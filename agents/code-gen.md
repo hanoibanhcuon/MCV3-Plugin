@@ -168,6 +168,53 @@ class Create{Mod}Schema(BaseModel):
 
 ---
 
+## QUY TẮC KIỂM TRA CHẤT LƯỢNG (BẮT BUỘC)
+
+Sau khi gen code cho mỗi module, tôi PHẢI chạy verification loop đầy đủ.
+Không được bỏ qua bất kỳ bước nào để "tiết kiệm thời gian".
+
+```
+### Compile & Lint (Bước 1-2)
+15. COMPILE-FIRST: PHẢI chạy tsc --noEmit (hoặc tương đương) — không được skip
+16. LINT-CLEAN: PHẢI chạy eslint/ruff — tự fix auto-fixable errors
+17. SELF-FIX-COMPILE: Nếu compile fail → ĐỌC error → TỰ FIX → RETRY (max 3 lần)
+18. COMPILE-ERROR-MARKER: Nếu vẫn fail sau 3 lần → đánh dấu // COMPILE-ERROR: [error] → báo user
+
+### Tests (Bước 3)
+19. TEST-MANDATORY: PHẢI chạy test suite — không được skip
+20. SELF-FIX-TEST: Nếu test fail → PHÂN TÍCH nguyên nhân → fix code hoặc test → RETRY (max 3 lần)
+21. TEST-FAIL-MARKER: Nếu vẫn fail → đánh dấu // TEST-FAIL: [test name] → báo user
+
+### Security (Bước 4)
+22. SECURITY-MANDATORY: PHẢI chạy security-checklist.md — không được skip
+23. SECURITY-AUTO-FIX: CRITICAL findings → TỰ FIX ngay (thêm validation, auth, hash password)
+24. SECURITY-WARNING-MARKER: HIGH findings không tự fix → đánh dấu // SECURITY-WARNING: [finding]
+25. NO-HARDCODED-SECRETS: Tuyệt đối không để hardcode credentials trong code được gen
+
+### Integration (Bước 5)
+26. CROSS-LAYER-CHECK: Verify controller↔service↔repository↔DTO consistency
+27. SELF-FIX-INTEGRATION: Nếu mismatch → tự thêm missing method/field
+
+### Migration (Bước 6)
+28. MIGRATION-ROLLBACK: Mọi migration phải có ROLLBACK script
+
+### Coverage (Bước 7)
+29. COVERAGE-CHECK: Chạy coverage report sau khi tests pass
+30. COVERAGE-THRESHOLD: Nếu dưới 80% lines / 70% branches → gen thêm tests → retry (max 2 lần)
+
+### Rollback
+31. PRE-CODEGEN-CHECKPOINT: Trước khi gen → mc_checkpoint "pre-codegen-{mod}"
+32. ROLLBACK-ON-FAIL: Nếu fail không tự fix được → rollback sạch → báo user rõ ràng
+33. NO-DELETE-USER-CODE: KHÔNG xóa code user đã viết — chỉ rollback code MCV3 gen
+
+### Cross-system
+34. CROSS-SYSTEM-VERIFY: Khi gen code gọi API hệ thống khác → verify endpoint có trong MODSPEC
+35. PENDING-IF-NO-SPEC: Nếu endpoint không có specs → // PENDING: Cần MODSPEC cho {system}
+36. NO-UNVERIFIED-CALLS: KHÔNG gen HTTP call đến endpoint không có specs
+```
+
+---
+
 ## Output tôi sinh ra
 
 Với 1 module, tôi tạo file list như sau:
@@ -238,3 +285,6 @@ TC-{MOD}-001  → src/{sys}/{mod}/__tests__/{mod}.service.test.ts#test-001
 - `skills/code-gen/references/validation-codegen.md` — TBL→Zod schemas
 - `skills/code-gen/references/test-codegen.md` — TC→real tests
 - `skills/code-gen/references/integration-patterns.md` — HTTP client, events (Multi-system)
+- `skills/code-gen/references/verification-loop.md` — Verification & Auto-Fix Loop (Phase 9)
+- `skills/code-gen/references/security-checklist.md` — Security checklist tự động
+- `skills/code-gen/references/rollback-mechanism.md` — Rollback & safety checkpoint

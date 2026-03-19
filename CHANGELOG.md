@@ -6,6 +6,64 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [3.10.0] — Code Quality Assurance — Verification & Auto-Fix Loop — 2026-03-19
+
+### Added
+
+- **`skills/code-gen/references/verification-loop.md`** (NEW) — Hướng dẫn chi tiết Phase 9 Verification & Auto-Fix Loop với 8 bước bắt buộc:
+  - Bước 1: Compile Check (tsc / py_compile / go build) + self-healing max 3 retry
+  - Bước 2: Lint Check (ESLint / Ruff) + auto-fix
+  - Bước 3: Unit Test Run (Jest / pytest) + phân tích failure + self-fix
+  - Bước 4: Security Scan (checklist nội bộ, không cần external tool)
+  - Bước 5: Integration Verification (cross-layer consistency check)
+  - Bước 6: Migration Test (up + down rollback)
+  - Bước 7: Coverage Report (Lines ≥ 80%, Branches ≥ 70%)
+  - Bước 8: Final Report template cho user
+- **`skills/code-gen/references/security-checklist.md`** (NEW) — Security checklist tự động 6 sections:
+  - Input Validation (CRITICAL): Zod/Joi, path params, file uploads, query sanitize
+  - Auth & Authz (CRITICAL): authenticate middleware, role-based authorize, password hashing
+  - Data Protection (HIGH): sensitive data in response, logging, ORM queries, CORS
+  - Injection Prevention (HIGH): SQL string concat, eval(), JSON.parse try-catch
+  - Headers & Transport (MEDIUM): Helmet, rate limiting, request size limit
+  - Secrets Management (CRITICAL): no hardcoded credentials, .env.example, .gitignore
+  - Scoring matrix: CRITICAL fail = BLOCK | HIGH fail = WARN | MEDIUM = INFO
+- **`skills/code-gen/references/rollback-mechanism.md`** (NEW) — Rollback safety protocol:
+  - Pre-codegen: mc_checkpoint + git branch/stash + file list
+  - In-progress: checkpoint per phase, no rollback of passing phases
+  - Rollback trigger conditions: compile fail 3x, test fail >50%, security CRITICAL unfixable
+  - 3 rollback options: git, manual file delete, mc_rollback
+  - Không xóa code user đã viết — chỉ rollback code MCV3 gen
+
+### Changed
+
+- **`skills/code-gen/SKILL.md`** — Thêm **Phase 9: Verification & Auto-Fix Loop** (sau Phase 5, trước Phase 6):
+  - 8 sub-phases: compile → lint → test → security → integration → migration → coverage → final report
+  - Cập nhật DEPENDENCY MAP: thêm 3 references mới (verification-loop, security-checklist, rollback-mechanism)
+  - Cập nhật Post-Gate: thêm Verification Loop quality gates (compile/lint/test/security/integration/migration/coverage)
+- **`agents/code-gen.md`** — Thêm section **QUY TẮC KIỂM TRA CHẤT LƯỢNG** (rules 15-36):
+  - 6 rules về Compile & Lint (bắt buộc, không skip)
+  - 3 rules về Tests (bắt buộc, self-fix)
+  - 4 rules về Security (auto-fix CRITICAL, SECURITY-WARNING marker cho HIGH)
+  - 3 rules về Integration check
+  - 2 rules về Migration rollback
+  - 4 rules về Coverage threshold
+  - 3 rules về Rollback safety
+  - 3 rules về Cross-system verification
+  - Cập nhật References: thêm 3 references mới
+- **`skills/verify/SKILL.md`** — Thêm Phase 4b.7: Verification Loop Results:
+  - Kiểm tra code-gen đã chạy Phase 9 chưa
+  - 7 checks: compile errors, test fails, security warnings, coverage, integration, migration
+  - Cảnh báo khi thiếu verification loop
+- **`CLAUDE.md`** — Cập nhật version 3.8 → 3.10, thêm **Batch E** section:
+  - Mô tả Phase 9 Verification Loop
+  - Danh sách references mới
+
+### Rationale
+
+Code-gen trước đây chỉ gen code mà không tự kiểm tra. Developer phải chạy compile/test/lint thủ công và tự xử lý security issues. Batch E biến `/mcv3:code-gen` thành một "mini CI pipeline" chạy ngay sau gen code: tự phát hiện và sửa lỗi thường gặp, đảm bảo mọi module pass qua quality gates trước khi sang `/mcv3:verify`.
+
+---
+
 ## [3.9.0] — Smart Code-Gen — Gộp SCAFFOLD + IMPLEMENT thành 1 chế độ thông minh — 2026-03-19
 
 ### Changed

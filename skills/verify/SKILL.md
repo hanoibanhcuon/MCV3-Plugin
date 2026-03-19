@@ -230,6 +230,36 @@ grep -rn "TODO\|FIXME" src/{sys}/{mod}/
 - [ ] `.github/workflows/ci.yml` tồn tại?
 - [ ] CI workflow có các steps: install → typecheck → lint → test?
 
+### 4b.7: Verification Loop Results
+
+Kiểm tra `/mcv3:code-gen` đã chạy **Phase 9 Verification Loop** chưa:
+
+```bash
+# Kiểm tra Final Report marker trong code
+grep -rn "VERIFICATION REPORT\|COMPILE-ERROR\|TEST-FAIL\|SECURITY-WARNING" src/{sys}/{mod}/
+```
+
+**Verification Loop checks:**
+- [ ] Có Final Report trong output của code-gen session?
+- [ ] Compile check PASS (không có `// COMPILE-ERROR:` trong code)?
+- [ ] Tests PASS (không có `// TEST-FAIL:` markers)?
+- [ ] Security scan: zero CRITICAL (`// SECURITY-WARNING:` không phải CRITICAL)?
+- [ ] Coverage đạt threshold (≥ 80% lines, ≥ 70% branches)?
+- [ ] Integration consistency verified (không có missing method stubs)?
+- [ ] Migration có rollback scripts?
+
+**Nếu thiếu Verification Loop:**
+```
+⚠️ CẢNH BÁO: Code module {MOD} chưa qua Phase 9 Verification Loop.
+   Các rủi ro:
+   - Compile errors tiềm ẩn
+   - Tests chưa được chạy
+   - Security vulnerabilities chưa kiểm tra
+
+   Đề xuất: Chạy lại /mcv3:code-gen với verification loop,
+   hoặc chạy thủ công: tsc --noEmit && npx jest && npm run lint
+```
+
 ---
 
 ## Phase 5 — End-to-End Traceability Matrix

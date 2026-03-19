@@ -56,6 +56,9 @@ References:
   - skills/code-gen/references/validation-codegen.md      ← TBL→Zod schemas
   - skills/code-gen/references/test-codegen.md            ← TC→real test code
   - skills/code-gen/references/integration-patterns.md    ← Multi-system HTTP client, events
+  - skills/code-gen/references/verification-loop.md       ← Verification & Auto-Fix Loop (Phase 9)
+  - skills/code-gen/references/security-checklist.md      ← Security checklist tự động
+  - skills/code-gen/references/rollback-mechanism.md      ← Rollback & safety checkpoint
   - templates/p5-tech-design/MODSPEC-TEMPLATE.md
   - templates/p5-tech-design/FIRMWARE-MODSPEC-TEMPLATE.md (Embedded/Firmware)
 ```
@@ -510,6 +513,133 @@ CI/CD:
 
 ---
 
+## Phase 9 — Verification & Auto-Fix Loop
+
+SAU KHI gen code cho mỗi module, **BẮT BUỘC** chạy verification loop.
+Không được bỏ qua hoặc rút ngắn dù specs đơn giản.
+
+> **Chi tiết đầy đủ:** `references/verification-loop.md`
+> **Security checklist:** `references/security-checklist.md`
+> **Rollback khi cần:** `references/rollback-mechanism.md`
+
+### 9.1 Compile Check
+
+```bash
+# TypeScript
+npx tsc --noEmit
+
+# Python
+python -m py_compile src/**/*.py
+
+# Go
+go build ./...
+```
+
+- PASS → tiếp tục 9.2
+- FAIL → đọc error → tự fix (type mismatch, missing import, syntax) → retry (max 3 lần)
+- Vẫn fail sau 3 lần → đánh dấu `// COMPILE-ERROR: [error]` → ghi vào Final Report
+
+### 9.2 Lint Check
+
+```bash
+npx eslint src/ --max-warnings 0   # TypeScript/JavaScript
+ruff check src/                    # Python
+```
+
+- PASS → tiếp tục 9.3
+- FAIL auto-fixable → chạy `--fix` flag → verify lại
+- Remaining errors → đánh dấu `// LINT-WARNING: [rule]`
+
+### 9.3 Unit Test Run
+
+```bash
+npx jest --passWithNoTests --forceExit   # Jest
+pytest -x --tb=short                     # pytest
+```
+
+- ALL PASS → tiếp tục 9.4
+- FAIL → phân tích: lỗi trong code hay test? → fix đúng chỗ → retry (max 3 lần)
+- Vẫn fail → đánh dấu `// TEST-FAIL: [test name] — [lý do]`
+
+### 9.4 Security Scan
+
+Chạy **security-checklist.md** theo thứ tự:
+
+```
+□ Input Validation: mọi req.body có Zod/Joi parse
+□ Auth/Authz: non-public routes có authenticate + authorize
+□ Data Protection: không leak password/token trong response
+□ Injection: không raw SQL với user input, không eval()
+□ Secrets: không hardcode credentials, .gitignore có .env
+```
+
+- CRITICAL fail → **tự fix ngay** (thêm validation, auth middleware, hash password)
+- HIGH fail → đánh dấu `// SECURITY-WARNING: [finding]` + ghi vào Final Report
+
+### 9.5 Integration Check
+
+Kiểm tra cross-layer consistency:
+
+```
+□ Controller ↔ Service: mỗi handler gọi service method tồn tại
+□ Service ↔ Repository: mỗi repo call có method tương ứng
+□ DTO ↔ Zod: mỗi field có validation rule
+□ TBL ↔ Migration: mỗi table spec có migration file
+□ API Response ↔ Types: mọi endpoint return đúng type
+```
+
+- Mismatch → tự thêm missing method/field → verify lại
+
+### 9.6 Migration Test
+
+```
+□ Mỗi migration có ROLLBACK script (DROP TABLE / DROP INDEX)
+□ Column definitions khớp với TBL specs
+□ Indexes và constraints đầy đủ
+□ Không có syntax errors trong SQL
+```
+
+- Thiếu rollback → sinh thêm rollback script
+
+### 9.7 Coverage Check
+
+```bash
+npx jest --coverage --coverageReporters=text-summary   # Jest
+pytest --cov=src --cov-report=term-missing             # pytest
+```
+
+Thresholds tối thiểu: **Lines ≥ 80%** | **Branches ≥ 70%**
+
+- Dưới threshold → xác định uncovered lines → gen thêm tests (error cases, edge cases) → retry (max 2 lần)
+
+### 9.8 Final Report
+
+Trình bày tổng hợp cho user theo format:
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║     VERIFICATION REPORT — {MODULE} — {DATE}                 ║
+╠══════════════════════════════════════════════════════════════╣
+║ COMPILE      │ ✅/❌ │ [kết quả]                            ║
+║ LINT         │ ✅/❌ │ [kết quả]                            ║
+║ TESTS        │ ✅/❌ │ [X/Y passed]                         ║
+║ SECURITY     │ ✅/⚠️ │ [X critical, Y warning]              ║
+║ INTEGRATION  │ ✅/❌ │ [All layers consistent / gaps]       ║
+║ MIGRATION    │ ✅/❌ │ [Up ✓ | Down ✓]                      ║
+║ COVERAGE     │ ✅/❌ │ [Lines: X% | Branches: Y%]           ║
+╠══════════════════════════════════════════════════════════════╣
+║ REVIEW markers : [N] — cần user xác nhận specs              ║
+║ PENDING markers: [N] — cần bổ sung specs                    ║
+║ SECURITY-WARNING: [N] — documented                          ║
+╠══════════════════════════════════════════════════════════════╣
+║ TỔNG KẾT: ✅ READY / ⚠️ ISSUES / ❌ BLOCKED                ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+Nếu có FAIL không tự fix được → liệt kê rõ ràng + đề xuất action cho user.
+
+---
+
 ## Phase 6 — Save & Traceability
 
 ```
@@ -538,21 +668,32 @@ CI/CD:
 
 ---
 
-## Post-Gate
+## Post-Gate — Quality Assurance
 
 ```
 ✅ Tất cả MODSPEC API-IDs có route handler tương ứng
 ✅ Tất cả MODSPEC TBL-IDs có migration file tương ứng
 ✅ Tất cả files có REQ-ID header comment
 ✅ Test files tương ứng với TC-IDs
-✅ TypeScript compile OK (tsc --noEmit)
 ✅ CI pipeline đã tạo
 ✅ Traceability FT → code đã link
 
-Thông báo kết quả theo markers:
-  Không có marker  → "✅ Phase 7 Code Gen hoàn thành! Code đầy đủ từ specs."
-  Có REVIEW marker → "⚠️ Code gen xong nhưng có {M} điểm cần xác nhận specs."
-  Có PENDING marker → "📋 Code gen xong nhưng có {P} phần thiếu specs — cần bổ sung."
+Verification Loop (Phase 9):
+✅ Compile: PASS (zero errors)
+✅ Lint: PASS (zero warnings)
+✅ Tests: ALL PASS + coverage ≥ thresholds
+✅ Security: zero CRITICAL findings
+✅ Integration: all layers consistent
+✅ Migration: up ✓ down ✓ (rollback scripts có sẵn)
+✅ REVIEW markers: [count] — cần user xem lại
+✅ PENDING markers: [count] — cần bổ sung specs
+✅ SECURITY-WARNING: [count] — documented trong Final Report
+
+Thông báo kết quả:
+  Không có issue    → "✅ Phase 7 + Verification hoàn thành! Code sẵn sàng verify."
+  Có REVIEW marker  → "⚠️ Code gen xong, {M} điểm cần xác nhận specs (xem REVIEW markers)."
+  Có PENDING marker → "📋 Code gen xong, {P} phần thiếu specs (xem PENDING markers)."
+  Có lỗi còn lại    → "❌ Verification có vấn đề cần fix thủ công (xem Final Report)."
 
 Tiếp theo: Chạy /mcv3:verify
 ```
