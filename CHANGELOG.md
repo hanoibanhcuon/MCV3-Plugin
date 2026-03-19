@@ -6,6 +6,77 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [3.5.0] — Phase A — Ongoing Project Support — 2026-03-19
+
+### Added — Skill mới: `/mcv3:assess`
+
+- **`/mcv3:assess`** — Đánh giá dự án đang phát triển dở (ongoing/in-progress projects)
+  - Phase 0: Project Type Detection — 4 loại (A/B/C/D)
+  - Phase 1: Structure Discovery — scan codebase hoặc classify docs
+  - Phase 2: Per-System Assessment — đánh giá phase hiện tại của từng system
+  - Phase 3: Gap Analysis — phân loại CRITICAL/WARNING/INFO gaps
+  - Phase 4: Code-Docs Sync Check — so sánh APIs, DB, business rules
+  - Phase 5: Remediation Roadmap — action plan với skill routing
+  - Phase 6: Initialize MCV3 — tạo .mc-data/ với per-system phases
+  - References: `assessment-checklist.md`, `code-patterns-detection.md`, `sync-check-rules.md`, `project-type-guides.md`
+
+### Added — Script mới
+
+- **`scripts/scan-codebase.sh`** — Quét codebase tự động:
+  - Detect tech stack: Node.js/Python/Java/Go/Ruby
+  - Detect framework: NestJS/Express/FastAPI/Spring Boot/...
+  - Count API endpoints, DB tables, test files
+  - Check MCV3 REQ-ID comment status
+  - Output: `manifest.json` cho `/mcv3:assess`
+
+### Updated — `/mcv3:migrate` (Scope 6)
+
+- Thêm **Scope 6: Ongoing Project Integration** — Mixed-Phase Mode:
+  - Import assets từ nhiều phases cùng lúc (không cần phase sequential)
+  - Link với `/mcv3:assess` để assess trước khi import
+  - Update `_config.json` với per-system phases sau import
+
+### Updated — MCP Server: Per-System Phase Tracking
+
+- **`types.ts`**: Thêm `currentPhase?: ProjectPhase` vào `SystemInfo` interface
+  - Mỗi system có thể ở phase khác nhau (phù hợp dự án in-progress)
+  - Field optional — không ảnh hưởng dự án mới
+  - `McInitParams.systems` cho phép set per-system phase khi init
+
+- **`mc-status.ts`**: Hiển thị per-system phase trong dashboard
+  - `mc_status` show `currentPhase` của từng system nếu có
+  - Gợi ý `/mcv3:assess` khi phát hiện per-system phases
+  - Suggest assess trong "Bước tiếp theo" section
+
+- **`mc-init.ts`**: Hỗ trợ khởi tạo với per-system phases
+  - `mc_init_project` nhận `systems[]` với `currentPhase` per system
+  - Validate và normalize system codes khi init
+
+- **`mc-validate.ts`**: Validate per-system phase consistency
+  - Function `validatePerSystemPhases()` — kiểm tra phases hợp lệ
+  - Warning nếu system phase vượt quá project-level phase quá nhiều
+  - Info nếu project-level phase chưa được update sau khi set per-system
+
+### Updated — Documentation
+
+- `CLAUDE.md` — Thêm `/mcv3:assess` vào Skills table, Hooks table, Scripts section
+  - Thêm section "Dự án đang phát triển dở (Ongoing Projects)"
+  - Cập nhật Quick Start với assess workflow
+  - Cập nhật Quy tắc 2 để cho phép mixed-phase với assess
+
+- `README.md` — Thêm section "Working with Existing Projects"
+  - Mô tả `/mcv3:assess` skill và workflow
+  - Mô tả `scan-codebase.sh` và output format
+  - Giải thích Per-System Phase Tracking
+
+### Updated — Configuration
+
+- `hooks/hooks.json` — Thêm hook `PreAssess`
+- `settings.json` — Thêm permissions cho assess workflow
+- `skills/navigator/SKILL.md` — Thêm routing cho `/mcv3:assess`
+
+---
+
 ## [3.4.0] — Sprint 4 — Lifecycle & Polish — 2026-03-19
 
 ### Added — Skills mới (Lifecycle Management)

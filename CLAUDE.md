@@ -316,7 +316,7 @@ export class InventoryService { ... }
 ## Quy tắc làm việc
 
 1. **Đọc trước khi làm** — Luôn gọi `mc_status` khi bắt đầu conversation mới
-2. **Không skip phases** — Phải có output của phase trước mới sang phase sau
+2. **Không skip phases** — Phải có output của phase trước mới sang phase sau (ngoại lệ: dự án in-progress dùng `/mcv3:assess` để assess rồi import mixed-phase)
 3. **Dùng templates** — Files trong `templates/` (tổ chức theo phase) là chuẩn tạo tài liệu
 4. **Lưu sau khi tạo** — Mọi tài liệu phải được lưu qua `mc_save`
 5. **Tiếng Việt** — Documentation và comments bằng tiếng Việt
@@ -349,6 +349,12 @@ export class InventoryService { ... }
 | onboard | `/mcv3:onboard` | Tutorial cho user mới (Developer / PM / Business Owner) |
 | evolve | `/mcv3:evolve` | Thêm sub-feature/module/system mới vào dự án |
 | migrate | `/mcv3:migrate` | Import tài liệu cũ vào MCV3 format |
+
+### Assess Skill (Phase A — dùng cho dự án đang phát triển dở)
+
+| Skill | Command | Mục đích |
+|-------|---------|---------|
+| assess | `/mcv3:assess` | Đánh giá dự án in-progress, tìm gaps, tạo remediation plan |
 
 ---
 
@@ -406,6 +412,9 @@ export class InventoryService { ... }
 
 # Sprint 4: Validate trước lifecycle skills
 ./scripts/check-lifecycle-prerequisites.sh <skill> <project_slug>
+
+# Phase A: Quét codebase để hỗ trợ /mcv3:assess
+./scripts/scan-codebase.sh [project_root] [output_manifest.json]
 ```
 
 ### Hooks
@@ -425,6 +434,7 @@ export class InventoryService { ... }
 | **PreChangeManager** | **Trước /mcv3:change-manager** | **check-lifecycle-prerequisites.sh** |
 | **PreEvolve** | **Trước /mcv3:evolve** | **check-lifecycle-prerequisites.sh** |
 | **PreMigrate** | **Trước /mcv3:migrate** | **check-lifecycle-prerequisites.sh** |
+| **PreAssess** | **Trước /mcv3:assess** | **check-lifecycle-prerequisites.sh** |
 
 ---
 
@@ -515,4 +525,41 @@ Nói với Claude: "Tạo dự án mới tên X, ngành Y"
 
 # Import tài liệu cũ:
 /mcv3:migrate          → Convert từ Word/Confluence/code
+
+# Dự án đang phát triển dở (có code/docs chưa đồng bộ):
+/mcv3:assess           → Đánh giá trạng thái, tìm gaps, lập remediation plan
 ```
+
+---
+
+## Dự án đang phát triển dở (Ongoing Projects)
+
+Khi nhận bàn giao dự án đang chạy hoặc muốn tích hợp vào MCV3:
+
+### Quy trình nhanh
+
+```
+1. /mcv3:assess        → Đánh giá toàn diện: systems, phases, gaps
+2. Xem REMEDIATION-PLAN.md → Biết thứ tự ưu tiên fix
+3. Chạy skills theo plan:
+   - Thiếu URS → /mcv3:migrate hoặc /mcv3:requirements
+   - Docs chưa sync với code → /mcv3:change-manager
+   - Thiếu MODSPEC → /mcv3:tech-design
+   - Cần verify → /mcv3:verify
+```
+
+### Per-System Phase Tracking
+
+Dự án in-progress thường có các systems đang ở **phases khác nhau**. MCV3 hỗ trợ:
+- `mc_status` hiển thị `currentPhase` per system
+- `_config.json` lưu `systems[i].currentPhase` riêng biệt
+- `/mcv3:assess` detect và set đúng phase per system sau khi assess
+
+### Loại dự án phổ biến
+
+| Loại | Mô tả | Skill đầu tiên |
+|------|-------|--------------|
+| A | Có code, không có docs | `/mcv3:assess` → `/mcv3:migrate` |
+| B | Có docs cũ, chưa có code | `/mcv3:assess` → `/mcv3:migrate` |
+| C | Có cả code + docs, chưa đồng bộ | `/mcv3:assess` → `/mcv3:change-manager` |
+| D | Production, muốn formalize | `/mcv3:assess` → skills theo gaps |

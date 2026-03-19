@@ -237,6 +237,32 @@
     }
   ],
 
+  "PreAssess": [
+    {
+      "id": "check-assess-prerequisites",
+      "name": "Kiểm tra prerequisites trước khi chạy Assess",
+      "script": "./scripts/check-lifecycle-prerequisites.sh",
+      "args": ["assess"],
+      "description": "Kiểm tra cơ bản trước assess — skill đầu tiên cho dự án in-progress, yêu cầu ít prerequisites",
+      "enabled": true,
+      "runCondition": "before-assess",
+      "failBehavior": "warn",
+      "_checks": [
+        "Codebase hoặc documents được chỉ định (warning nếu không có)",
+        "Nếu project MCV3 đã tồn tại → xác nhận user muốn re-assess"
+      ]
+    },
+    {
+      "id": "snapshot-before-assess",
+      "name": "Tạo safety snapshot trước Assess (nếu project đã có .mc-data)",
+      "script": "./scripts/auto-snapshot-milestone.sh",
+      "description": "Auto-tạo safety snapshot trước khi assess nếu project đã có data — cho phép rollback nếu cần",
+      "enabled": true,
+      "runCondition": "before-assess-if-mcdata-exists",
+      "_note": "Chỉ chạy nếu .mc-data/ đã tồn tại — skip nếu project hoàn toàn mới"
+    }
+  ],
+
   "PreTechDesign": [
     {
       "id": "check-urs-complete",
@@ -292,9 +318,10 @@
     "snapshotOnMilestone": true,
     "validateOnSave": false,
     "traceabilityAutoUpdate": false,
-    "_sprint": "Sprint 4",
-    "_version": "3.4.0",
+    "_sprint": "Sprint 5",
+    "_version": "3.5.0",
     "_lifecycle_skills": ["change-manager", "evolve", "migrate", "onboard"],
-    "_note": "Sprint 4: Thêm hooks cho Lifecycle Skills (PreChangeManager, PreEvolve, PreMigrate)"
+    "_assess_skill": ["assess"],
+    "_note": "Sprint 5: Thêm hook PreAssess cho Assess Skill (ongoing project support)"
   }
 }

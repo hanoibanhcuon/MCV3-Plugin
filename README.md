@@ -92,9 +92,77 @@ Dùng sau khi project đã ở Phase 5+:
 |------|---------|
 | `/mcv3:change-manager` | Quản lý requirements changes với impact analysis |
 | `/mcv3:evolve` | Thêm features/modules/systems mới vào dự án |
-| `/mcv3:migrate` | Import tài liệu cũ vào MCV3 format |
+| `/mcv3:migrate` | Import tài liệu cũ vào MCV3 format (incl. Scope 6: Ongoing) |
 | `/mcv3:onboard` | Hướng dẫn user mới sử dụng plugin |
 | `/mcv3:status` | Dashboard tiến độ dự án |
+
+---
+
+## Working with Existing Projects (Phase A)
+
+> **Bạn có dự án đang phát triển dở?** — MCV3 hỗ trợ tiếp nhận dự án in-progress.
+
+### Vấn đề phổ biến
+
+- Codebase đang chạy nhưng không có documentation
+- Docs cũ (Word/PDF/Confluence) không sync với code
+- Muốn biết dự án đang "thiếu" gì so với MCV3 pipeline
+- Cần onboard vào MCV3 mà không muốn restart từ đầu
+
+### Skill `/mcv3:assess`
+
+Skill đánh giá chuyên biệt cho dự án in-progress:
+
+```
+/mcv3:assess
+```
+
+**Workflow:**
+1. **Project Type Detection** — Phân loại: code-only / docs-only / mixed / production
+2. **Structure Discovery** — Scan codebase → detect systems, modules, tech stack
+3. **Per-System Assessment** — Đánh giá từng system đang ở phase nào trong MCV3
+4. **Gap Analysis** — Phân loại gaps: CRITICAL / WARNING / INFO
+5. **Code-Docs Sync** — So sánh APIs, DB tables, business rules giữa code và docs
+6. **Remediation Roadmap** — Action plan với skill MCV3 tương ứng cho từng gap
+7. **Initialize MCV3** — Tạo .mc-data/ với per-system phases đúng
+
+**Output:**
+- `_mcv3-work/assessment/PROJECT-MANIFEST.md`
+- `_mcv3-work/assessment/ASSESSMENT-MATRIX.md`
+- `_mcv3-work/assessment/GAP-REPORT.md`
+- `_mcv3-work/assessment/SYNC-REPORT.md` (nếu có code + docs)
+- `_mcv3-work/assessment/REMEDIATION-PLAN.md`
+
+### Script: `scan-codebase.sh`
+
+Tự động scan tech stack và cấu trúc code:
+
+```bash
+./scripts/scan-codebase.sh [project_root] [output.json]
+```
+
+Output `manifest.json` với:
+- Tech stack (language, framework, ORM, testing)
+- Systems và modules detected
+- API endpoint count
+- Database tables và migration count
+- Test file count
+- MCV3 REQ-ID comment status
+
+### Per-System Phase Tracking
+
+MCV3 hỗ trợ mỗi system có `currentPhase` riêng:
+
+```json
+{
+  "systems": [
+    { "code": "ERP", "currentPhase": "phase5-design" },
+    { "code": "WEB", "currentPhase": "phase3-bizdocs" }
+  ]
+}
+```
+
+`mc_status` hiển thị phase per system, giúp track tiến độ trong dự án phức tạp.
 
 ---
 

@@ -41,6 +41,13 @@ export interface SystemInfo {
   techStack: string;
   /** Trạng thái: planned, in-progress, done */
   status: 'planned' | 'in-progress' | 'done';
+  /**
+   * Phase hiện tại của system này (per-system phase tracking).
+   * Dùng cho dự án in-progress: mỗi system có thể đang ở phase khác nhau.
+   * VD: ERP đang ở phase5-design, WEB đang ở phase3-bizdocs.
+   * Nếu không set → hiển thị theo projectConfig.currentPhase (project-level).
+   */
+  currentPhase?: ProjectPhase;
 }
 
 /** Các phase của workflow MCV3 */
@@ -114,6 +121,12 @@ export interface McInitParams {
   domain: string;
   /** Đường dẫn gốc dự án (mặc định: thư mục hiện tại) */
   projectRoot?: string;
+  /**
+   * Danh sách systems với per-system phase (tùy chọn).
+   * Dùng khi init dự án in-progress: mỗi system đang ở phase khác nhau.
+   * Nếu không truyền → tất cả systems bắt đầu từ phase0-init.
+   */
+  systems?: Array<Partial<SystemInfo> & { code: string; name: string }>;
 }
 
 /** Tham số cho mc_save */

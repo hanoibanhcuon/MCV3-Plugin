@@ -123,6 +123,38 @@ Xem `references/status-display.md` để biết format hiển thị chi tiết.
 - `mc_status` — đọc trạng thái project
 - `mc_list` — liệt kê tài liệu (nếu cần)
 
+---
+
+### Bước 5 — Routing cho dự án in-progress
+
+Nếu `mc_status` trả về systems có `currentPhase` khác nhau:
+
+```
+"⚠️ Phát hiện dự án in-progress với per-system phases!
+
+Systems:
+  - ERP: phase5-design
+  - WEB: phase3-bizdocs
+
+→ Chạy /mcv3:assess để:
+  1. Xem full assessment per system
+  2. Tìm gaps CRITICAL/WARNING/INFO
+  3. Nhận REMEDIATION-PLAN với thứ tự ưu tiên"
+```
+
+Nếu user hỏi về dự án cũ hoặc có code nhưng chưa có docs:
+```
+→ Gợi ý /mcv3:assess ngay
+→ Sau assess → làm theo REMEDIATION-PLAN
+```
+
+---
+
+## Tools sử dụng
+
+- `mc_status` — đọc trạng thái project
+- `mc_list` — liệt kê tài liệu (nếu cần)
+
 ## Không làm
 
 - KHÔNG tự động chạy skills khác (chỉ gợi ý)
