@@ -150,9 +150,37 @@ case "$SKILL" in
     echo "ℹ️  Chạy /mcv3:onboard để bắt đầu tutorial" >&2
     ;;
 
+  "assess")
+    # Assess — dùng cho dự án in-progress, yêu cầu ít prerequisites
+    # Đây thường là skill đầu tiên → không nên block
+
+    echo "ℹ️  Assess skill: đánh giá dự án đang phát triển dở" >&2
+
+    # Cảnh báo nếu không có codebase cũng không có docs rõ ràng
+    # (nhưng không block — user có thể describe bằng lời)
+    if [ ! -d "${PROJECT_ROOT}/src" ] && \
+       [ ! -d "${PROJECT_ROOT}/app" ] && \
+       [ ! -f "${PROJECT_ROOT}/package.json" ] && \
+       [ ! -f "${PROJECT_ROOT}/requirements.txt" ] && \
+       [ ! -f "${PROJECT_ROOT}/pom.xml" ] && \
+       [ ! -f "${PROJECT_ROOT}/go.mod" ]; then
+      echo "ℹ️  Không phát hiện codebase tiêu chuẩn trong ${PROJECT_ROOT}" >&2
+      echo "   → Có thể mô tả cấu trúc bằng lời hoặc paste nội dung tài liệu" >&2
+    else
+      echo "✅ Phát hiện codebase/project files" >&2
+    fi
+
+    # Nếu đã có .mc-data → thông báo sẽ tạo snapshot
+    if [ -d "${PROJECT_ROOT}/.mc-data" ]; then
+      echo "ℹ️  Project .mc-data đã tồn tại — sẽ tạo safety snapshot trước khi assess" >&2
+    else
+      echo "ℹ️  Chưa có .mc-data — assess sẽ tạo mới sau khi phân tích xong" >&2
+    fi
+    ;;
+
   *)
     echo "⚠️  Skill không được nhận diện: ${SKILL}" >&2
-    echo "   Skills hợp lệ: change-manager | evolve | migrate | onboard" >&2
+    echo "   Skills hợp lệ: change-manager | evolve | migrate | onboard | assess" >&2
     WARNINGS=$((WARNINGS + 1))
     ;;
 

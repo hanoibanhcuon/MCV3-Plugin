@@ -377,6 +377,21 @@ export async function mcInitProject(
 
   // ── Tạo cấu hình dự án ────────────────────────────────────────────────
   const now = new Date().toISOString();
+
+  // Xử lý systems được truyền vào (cho dự án in-progress với per-system phases)
+  // Nếu params.systems có giá trị, merge vào config với per-system currentPhase
+  const initialSystems = params.systems
+    ? params.systems.map(s => ({
+        code: s.code.toUpperCase(),
+        name: s.name,
+        description: s.description || '',
+        techStack: s.techStack || '',
+        status: (s.status || 'in-progress') as 'planned' | 'in-progress' | 'done',
+        // Per-system phase: nếu có truyền vào → dùng, không thì để undefined
+        ...(s.currentPhase ? { currentPhase: s.currentPhase } : {}),
+      }))
+    : [];
+
   const config: ProjectConfig = {
     name: params.projectName.trim(),
     slug,
@@ -385,7 +400,7 @@ export async function mcInitProject(
     updatedAt: now,
     mcv3Version: '3.4.0',
     currentPhase: 'phase0-init' as ProjectPhase,
-    systems: [],
+    systems: initialSystems,
   };
 
   // ── Tạo cấu trúc thư mục ─────────────────────────────────────────────

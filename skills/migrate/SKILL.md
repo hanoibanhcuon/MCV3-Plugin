@@ -7,6 +7,7 @@ Hỗ trợ **migrate dự án từ format cũ sang MCV3**. Khi có:
 - Dự án cũ không có formal ID system
 - Muốn import existing codebase vào MCV3 structure
 - Chuyển từ một document format khác sang MCV3 templates
+- Dự án đang phát triển dở với assets ở nhiều phases cùng lúc (Scope 6)
 
 ---
 
@@ -63,7 +64,12 @@ Bạn đang migrate từ đâu?
     → Extract và assign formal IDs
 
 [5] Kết hợp nhiều nguồn
-    → Merge nhiều sources vào 1 project MCV3"
+    → Merge nhiều sources vào 1 project MCV3
+
+[6] Dự án đang phát triển dở (Ongoing Project Integration)
+    → Mixed-phase: import assets từ nhiều phases cùng lúc
+    → Không yêu cầu hoàn thành phase trước mới import phase sau
+    → Khuyến nghị: chạy /mcv3:assess trước để có assessment"
 ```
 
 ---
@@ -375,6 +381,129 @@ Migration report format:
 1. Review và confirm generated ACs
 2. Fill gaps: NFR, priority, actors
 3. Continue pipeline: /mcv3:tech-design
+```
+
+---
+
+## Scope 6 — Ongoing Project Integration (Mixed-Phase Mode)
+
+Dùng khi dự án có assets ở **nhiều phases cùng lúc** và không theo thứ tự tuần tự.
+Ví dụ: Có code (Phase 7) + có API spec (Phase 5) + có BRD cũ (Phase 3) nhưng thiếu Phase 4.
+
+### Nguyên tắc Mixed-Phase
+
+```
+FLEXIBLE_ENTRY: Không cần hoàn thành Phase 1-3 mới được import Phase 5
+PER-ASSET_IMPORT: Mỗi asset được import độc lập theo đúng phase của nó
+MARK_GAPS: Phases thiếu được đánh dấu rõ, không block import
+LINK_WITH_ASSESS: Nên có ASSESSMENT-MATRIX từ /mcv3:assess trước khi làm
+```
+
+### Workflow Mixed-Phase
+
+**Bước 0: Kiểm tra assessment (nếu chưa có)**
+
+```
+"Bạn đã chạy /mcv3:assess chưa?
+[Y] Đã có ASSESSMENT-MATRIX → tiến hành import ngay
+[N] Chưa có → Khuyến nghị: chạy /mcv3:assess trước để có full picture
+
+Muốn bỏ qua assess và import trực tiếp? [Y/N]"
+```
+
+**Bước 1: Inventory tất cả assets**
+
+```
+"Liệt kê tất cả assets bạn có, không cần theo thứ tự:
+VD:
+  - API_Spec_v3.xlsx → Phase 5 (MODSPEC candidate)
+  - BRD_2023.docx → Phase 3/4 (BIZ-POLICY + URS candidate)
+  - src/ (codebase) → Phase 7 (Code)
+  - swagger.json → Phase 5 (MODSPEC)
+  - test_cases.xlsx → Phase 6 (TEST candidate)
+
+Paste danh sách của bạn:"
+```
+
+**Bước 2: Phase assignment**
+
+```
+Với mỗi asset, tôi xác định:
+  - Phase tương ứng trong MCV3
+  - Target path trong .mc-data/
+  - Import method (convert hoặc reverse-engineer)
+  - Estimated effort
+
+"📋 Import Plan:
+
+Asset → Target → Method → Effort
+---
+API_Spec_v3.xlsx → {SYS}/P2-DESIGN/MODSPEC-{MOD}.md → Convert → Low
+BRD_2023.docx → _PROJECT/BIZ-POLICY/ + {SYS}/P1-REQUIREMENTS/ → Convert → Medium
+src/ → {SYS}/ (code + annotation) → Annotate → Low
+test_cases.xlsx → {SYS}/P3-QA-DOCS/TEST-{MOD}.md → Convert → Low
+
+⚠️ Phases không có asset:
+  Phase 1 (Discovery): Sẽ tạo PROJECT-OVERVIEW từ BRD intro + context
+  Phase 2 (Expert): Tạm để trống — không block các phases khác
+
+Bắt đầu import?"
+```
+
+**Bước 3: Import per-phase (không theo thứ tự)**
+
+```
+Import theo thứ tự: Phase 5 trước (đã có spec) → Phase 3/4 → Phase 6 → Phase 7
+
+VD: Import API spec trước (vì có sẵn và complete):
+  → Convert API_Spec_v3.xlsx → MODSPEC format
+  → Assign API-{SYS}-xxx IDs
+  → mc_save({path: "{SYS}/P2-DESIGN/MODSPEC-{MOD}.md"})
+
+Sau đó import BRD:
+  → Extract business rules → BIZ-POLICY format
+  → Extract user stories → URS format
+  → Assign BR-xxx, US-xxx IDs
+  → mc_save() cho từng file
+
+Chú ý: Các IDs cross-reference nhau sẽ được link sau khi import xong
+```
+
+**Bước 4: Update _config.json với per-system phases**
+
+```
+Sau khi import xong:
+  mc_status({ projectSlug: {slug} })
+  → Xem phases nào đã có content
+
+Cập nhật config để phản ánh đúng currentPhase per system:
+  - systems[i].currentPhase = phase có content cao nhất
+  VD: ERP có đến phase5-design → currentPhase: "phase5-design"
+      WEB chỉ có phase3-bizdocs → currentPhase: "phase3-bizdocs"
+```
+
+**Bước 5: Gap documentation**
+
+```
+Sau import, document rõ gaps còn lại:
+
+"📊 Import Summary:
+
+✅ Imported:
+  - Phase 3: BIZ-POLICY-WH.md, BIZ-POLICY-SALES.md
+  - Phase 4: URS-WH.md (partial — thiếu ACs)
+  - Phase 5: MODSPEC-WH.md, MODSPEC-SALES.md
+  - Phase 6: TEST-WH.md (partial)
+  - Phase 7: src/ annotated với REQ-IDs
+
+⚠️ Gaps (cần bổ sung):
+  - Phase 1: PROJECT-OVERVIEW.md → /mcv3:discovery
+  - Phase 2: EXPERT-LOG.md → /mcv3:expert-panel (tùy chọn)
+  - Phase 4: Thiếu ACs cho URS-WH → /mcv3:requirements (enrich)
+  - Phase 6: Thiếu UAT scenarios → /mcv3:qa-docs (enrich)
+  - Phase 8: Cần verify sau khi gaps được fill → /mcv3:verify
+
+Thứ tự fill gaps theo REMEDIATION-PLAN (từ /mcv3:assess)"
 ```
 
 ---
