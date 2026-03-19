@@ -2,7 +2,18 @@
 
 ## Mục đích
 
-Chuyển **MODSPEC (Phase 5)** thành **Source Code Scaffolding** — Phase 7.
+Chuyển **MODSPEC (Phase 5)** thành **Source Code** — Phase 7.
+
+Có 2 modes:
+
+| Mode | Mô tả | Output | TODO count |
+|------|-------|--------|-----------|
+| **SCAFFOLD** | Sinh code skeleton với TODO comments | Stubs, interfaces, empty methods | Nhiều TODOs |
+| **IMPLEMENT** | Sinh code thực từ BR/TBL/TC specs | Business logic, real queries, real tests | Zero TODOs |
+
+**Khi nào dùng mode nào:**
+- `SCAFFOLD` — Muốn có structure nhanh, sẽ tự implement sau
+- `IMPLEMENT` — Muốn code thực từ đầu, dựa trên MODSPEC đầy đủ với BR specs, TBL schemas, TC specs chi tiết
 
 Với mỗi module, tạo:
 - **Project structure** theo tech stack đã chọn
@@ -20,14 +31,20 @@ Mọi code file PHẢI có **REQ-ID comment** truy về MODSPEC.
 ```
 Requires:
   - {SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md (Phase 5 — bắt buộc)
-  - {SYSTEM}/P3-QA-DOCS/TEST-{MOD}.md (Phase 6 — test stubs)
+  - {SYSTEM}/P3-QA-DOCS/TEST-{MOD}.md (Phase 6 — test stubs/specs)
   - _PROJECT/PROJECT-OVERVIEW.md (tech stack)
   - _PROJECT/PROJECT-ARCHITECTURE.md (conventions)
 Produces:
-  - src/{sys}/{mod}/ (source code scaffolding)
-  - src/{sys}/{mod}/__tests__/ (test file stubs)
-  - db/migrations/ (schema migrations)
-  - docker-compose.yml, .env.example (nếu chưa có)
+  SCAFFOLD mode:
+    - src/{sys}/{mod}/ (code skeletons với TODO comments)
+    - src/{sys}/{mod}/__tests__/ (test file stubs)
+    - db/migrations/ (schema với TODO fields)
+    - docker-compose.yml, .env.example (nếu chưa có)
+  IMPLEMENT mode:
+    - src/{sys}/{mod}/ (code thực với business logic từ BR specs)
+    - src/{sys}/{mod}/__tests__/ (real tests từ TC specs)
+    - db/migrations/ (real schema từ TBL specs)
+    - .github/workflows/ci.yml (CI pipeline)
 Enables: /mcv3:verify (Phase 8)
 Agents: code-gen (chuyên biệt), tech-expert (validate)
 MCP Tools:
@@ -41,6 +58,11 @@ References:
   - skills/code-gen/references/tech-stack-nextjs.md     ← Next.js 14+ App Router
   - skills/code-gen/references/tech-stack-mobile.md     ← React Native + Flutter
   - skills/code-gen/references/database-nosql-guide.md  ← MongoDB, Firebase, Supabase, Redis
+  - skills/code-gen/references/implementation-patterns.md ← IMPLEMENT mode: BR→Code transpiler
+  - skills/code-gen/references/query-patterns.md          ← IMPLEMENT mode: Prisma/SQLAlchemy queries
+  - skills/code-gen/references/validation-codegen.md      ← IMPLEMENT mode: TBL→Zod schemas
+  - skills/code-gen/references/test-codegen.md            ← IMPLEMENT mode: TC→real test code
+  - skills/code-gen/references/integration-patterns.md    ← Multi-system HTTP client, events
   - templates/p5-tech-design/MODSPEC-TEMPLATE.md
   - templates/p5-tech-design/FIRMWARE-MODSPEC-TEMPLATE.md (Embedded/Firmware)
 ```
@@ -67,7 +89,11 @@ References:
    [Danh sách MODSPEC files]
 
    Tech stack đã confirm: {backend} / {database} / {frontend}
-   Output folder sẽ là: src/{sys_lower}/{mod_lower}/"
+   Output folder sẽ là: src/{sys_lower}/{mod_lower}/
+
+   Chọn mode:
+   [S] SCAFFOLD — sinh stubs với TODO comments (nhanh, tự implement sau)
+   [I] IMPLEMENT — sinh code thực từ BR/TBL/TC specs (đầy đủ, zero TODOs)"
 ```
 
 **Nếu thiếu MODSPEC:**
@@ -114,20 +140,34 @@ Từ MODSPEC, extract:
 - Flutter → `references/tech-stack-mobile.md` (Riverpod, go_router, Dio)
 - MongoDB / Firebase / Supabase / Redis → `references/database-nosql-guide.md`
 
-### 1c. Confirm với user
+### 1c. Load references theo mode
+
+**SCAFFOLD mode:** Load `code-patterns.md` + tech stack guide phù hợp.
+
+**IMPLEMENT mode:** Load thêm:
+```
+implementation-patterns.md  ← BR→Code transpiler rules
+query-patterns.md           ← Real database queries
+validation-codegen.md       ← TBL schema → Zod schemas
+test-codegen.md             ← TC specs → real tests
+```
+
+### 1d. Confirm với user
 
 ```
 "Tôi sẽ generate code với config:
 - Language: TypeScript / Python / Java
 - Framework: Express.js / FastAPI / Spring Boot
 - ORM: Prisma / SQLAlchemy / JPA
+- Mode: SCAFFOLD / IMPLEMENT
 - Output: src/{sys}/{mod}/
 
 Tôi sẽ tạo:
 ✓ {N} API route handlers (từ {N} API specs)
-✓ {M} Service methods (từ {M} COMP specs)
-✓ {K} Database migrations (từ {K} TBL specs)
-✓ {L} Test file stubs (từ {L} TCs)
+✓ {M} Service methods — [IMPLEMENT: với BR logic / SCAFFOLD: stubs]
+✓ {K} Database migrations — [IMPLEMENT: real schema / SCAFFOLD: TODO skeleton]
+✓ {L} Test files — [IMPLEMENT: real assertions từ TCs / SCAFFOLD: stubs]
+[IMPLEMENT only] ✓ CI pipeline (.github/workflows/ci.yml)
 
 Tiếp tục?"
 ```
@@ -383,7 +423,7 @@ services:
 
 ## Phase 5 — Review & Validate
 
-### 5a. Code Review Checklist
+### 5a. Code Review Checklist (cả 2 modes)
 
 ```
 ✅ Mọi file có REQ-ID comment header
@@ -392,11 +432,22 @@ services:
 ✅ Lỗi được handle đúng cách (không expose stack trace)
 ✅ Business logic trong Service, không trong Controller
 ✅ Database access chỉ trong Repository
-✅ Test stubs tương ứng với TC-IDs trong TEST-{MOD}.md
+✅ Test files tương ứng với TC-IDs trong TEST-{MOD}.md
+```
+
+**Bổ sung cho IMPLEMENT mode:**
+```
+✅ Không còn TODO comment trong business logic (zero TODOs)
+✅ Mọi BR spec có implementation (validation, calculation, state machine)
+✅ Mọi TBL column có Zod schema tương ứng
+✅ Mọi TC happy path có integration test thực
+✅ TypeScript compile OK (tsc --noEmit)
+✅ CI pipeline file đã tạo
 ```
 
 ### 5b. Guided Review với user
 
+**SCAFFOLD mode:**
 ```
 "📁 Tôi đã scaffold {N} files cho module {MOD}:
 
@@ -411,8 +462,32 @@ Database:
 Tests:
   src/{sys}/{mod}/__tests__/{mod}.service.test.ts  ({K} stubs)
 
-Tôi để TODO comments ở những chỗ cần implement thực tế.
+Tôi để TODO comments ở những chỗ cần implement thực tế ({M} TODOs tổng cộng).
 Muốn tôi implement thêm phần nào chi tiết hơn không?"
+```
+
+**IMPLEMENT mode:**
+```
+"📁 Tôi đã implement {N} files cho module {MOD}:
+
+Backend (full implementation):
+  src/{sys}/{mod}/controllers/{mod}.controller.ts  ({X} endpoints với real validation)
+  src/{sys}/{mod}/services/{mod}.service.ts        ({Y} methods với BR logic)
+  src/{sys}/{mod}/repositories/{mod}.repository.ts ({Z} real Prisma queries)
+  src/{sys}/{mod}/validators/{mod}.validator.ts    (Zod schemas từ TBL+BR)
+
+Database:
+  db/migrations/V{NNN}__create_{table}.sql  (real schema với indexes)
+
+Tests:
+  test/integration/{mod}.test.ts  ({K} integration tests từ TC specs)
+  test/unit/{mod}.service.test.ts ({L} unit tests)
+  test/factories/{mod}.factory.ts (faker.js factory)
+
+CI/CD:
+  .github/workflows/ci.yml
+
+TODO count: 0 ✅"
 ```
 
 ---
@@ -443,6 +518,7 @@ Muốn tôi implement thêm phần nào chi tiết hơn không?"
 
 ## Post-Gate
 
+**SCAFFOLD mode:**
 ```
 ✅ Tất cả MODSPEC API-IDs có route handler tương ứng
 ✅ Tất cả MODSPEC TBL-IDs có migration file tương ứng
@@ -451,22 +527,54 @@ Muốn tôi implement thêm phần nào chi tiết hơn không?"
 ✅ Không có syntax errors (TypeScript compile OK)
 ✅ Traceability FT → code đã link
 
-→ "✅ Phase 7 Code Gen hoàn thành!
+→ "✅ Phase 7 Code Gen (SCAFFOLD) hoàn thành!
    {N} files scaffolded với {M} TODO comments cần implement.
    Tiếp theo: Implement TODOs → /mcv3:verify"
+```
+
+**IMPLEMENT mode:**
+```
+✅ Tất cả MODSPEC API-IDs có route handler thực
+✅ Tất cả MODSPEC TBL-IDs có migration với real schema
+✅ Tất cả BR specs có implementation (validation/calculation/state machine)
+✅ Tất cả files có REQ-ID header comment
+✅ Test files tương ứng với TC-IDs — real assertions
+✅ TODO count = 0 (không còn TODO trong business logic)
+✅ TypeScript compile OK
+✅ Traceability FT → code đã link
+✅ CI pipeline đã tạo
+
+→ "✅ Phase 7 Code Gen (IMPLEMENT) hoàn thành!
+   {N} files với full implementation.
+   Tiếp theo: chạy tests → /mcv3:verify"
 ```
 
 ---
 
 ## Quy tắc Code Gen
 
+**Shared (cả 2 modes):**
 ```
 REQ-ID-FIRST: Mọi file bắt đầu bằng REQ-ID comment
-TODO-DRIVEN: Dùng TODO comments cho phần cần implement thêm
 NO-BUSINESS-IN-CONTROLLER: Logic nghiệp vụ chỉ trong Service
 REPOSITORY-PATTERN: Database access chỉ trong Repository
 VALIDATE-INPUT: Mọi input từ request phải validate trước xử lý
 TYPED: TypeScript strict mode, không dùng any
 TESTABLE: Code viết để testable (inject dependencies)
 TRACE-TO-SPEC: Mọi method/class trace về MODSPEC spec
+```
+
+**SCAFFOLD mode thêm:**
+```
+TODO-DRIVEN: Dùng TODO comments để đánh dấu phần cần implement
+```
+
+**IMPLEMENT mode thêm:**
+```
+BR-IMPLEMENT: Mọi BR spec phải có code tương ứng (xem implementation-patterns.md)
+REAL-QUERIES: Dùng query-patterns.md để sinh Prisma/SQLAlchemy queries thực
+ZOD-SCHEMA: Mọi TBL column có Zod validation tương ứng (xem validation-codegen.md)
+REAL-TESTS: Mọi TC spec có test thực với assertions (xem test-codegen.md)
+ZERO-TODO: Post-gate PHẢI có TODO count = 0
+CI-PIPELINE: PHẢI tạo CI pipeline file
 ```

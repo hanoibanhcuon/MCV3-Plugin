@@ -192,8 +192,102 @@ ORCHESTRATE:
      - Nếu prerequisite missing → guide user
      - Nếu phase ready → propose skill command
      - Nếu parallel possible → 2+1 pattern
+     - Nếu multi-system → xem Multi-System Build Order Protocol
   4. Present summary rõ ràng
   5. Wait for user confirmation trước khi proceed
+```
+
+---
+
+## Multi-System Build Order Protocol
+
+Khi project có **2+ systems**, áp dụng protocol này để xác định thứ tự build/deploy.
+
+### Bước 1 — Thu thập system info
+
+```
+1. mc_status({ projectSlug }) → đọc systems[] từ _config.json
+2. mc_list({ subPath: "_SHARED-SERVICES" }) → kiểm tra shared services đã có
+3. Với mỗi system: mc_list({ subPath: "{SYS}/P2-DESIGN" }) → tìm INT-{SYS}-NNN specs
+4. mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 2 }) → tech stack context
+```
+
+### Bước 2 — Xây dựng Dependency Graph
+
+```
+Từ INT-{SYS}-NNN specs trong mọi MODSPEC:
+  - INT type "HTTP_CALL": System A depends on System B
+  - INT type "EVENT_LISTENER": System A depends on System B (weak dependency)
+  - INT type "SHARED_AUTH": System A depends on AUTH service
+
+Kết quả:
+  dependencies[SystemA] = [SystemB, SystemC]
+  dependencies[SystemB] = [AUTH]
+  dependencies[AUTH] = []
+```
+
+### Bước 3 — Topological Sort → Build Order
+
+```
+Xếp theo layers:
+  Layer 0 (no dependencies): AUTH, shared-types, infrastructure
+  Layer 1 (depends on Layer 0 only): Master data systems (Catalog, CRM, ...)
+  Layer 2 (depends on Layer 0+1): Business systems (Order, Inventory, ...)
+  Layer 3 (depends on all): Integration systems (Notification, Reporting, ...)
+  Layer 4 (depends on all): Frontend (Web, Mobile)
+
+Trong cùng layer: có thể build song song
+Qua layers: phải build tuần tự
+```
+
+### Bước 4 — Output Build Order
+
+```markdown
+## 🏗️ Multi-System Build Order — {Project Name}
+
+**{N} systems detected.** Thứ tự build được xác định từ dependencies.
+
+### Layer 0 — Foundation (build trước tiên)
+- ⬜ AUTH Service — shared authentication
+- ⬜ Shared Types package (nếu monorepo)
+- ⬜ Database setup + migrations
+
+### Layer 1 — Core Data (có thể song song)
+- ⬜ {SYSTEM_A} — {description} (depends on: AUTH)
+- ⬜ {SYSTEM_B} — {description} (depends on: AUTH)
+
+### Layer 2 — Business Logic (sau Layer 1)
+- ⬜ {SYSTEM_C} — {description} (depends on: SYSTEM_A, AUTH)
+- ⬜ {SYSTEM_D} — {description} (depends on: SYSTEM_A, SYSTEM_B, AUTH)
+
+### Layer 3 — Integration (sau Layer 2)
+- ⬜ Notification Service (depends on: tất cả)
+
+### Layer 4 — Frontend (sau Layer 3)
+- ⬜ {FRONTEND} (depends on: tất cả backend)
+
+**Parallel opportunities:**
+- Layer 1 systems có thể build song song (2+1 pattern)
+- Layer 2 systems có thể build song song NẾU không depends nhau
+
+**Shared Services cần tạo:**
+- [ ] AUTH-SPEC (từ templates/_shared-services/AUTH-SPEC-TEMPLATE.md)
+- [ ] NOTIFICATION-SPEC (nếu cần) — templates/_shared-services/NOTIFICATION-SPEC-TEMPLATE.md
+- [ ] FILE-SERVICE-SPEC (nếu cần) — templates/_shared-services/FILE-SERVICE-SPEC-TEMPLATE.md
+```
+
+### Bước 5 — Hỏi user confirm
+
+```
+"📋 Tôi đã phân tích {N} systems trong dự án.
+
+Build order đề xuất (xem phân tích ở trên):
+  Bắt đầu với: {FIRST_SYSTEM} (Layer 0/1)
+
+Bạn muốn:
+[A] Bắt đầu từ đầu theo thứ tự đề xuất
+[B] Chọn system cụ thể để làm trước
+[C] Xem chi tiết dependencies của từng system"
 ```
 
 ---
