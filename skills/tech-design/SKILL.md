@@ -38,6 +38,7 @@ References:
   - templates/p5-tech-design/MODSPEC-TEMPLATE.md
   - templates/p5-tech-design/ARCHITECTURE-TEMPLATE.md
   - templates/p5-tech-design/DATA-MODEL-TEMPLATE.md
+  - templates/p5-tech-design/MOBILE-MODSPEC-TEMPLATE.md (Mobile App — React Native / Flutter)
   - templates/p5-tech-design/FIRMWARE-MODSPEC-TEMPLATE.md (Embedded/Firmware)
   - templates/_shared-services/AUTH-SPEC-TEMPLATE.md     ← Shared Auth service spec
   - templates/_shared-services/NOTIFICATION-SPEC-TEMPLATE.md ← Shared Notification spec
@@ -51,6 +52,12 @@ References:
 - Sau khi `/mcv3:requirements` hoàn thành (ít nhất 1 URS file)
 - Cần thiết kế API, database schema từ requirements
 - Cần architecture decisions cho tech stack
+- **Mobile App project** (React Native / Flutter): Dùng MOBILE-MODSPEC-TEMPLATE thay vì MODSPEC-TEMPLATE
+  - Phần "API Endpoints" → Giữ nguyên, nhưng thêm error handling cho mobile (401 refresh, offline fallback)
+  - Phần "Database Schema" → Chuyển thành "Data Schema": API models (TypeScript/Dart) + Local storage (MMKV/Hive)
+  - Phần "Component Design" → Thêm State Management (Zustand stores / Riverpod providers)
+  - Thêm mới: "Screen Flows & Navigation", "Push Notifications", "Offline Behavior", "Auth Integration"
+  - Không cần "Routes & Navigation" web style — thay bằng mobile navigation map (tabs, stack, drawer)
 - **Embedded/Firmware project**: Dùng FIRMWARE-MODSPEC-TEMPLATE thay vì MODSPEC-TEMPLATE
   - Thiết kế: Pin assignment, peripheral config, RTOS tasks, state machine, communication protocol
   - Phần "API Design" → thay bằng "Communication Protocol" (MQTT topics, BLE GATT, UART packets)
