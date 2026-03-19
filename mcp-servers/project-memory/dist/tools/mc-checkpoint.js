@@ -49,6 +49,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.mcCheckpoint = mcCheckpoint;
 const path = __importStar(require("path"));
+const fs = __importStar(require("fs"));
 const file_io_js_1 = require("../utils/file-io.js");
 // ─── Helpers ───────────────────────────────────────────────────────────────
 /**
@@ -67,6 +68,149 @@ async function getDocumentList(projectPath) {
     }
     return docs;
 }
+// ─── Implementation Progress Scanner ────────────────────────────────────
+/**
+ * Kiểm tra trạng thái của một layer file (controller/service/repository/tests).
+ * - done: file tồn tại, không còn TODO/FIXME/placeholder
+ * - partial: file tồn tại nhưng còn TODO/FIXME hoặc expect(true).toBe(true)
+ * - todo: file chưa được tạo
+ */
+async function checkLayerStatus(modPath, modName, layer) {
+    // Map layer → đường dẫn file tương đối trong module
+    const fileMap = {
+        controller: `controllers/${modName}.controller.ts`,
+        service: `services/${modName}.service.ts`,
+        repository: `repositories/${modName}.repository.ts`,
+        tests: `__tests__/${modName}.service.test.ts`,
+    };
+    const filePath = path.join(modPath, fileMap[layer]);
+    if (!(await (0, file_io_js_1.exists)(filePath)))
+        return 'todo';
+    // Đọc nội dung và kiểm tra placeholder patterns
+    const content = await (0, file_io_js_1.readFile)(filePath) || '';
+    const hasPlaceholders = /\bTODO\b|\bFIXME\b|expect\(true\)\.toBe\(true\)/.test(content);
+    return hasPlaceholders ? 'partial' : 'done';
+}
+/**
+ * Kiểm tra trạng thái migration cho module.
+ * Tìm file trong db/migrations/ có tên chứa modName.
+ */
+async function checkMigrationStatus(migrationsPath, modName) {
+    if (!(await (0, file_io_js_1.exists)(migrationsPath)))
+        return 'todo';
+    try {
+        const files = await fs.promises.readdir(migrationsPath);
+        const modNameLower = modName.toLowerCase();
+        const hasFile = files.some(f => f.toLowerCase().includes(modNameLower));
+        return hasFile ? 'done' : 'todo';
+    }
+    catch {
+        return 'todo';
+    }
+}
+/**
+ * Quét thư mục src/{system}/{module}/ để build implementation progress map.
+ * Chỉ quét khi includeProgress = true. Graceful nếu src/ không tồn tại.
+ *
+ * @param projectRoot - Thư mục gốc dự án (chứa src/ và db/)
+ * @returns ImplementationProgress với key format "{SYSTEM}/{module}"
+ */
+async function scanImplementationProgress(projectRoot) {
+    const progress = {};
+    const srcPath = path.join(projectRoot, 'src');
+    // Nếu không có thư mục src/, trả về map rỗng
+    if (!(await (0, file_io_js_1.exists)(srcPath)))
+        return progress;
+    const migrationsPath = path.join(projectRoot, 'db', 'migrations');
+    try {
+        // Lấy danh sách systems (sub-dirs của src/)
+        const systemDirs = await fs.promises.readdir(srcPath);
+        for (const sysDir of systemDirs) {
+            const sysPath = path.join(srcPath, sysDir);
+            // Bỏ qua files, chỉ xử lý directories
+            let sysStat;
+            try {
+                sysStat = await fs.promises.stat(sysPath);
+            }
+            catch {
+                continue;
+            }
+            if (!sysStat.isDirectory())
+                continue;
+            // Lấy danh sách modules (sub-dirs của src/{system}/)
+            const moduleDirs = await fs.promises.readdir(sysPath);
+            for (const modDir of moduleDirs) {
+                const modPath = path.join(sysPath, modDir);
+                let modStat;
+                try {
+                    modStat = await fs.promises.stat(modPath);
+                }
+                catch {
+                    continue;
+                }
+                if (!modStat.isDirectory())
+                    continue;
+                // Key format: "ERP/inventory" — system uppercase, module lowercase
+                const key = `${sysDir.toUpperCase()}/${modDir}`;
+                // Kiểm tra từng layer song song
+                const [controller, service, repository, tests, migration] = await Promise.all([
+                    checkLayerStatus(modPath, modDir, 'controller'),
+                    checkLayerStatus(modPath, modDir, 'service'),
+                    checkLayerStatus(modPath, modDir, 'repository'),
+                    checkLayerStatus(modPath, modDir, 'tests'),
+                    checkMigrationStatus(migrationsPath, modDir),
+                ]);
+                // Tính percentage: done=1.0, partial=0.5, todo=0
+                const layers = [controller, service, repository, tests, migration];
+                const score = layers.reduce((sum, s) => {
+                    if (s === 'done')
+                        return sum + 1;
+                    if (s === 'partial')
+                        return sum + 0.5;
+                    return sum;
+                }, 0);
+                const percentage = Math.round((score / 5) * 100);
+                progress[key] = { controller, service, repository, tests, migration, percentage };
+            }
+        }
+    }
+    catch {
+        // Lỗi không mong đợi → trả về progress đã scan được (có thể rỗng)
+    }
+    return progress;
+}
+/**
+ * Render trạng thái layer thành emoji dễ đọc
+ */
+function renderLayerStatus(status) {
+    if (status === 'done')
+        return '✅';
+    if (status === 'partial')
+        return '🔶';
+    return '⬜';
+}
+/**
+ * Sinh bảng progress Markdown từ ImplementationProgress
+ */
+function renderProgressSection(progress) {
+    const entries = Object.entries(progress).sort(([a], [b]) => a.localeCompare(b));
+    if (entries.length === 0)
+        return '';
+    const rows = entries
+        .map(([key, p]) => `| \`${key}\` | ${renderLayerStatus(p.controller)} | ${renderLayerStatus(p.service)} | ${renderLayerStatus(p.repository)} | ${renderLayerStatus(p.tests)} | ${renderLayerStatus(p.migration)} | **${p.percentage}%** |`)
+        .join('\n');
+    return `---
+
+## Tiến độ Implementation
+
+| Module | Controller | Service | Repository | Tests | Migration | % |
+|--------|-----------|---------|-----------|-------|----------|---|
+${rows}
+
+_✅ done · 🔶 partial (còn TODO) · ⬜ todo (chưa tạo file)_
+`;
+}
+// ─── Checkpoint Content Generator ────────────────────────────────────────
 /**
  * Sinh nội dung Markdown cho checkpoint
  */
@@ -77,16 +221,35 @@ function generateCheckpointContent(data) {
     const docsList = data.documentsSaved.length > 0
         ? data.documentsSaved.map(d => `- \`${d}\``).join('\n')
         : '_(chưa có tài liệu nào)_';
-    const implSection = data.implementationProgress && data.implementationProgress.length > 0
-        ? `\n---\n\n## Code-Gen Progress (Phase 7)\n\n| System | Module | Mode | Status | TODOs | Files |\n|--------|--------|------|--------|-------|-------|\n${data.implementationProgress.map(m => `| ${m.systemCode} | ${m.moduleCode} | ${m.mode} | ${m.status === 'done' ? '✅ done' : m.status === 'in-progress' ? '🔄 in-progress' : '⏳ pending'} | ${m.todoCount} | ${m.filesGenerated.length} |`).join('\n')}\n`
+    // Tính tổng progress nếu có
+    const progressSection = data.implementationProgress
+        ? renderProgressSection(data.implementationProgress)
         : '';
+    // Tổng % implementation (trung bình tất cả modules)
+    const progressEntries = data.implementationProgress
+        ? Object.values(data.implementationProgress)
+        : [];
+    const avgProgress = progressEntries.length > 0
+        ? Math.round(progressEntries.reduce((s, p) => s + p.percentage, 0) / progressEntries.length)
+        : null;
+    // Working Context JSON với optional implementationProgress
+    const workingContext = {
+        projectSlug: data.projectSlug,
+        currentPhase: data.currentPhase,
+        checkpointLabel: data.label,
+        savedAt: data.savedAt,
+        resumeInstruction: 'Đọc MASTER-INDEX.md → Đọc file này → Tiếp tục nextActions[0]',
+        ...(data.implementationProgress && Object.keys(data.implementationProgress).length > 0
+            ? { implementationProgress: data.implementationProgress }
+            : {}),
+    };
     return `# CHECKPOINT — ${data.projectName}
 <!-- MCV3 working state — auto-managed, không cần sửa thủ công -->
 
 > **Dự án:** ${data.projectName} (\`${data.projectSlug}\`)
 > **Phase hiện tại:** ${data.currentPhase}
 > **Checkpoint:** ${data.label}
-> **Lưu lúc:** ${data.savedAt}
+> **Lưu lúc:** ${data.savedAt}${avgProgress !== null ? `\n> **Implementation:** ${avgProgress}% hoàn thành (${progressEntries.length} modules)` : ''}
 
 ---
 
@@ -105,19 +268,13 @@ ${nextActionsList}
 ## Tài liệu đã có
 
 ${docsList}
-${implSection}
----
+
+${progressSection}---
 
 ## Working Context (AI Resume Point)
 
 \`\`\`json
-{
-  "projectSlug": "${data.projectSlug}",
-  "currentPhase": "${data.currentPhase}",
-  "checkpointLabel": "${data.label}",
-  "savedAt": "${data.savedAt}",
-  "resumeInstruction": "Đọc MASTER-INDEX.md → Đọc file này → Tiếp tục nextActions[0]"
-}
+${JSON.stringify(workingContext, null, 2)}
 \`\`\`
 
 ---
@@ -168,6 +325,11 @@ async function mcCheckpoint(params, projectRoot) {
         const now = new Date().toISOString();
         const label = params.label || `checkpoint-${now.replace(/[:.]/g, '-').slice(0, 19)}`;
         const docs = await getDocumentList(projectPath);
+        // Scan implementation progress nếu user yêu cầu
+        let implProgress;
+        if (params.includeProgress === true) {
+            implProgress = await scanImplementationProgress(projectRoot);
+        }
         const checkpointData = {
             projectSlug: params.projectSlug,
             projectName: config.name,
@@ -177,7 +339,7 @@ async function mcCheckpoint(params, projectRoot) {
             sessionSummary: params.sessionSummary || '',
             nextActions: params.nextActions || [],
             documentsSaved: docs,
-            implementationProgress: params.implementationProgress,
+            implementationProgress: implProgress,
         };
         const content = generateCheckpointContent(checkpointData);
         // ── Lưu latest checkpoint ────────────────────────────────────────────
@@ -196,6 +358,14 @@ async function mcCheckpoint(params, projectRoot) {
         const changelog = await (0, file_io_js_1.readFile)(changelogPath) || '';
         const entry = `\n- [${now.split('T')[0]}] Checkpoint "${label}" — Phase: ${config.currentPhase}`;
         await (0, file_io_js_1.writeFile)(changelogPath, changelog + entry);
+        // Tóm tắt progress để trả về (nếu có scan)
+        const progressSummary = implProgress && Object.keys(implProgress).length > 0
+            ? {
+                moduleCount: Object.keys(implProgress).length,
+                avgPercentage: Math.round(Object.values(implProgress).reduce((s, p) => s + p.percentage, 0) /
+                    Object.keys(implProgress).length),
+            }
+            : null;
         return {
             success: true,
             message: `✅ Đã lưu checkpoint "${label}" cho dự án "${config.name}"`,
@@ -204,6 +374,7 @@ async function mcCheckpoint(params, projectRoot) {
                 snapshotPath: snapshotPath ? path.relative(projectRoot, snapshotPath) : null,
                 phase: config.currentPhase,
                 documentCount: docs.length,
+                ...(progressSummary ? { implementationProgress: progressSummary } : {}),
             },
         };
     }

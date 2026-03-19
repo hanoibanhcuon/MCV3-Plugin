@@ -226,18 +226,32 @@ export interface PhaseProgressItem {
   documentCount: number;
 }
 
-/** Trạng thái implementation của một module (Phase 7 IMPLEMENT mode) */
+/** Trạng thái một layer code (controller/service/repository/tests/migration) */
+export type LayerStatus = 'done' | 'partial' | 'todo';
+
+/**
+ * Tiến độ triển khai cho từng module (5 layers).
+ * Percentage = (done×1 + partial×0.5) / 5 × 100
+ */
 export interface ModuleProgress {
-  /** Module code (VD: "INV", "ORD") */
-  moduleCode: string;
-  /** System code (VD: "ERP", "WEB") */
-  systemCode: string;
-  /** Mode đã dùng để gen code */
-  mode: 'SCAFFOLD' | 'IMPLEMENT';
-  /** Trạng thái hiện tại */
-  status: 'pending' | 'in-progress' | 'done';
-  /** Danh sách files đã tạo */
-  filesGenerated: string[];
-  /** Số TODO còn lại (IMPLEMENT mode phải = 0) */
-  todoCount: number;
+  /** Controller layer: Route handlers */
+  controller: LayerStatus;
+  /** Service layer: Business logic */
+  service: LayerStatus;
+  /** Repository layer: Database access */
+  repository: LayerStatus;
+  /** Tests: Unit + integration test stubs */
+  tests: LayerStatus;
+  /** Migration: Database schema migrations */
+  migration: LayerStatus;
+  /** Phần trăm hoàn thành (0–100) */
+  percentage: number;
+}
+
+/**
+ * Tiến độ toàn bộ implementation của dự án.
+ * Key format: "{SYSTEM}/{module}" — VD: "ERP/inventory", "WEB/auth"
+ */
+export interface ImplementationProgress {
+  [systemModule: string]: ModuleProgress;
 }
