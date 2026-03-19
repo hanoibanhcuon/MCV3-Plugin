@@ -1,7 +1,7 @@
 {
-  "_comment": "MCV3 Hooks Configuration — v3.7 (Batch C)",
+  "_comment": "MCV3 Hooks Configuration — v3.10 (Batch F)",
   "_doc": "Hooks tự động hóa các tác vụ MCV3. Đọc scripts/ để biết cách cấu hình.",
-  "_version": "3.7.0",
+  "_version": "3.10.0",
 
   "SessionStart": [
     {
@@ -281,7 +281,7 @@
     {
       "id": "snapshot-before-design",
       "name": "Tạo snapshot trước khi bắt đầu Tech Design",
-      "script": "./scripts/pre-design-snapshot.sh",
+      "script": "./scripts/auto-snapshot-milestone.sh",
       "description": "Auto-tạo safety snapshot trước khi bắt đầu thiết kế kỹ thuật (có thể rollback nếu cần)",
       "enabled": false,
       "runCondition": "before-tech-design",
@@ -318,10 +318,10 @@
     "snapshotOnMilestone": true,
     "validateOnSave": false,
     "traceabilityAutoUpdate": false,
-    "_sprint": "Batch C (v3.7)",
-    "_version": "3.7.0",
+    "_sprint": "Batch F (v3.10)",
+    "_version": "3.10.0",
     "_lifecycle_skills": ["change-manager", "evolve", "migrate", "onboard"],
     "_assess_skill": ["assess"],
-    "_note": "v3.7: Batch C — Scale Flexibility & Industry Expansion (12 industries)"
+    "_note": "v3.10: Batch F — Skills Full Audit + Code Quality Assurance"
   }
 }

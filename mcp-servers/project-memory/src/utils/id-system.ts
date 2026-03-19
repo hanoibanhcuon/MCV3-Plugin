@@ -23,9 +23,11 @@ export const VALID_PREFIXES = [
   // Phase 5: Design
   'AP', 'ADR', 'FT', 'API', 'UI', 'TBL', 'INT', 'NFR',
   // Phase 6: QA
-  'TC', 'UAT',
+  'TC', 'TP', 'UAT',
   // Sprint 4 — Lifecycle
   'CHG', 'EVOL',
+  // Embedded/Firmware (Batch B)
+  'PIN', 'PERIPH', 'TASK', 'SM', 'MSG',
   // Khác
   'RISK', 'MC',
 ] as const;
@@ -60,8 +62,9 @@ export interface ParsedId {
 export function isValidId(id: string): boolean {
   if (!id || typeof id !== 'string') return false;
 
-  // Pattern: PREFIX-[MODULECODE-]NNN[NNN...]
-  const pattern = /^(PROB|PAIN|BG|PG|BR|UJ|TERM|ENT|ENUM|US|UC|AC|AP|ADR|FT|API|UI|TBL|INT|NFR|TC|UAT|CHG|EVOL|RISK|MC)-[A-Z0-9-]+$/;
+  // Pattern: PREFIX-[MODULECODE-]NNN[NNN...] — dùng VALID_PREFIXES để tránh lệch nhau
+  const prefixList = VALID_PREFIXES.join('|');
+  const pattern = new RegExp(`^(${prefixList})-[A-Z0-9][A-Z0-9-]*$`);
   return pattern.test(id);
 }
 
@@ -127,7 +130,9 @@ export function generateNextId(
  * Hữu ích để scan document tìm ID đã dùng
  */
 export function extractIdsFromText(text: string): string[] {
-  const pattern = /\b(PROB|PAIN|BG|PG|BR|UJ|TERM|ENT|ENUM|US|UC|AC|AP|ADR|FT|API|UI|TBL|INT|NFR|TC|UAT|CHG|EVOL|RISK|MC)-[A-Z0-9-]+\b/g;
+  // Dùng VALID_PREFIXES để đảm bảo luôn đồng bộ với bảng prefix
+  const prefixList = VALID_PREFIXES.join('|');
+  const pattern = new RegExp(`\\b(${prefixList})-[A-Z0-9][A-Z0-9-]*\\b`, 'g');
   const matches = text.match(pattern) || [];
   return [...new Set(matches)]; // Unique
 }
@@ -146,5 +151,7 @@ export function getBrCategory(sequence: number): string {
   if (sequence >= 20 && sequence <= 29) return 'Workflow';
   if (sequence >= 30 && sequence <= 39) return 'Authorization';
   if (sequence >= 40 && sequence <= 49) return 'Constraints';
-  return 'Unknown';
+  if (sequence >= 50 && sequence <= 99) return 'Custom';
+  // Sequence vượt quá range chuẩn (001-049) — vẫn hợp lệ nhưng không thuộc category tiêu chuẩn
+  return 'Unknown/Extended';
 }

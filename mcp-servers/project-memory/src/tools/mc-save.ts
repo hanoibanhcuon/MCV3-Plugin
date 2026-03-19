@@ -90,12 +90,12 @@ export async function mcSave(
     };
   }
 
-  // Security: ngăn chặn path traversal
+  // Security: ngăn chặn path traversal và absolute paths
   const normalizedPath = path.normalize(params.filePath).replace(/\\/g, '/');
-  if (normalizedPath.startsWith('..') || normalizedPath.includes('/../')) {
+  if (normalizedPath.startsWith('..') || normalizedPath.includes('/../') || path.isAbsolute(params.filePath)) {
     return {
       success: false,
-      message: 'filePath không hợp lệ: không được chứa ".."',
+      message: 'filePath không hợp lệ: không được chứa ".." hoặc absolute path',
       error: 'INVALID_PATH',
     };
   }
@@ -118,6 +118,18 @@ export async function mcSave(
   }
 
   const targetPath = path.join(projectPath, params.filePath);
+
+  // Security: xác minh resolved path nằm trong projectPath (chặn mọi path traversal còn lại)
+  const resolvedTarget = path.resolve(targetPath);
+  const resolvedProject = path.resolve(projectPath);
+  if (!resolvedTarget.startsWith(resolvedProject + path.sep) && resolvedTarget !== resolvedProject) {
+    return {
+      success: false,
+      message: 'filePath không hợp lệ: path traversal hoặc absolute path bị chặn',
+      error: 'INVALID_PATH',
+    };
+  }
+
   const isUpdate = await exists(targetPath);
 
   // ── Ghi file ─────────────────────────────────────────────────────────

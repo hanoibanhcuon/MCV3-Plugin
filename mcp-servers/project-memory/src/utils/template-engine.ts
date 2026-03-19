@@ -10,6 +10,9 @@
  *   output: "Dự án: ERP ABC, ngày: 2026-03-19"
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 // ─── Types ────────────────────────────────────────────────────────────────
 
 /** Map các placeholder → giá trị thay thế */
@@ -66,11 +69,6 @@ export function renderWithDefaults(
  * Template files nằm trong templates/{phase-folder}/ (p0-init, p1-discovery, ...)
  */
 export function getTemplateContent(templateName: string, templatesDir: string): string {
-  // Hàm này được gọi sync từ tool — templates đã được load trước
-  // Thực tế sẽ dùng fs.readFileSync vì templates là static
-  const fs = require('fs') as typeof import('fs');
-  const path = require('path') as typeof import('path');
-
   const templatePath = path.join(templatesDir, templateName);
   try {
     return fs.readFileSync(templatePath, 'utf-8');
