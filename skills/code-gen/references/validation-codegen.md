@@ -1,6 +1,6 @@
 # Validation Code-Gen — Code-Gen Reference
 
-Hướng dẫn **chuyển TBL schema + BR specs thành Zod validation** (dùng trong IMPLEMENT mode).
+Hướng dẫn **chuyển TBL schema + BR specs thành Zod validation** khi code-gen.
 
 ---
 

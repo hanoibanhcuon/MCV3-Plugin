@@ -6,6 +6,30 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [3.9.0] — Smart Code-Gen — Gộp SCAFFOLD + IMPLEMENT thành 1 chế độ thông minh — 2026-03-19
+
+### Changed
+
+- **`skills/code-gen/SKILL.md`** — Xóa mode selector (SCAFFOLD/IMPLEMENT), gộp thành 1 flow thông minh:
+  - Specs đầy đủ → sinh code hoàn chỉnh tự động
+  - Specs mơ hồ → sinh code best-effort + `// REVIEW: [câu hỏi cụ thể]`
+  - Thiếu specs → sinh interface + `// PENDING: Cần bổ sung tại Phase X`
+  - Phase 0 không còn hỏi chọn mode — user chỉ cần chọn module
+  - Post-Gate báo cáo theo markers: không có marker / có REVIEW / có PENDING
+- **`agents/code-gen.md`** — Xóa sections "SCAFFOLD mode" và "IMPLEMENT mode", thay bằng `QUY TẮC SINH CODE` thống nhất (14 rules)
+- **`CLAUDE.md`** — Cập nhật mô tả: "Smart Code-Gen" thay cho "Full Implementation Engine (IMPLEMENT mode)"
+- **`skills/verify/SKILL.md`** — Phase 4b đổi tên từ "IMPLEMENT Mode Completeness" → "Code Completeness Checks"; thêm check REVIEW/PENDING markers
+- **`skills/code-gen/references/implementation-patterns.md`** — Đổi "Post-Gate IMPLEMENT Mode" → "Post-Gate Code Quality"; cập nhật checklist với marker pattern
+- **`skills/code-gen/references/query-patterns.md`** — Xóa "(dùng trong IMPLEMENT mode)" khỏi mô tả
+- **`skills/code-gen/references/validation-codegen.md`** — Xóa "(dùng trong IMPLEMENT mode)" khỏi mô tả
+- **`skills/code-gen/references/test-codegen.md`** — Xóa "(dùng trong IMPLEMENT mode)" khỏi mô tả
+
+### Rationale
+
+User không cần chọn mode — Claude tự động sinh code tốt nhất có thể dựa trên mức độ chi tiết của specs hiện có. Điều này loại bỏ friction và giữ nguyên toàn bộ capability của IMPLEMENT mode làm default.
+
+---
+
 ## [3.8.0] — Batch D — Full Implementation Engine & Multi-System Orchestration — 2026-03-19
 
 ### Added — Full Implementation Engine (Phase 7 IMPLEMENT mode)

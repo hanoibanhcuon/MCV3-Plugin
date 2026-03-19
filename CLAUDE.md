@@ -1,6 +1,6 @@
 # CLAUDE.md — MasterCraft DevKit v3.8 (MCV3)
 
-Plugin này giúp Claude Code làm việc với **dự án phần mềm** theo quy trình 8 phases của MCV3. v3.8 hoàn chỉnh với: Pipeline 8 Phase + Lifecycle Management + Assess Skill + Embedded/IoT Module + Scale Flexibility & Industry Expansion (12 ngành) + **Full Implementation Engine** (IMPLEMENT mode cho Code-Gen) + **Multi-System Orchestration** (build order, shared services, integration patterns).
+Plugin này giúp Claude Code làm việc với **dự án phần mềm** theo quy trình 8 phases của MCV3. v3.8 hoàn chỉnh với: Pipeline 8 Phase + Lifecycle Management + Assess Skill + Embedded/IoT Module + Scale Flexibility & Industry Expansion (12 ngành) + **Smart Code-Gen** (sinh code thông minh theo mức độ chi tiết specs) + **Multi-System Orchestration** (build order, shared services, integration patterns).
 
 ---
 
@@ -112,7 +112,7 @@ Idea → Discovery → Expert → BizDocs → Requirements → Design → QA →
 | 4. Requirements | `/mcv3:requirements` | URS-{MOD}.md (US, FT, AC, NFR, UC per module) |
 | 5. Tech Design | `/mcv3:tech-design` | MODSPEC-{MOD}.md (API, DB, COMP, ADR) |
 | 6. QA & Docs | `/mcv3:qa-docs` | TEST-{MOD}.md, USER-GUIDE, ADMIN-GUIDE |
-| 7. Code Gen | `/mcv3:code-gen` | src/{sys}/{mod}/ + db/migrations/ + test stubs |
+| 7. Code Gen | `/mcv3:code-gen` | src/{sys}/{mod}/ + db/migrations/ + tests + CI |
 | 8a. Verify | `/mcv3:verify` | _VERIFY-CROSS/verification-report.md + traceability-matrix |
 | 8b. Deploy-Ops | `/mcv3:deploy-ops` | DEPLOY-OPS.md + deploy-readiness-checklist |
 
@@ -139,13 +139,18 @@ References: skills/qa-docs/references/
 
 ```
 Input: MODSPEC-{MOD}.md + TEST-{MOD}.md
-Output: source code scaffolding với REQ-ID comments
+Output: code thông minh theo mức độ chi tiết specs
   - src/{sys}/{mod}/controllers/{mod}.controller.ts
-  - src/{sys}/{mod}/services/{mod}.service.ts
-  - src/{sys}/{mod}/repositories/{mod}.repository.ts
-  - src/{sys}/{mod}/dtos/create-{mod}.dto.ts
-  - src/{sys}/{mod}/__tests__/{mod}.service.test.ts (stubs)
-  - db/migrations/V{NNN}__create_{table}.sql
+  - src/{sys}/{mod}/services/{mod}.service.ts  (business logic từ BR specs)
+  - src/{sys}/{mod}/repositories/{mod}.repository.ts  (real queries)
+  - src/{sys}/{mod}/validators/{mod}.validator.ts  (Zod schemas từ TBL)
+  - src/{sys}/{mod}/__tests__/{mod}.service.test.ts  (real assertions từ TC)
+  - db/migrations/V{NNN}__create_{table}.sql  (real schema)
+  - .github/workflows/ci.yml
+
+Markers khi specs chưa đầy đủ:
+  // REVIEW: [câu hỏi] — specs mơ hồ, cần xác nhận
+  // PENDING: Cần bổ sung tại Phase X — thiếu specs
 
 Code REQ-ID format:
   /**
@@ -337,7 +342,7 @@ export class InventoryService { ... }
 | requirements | `/mcv3:requirements` | 4 | Viết URS (US, FT, AC, NFR) per module |
 | tech-design | `/mcv3:tech-design` | 5 | Thiết kế MODSPEC (API, DB, COMP, ADR) |
 | qa-docs | `/mcv3:qa-docs` | 6 | Tạo TEST docs, USER/ADMIN GUIDE |
-| code-gen | `/mcv3:code-gen` | 7 | Generate code scaffolding từ MODSPEC |
+| code-gen | `/mcv3:code-gen` | 7 | Generate code từ MODSPEC, tự động điều chỉnh theo mức độ chi tiết specs |
 | verify | `/mcv3:verify` | 8a | Cross-verify traceability end-to-end |
 | deploy-ops | `/mcv3:deploy-ops` | 8b | Tạo Deploy Plan, Rollback, Monitoring, SLA |
 
@@ -541,23 +546,22 @@ Reference: `skills/code-gen/references/`
 
 Nâng cấp thêm vào MCV3 (v3.8):
 
-### Full Implementation Engine (Phase 7 IMPLEMENT mode)
+### Smart Code-Gen (Phase 7)
 
-Code-Gen Skill giờ có 2 modes:
+`/mcv3:code-gen` sinh code thông minh, tự động điều chỉnh theo mức độ chi tiết của specs:
 
-```
-SCAFFOLD (cũ): Sinh stubs với TODO comments — nhanh, tự implement sau
-IMPLEMENT (mới): Sinh code thực với zero TODOs từ BR/TBL/TC specs
-```
+- Specs đầy đủ (BR, API, TBL, TC rõ ràng) → sinh code hoàn chỉnh, không cần chọn gì thêm
+- Specs mơ hồ → sinh code best-effort + `// REVIEW: [câu hỏi cụ thể]`
+- Thiếu specs → sinh interface + `// PENDING: Cần bổ sung tại Phase X`
 
-IMPLEMENT mode features:
+Capabilities:
 - **BR-to-Code Transpiler**: BR Validation→if/throw, BR Calculation→function, BR Workflow→state machine
 - **Real Queries**: Prisma/SQLAlchemy CRUD với filter, sort, pagination, transaction
 - **Zod Schemas**: Auto-generate từ TBL column specs
 - **Real Tests**: TC specs → integration tests với faker.js factories
 - **CI Pipeline**: GitHub Actions với test + typecheck + lint
 
-References mới:
+References:
 - `skills/code-gen/references/implementation-patterns.md`
 - `skills/code-gen/references/query-patterns.md`
 - `skills/code-gen/references/validation-codegen.md`

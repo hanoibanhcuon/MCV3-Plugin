@@ -1,6 +1,6 @@
 # Implementation Patterns — Code-Gen Reference
 
-Hướng dẫn **chuyển BR specs thành code thực** (dùng trong IMPLEMENT mode).
+Hướng dẫn **chuyển BR specs thành code thực** khi code-gen.
 
 ---
 
@@ -557,7 +557,7 @@ res.status(200).json({
 
 ## D. REQ-ID Tracing trong Code
 
-### D1. File Header JSDoc (BẮT BUỘC trong IMPLEMENT mode)
+### D1. File Header JSDoc (BẮT BUỘC)
 
 ```typescript
 /**
@@ -702,23 +702,29 @@ jobs:
 
 ---
 
-## F. Post-Gate IMPLEMENT Mode
+## F. Post-Gate Code Quality
 
-Trong IMPLEMENT mode, **TODO count phải = 0** trước khi phase kết thúc:
+**TODO count phải = 0** trước khi phase kết thúc (dùng REVIEW/PENDING markers thay thế):
 
 ```
-Kiểm tra TODOs còn lại:
-grep -r "// TODO" src/{sys}/{mod}/ --include="*.ts"
+Kiểm tra markers còn lại:
+grep -r "// TODO\|// FIXME" src/{sys}/{mod}/ --include="*.ts"
+# Expected: 0 kết quả
 
-Nếu còn TODO → PHẢI implement hoặc convert sang real code
-Nếu không còn TODO → ✅ Phase hoàn thành
+grep -r "// REVIEW:" src/{sys}/{mod}/ --include="*.ts"
+# → Liệt kê để thông báo user cần xác nhận specs
+
+grep -r "// PENDING:" src/{sys}/{mod}/ --include="*.ts"
+# → Liệt kê để thông báo user cần bổ sung specs
 ```
 
-**Checklist sau IMPLEMENT:**
+**Checklist sau code-gen:**
 ```
-✅ Không còn TODO comment trong business logic
-✅ Mọi BR spec có code tương ứng (validation, calculation, state machine)
-✅ Mọi method có error handling thực sự (không phải placeholder)
+✅ Không còn TODO/FIXME trong business logic
+✅ Mọi BR spec có code tương ứng khi specs đủ rõ
+✅ REVIEW markers có câu hỏi cụ thể (không phải placeholder)
+✅ PENDING markers chỉ rõ Phase cần bổ sung
+✅ Mọi method có error handling thực sự
 ✅ Mọi file có REQ-ID JSDoc header
 ✅ Tất cả inline BR comments khớp với BR-IDs trong MODSPEC
 ✅ TypeScript compile OK (tsc --noEmit)

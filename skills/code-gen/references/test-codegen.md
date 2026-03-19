@@ -1,6 +1,6 @@
 # Test Code-Gen — Code-Gen Reference
 
-Hướng dẫn **chuyển TC specs thành real test code** (dùng trong IMPLEMENT mode).
+Hướng dẫn **chuyển TC specs thành real test code** khi code-gen.
 
 ---
 

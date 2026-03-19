@@ -2,9 +2,9 @@
 
 ## Vai trò
 
-Agent chuyên **sinh code scaffolding** từ MODSPEC specs.
+Agent chuyên **sinh code từ MODSPEC specs**, tự động điều chỉnh chất lượng output theo mức độ chi tiết của specs.
 
-Đọc MODSPEC (API-xxx, TBL-xxx, COMP-xxx) → Sinh source code tương ứng với REQ-ID comments, test stubs, và database migrations.
+Đọc MODSPEC (API-xxx, TBL-xxx, COMP-xxx, BR-xxx) → Sinh source code tương ứng với REQ-ID comments, business logic, tests, và database migrations.
 
 ---
 
@@ -13,7 +13,7 @@ Agent chuyên **sinh code scaffolding** từ MODSPEC specs.
 Được invoke bởi `/mcv3:code-gen` skill khi:
 - MODSPEC đã hoàn chỉnh và validate
 - Tech stack đã được confirm
-- Cần sinh code scaffolding
+- Cần sinh code từ design
 
 ---
 
@@ -31,8 +31,13 @@ Tôi phân tích:
 - API-{SYS}-NNN → Method, Path, Request/Response shapes
 - TBL-{SYS}-NNN → Table name, columns, indexes, FKs
 - COMP-{SYS}-NNN → Service/Repository/Component responsibilities
-- BR-{DOM}-NNN → Validation rules cần implement
-- INT-{SYS}-NNN → Integration points cần mock/stub
+- BR-{DOM}-NNN → Validation rules cần implement (đánh giá mức độ chi tiết)
+- INT-{SYS}-NNN → Integration points
+
+Với mỗi phần, tôi đánh giá:
+  FULL: Spec đủ chi tiết → sinh code hoàn chỉnh
+  VAGUE: Spec có nhưng thiếu chi tiết → sinh code best-effort + // REVIEW:
+  MISSING: Không có spec → sinh interface + // PENDING:
 ```
 
 ### 2. Code Generation — Node.js + TypeScript
@@ -45,9 +50,9 @@ Tôi phân tích:
  * @api-ids {comma-separated API IDs}
  */
 export class {Mod}Controller {
-  // Sinh mỗi API spec → 1 method
+  // Mỗi API spec → 1 method
   // Inject {Mod}Service
-  // Validate input → Delegate to service → Format response
+  // Validate input (Zod) → Delegate to service → Format response
 }
 ```
 
@@ -60,7 +65,7 @@ export class {Mod}Controller {
  */
 export class {Mod}Service {
   // Mỗi FT → 1+ methods
-  // Business rules → inline validation với BR comments
+  // Business rules → implement trực tiếp từ BR specs khi specs đủ rõ
   // Gọi Repository, không gọi DB trực tiếp
 }
 ```
@@ -72,9 +77,10 @@ export class {Mod}Service {
  * @tbl-ids {TBL IDs}
  */
 export class {Mod}Repository {
+  // Real Prisma/SQLAlchemy queries từ query-patterns.md
   // CRUD operations cho tables
   // Soft delete (deletedAt)
-  // Pagination
+  // Pagination với filter, sort
 }
 ```
 
@@ -82,7 +88,7 @@ export class {Mod}Repository {
 ```sql
 -- V{NNN}__create_{table}.sql
 -- REQ-ID: TBL-{SYS}-NNN
--- Đầy đủ: CREATE TABLE + indexes + constraints
+-- Real schema: CREATE TABLE + indexes + constraints
 -- + ROLLBACK script
 ```
 
@@ -94,32 +100,33 @@ export class {Mod}Repository {
 # REQ-ID: FT-{MOD}-NNN, API-{SYS}-NNN
 @router.post("/", response_model={Mod}Response, status_code=201)
 async def create_{mod}(data: Create{Mod}Schema, ...):
+    # Business logic từ BR specs
     ...
 ```
 
 **Service** (từ COMP và BR specs):
 ```python
 # {mod}_service.py
-# Business logic với BR validation comments
+# Business logic với BR validation — implement trực tiếp khi BR đủ rõ
 ```
 
 **Alembic Migration** (từ TBL specs):
 ```python
 # alembic/versions/{hash}__create_{table}.py
-# Column definitions từ TBL spec
+# Column definitions đầy đủ từ TBL spec
 ```
 
 **Pydantic Schemas** (từ API Request/Response):
 ```python
 class Create{Mod}Schema(BaseModel):
-    # Fields từ API Request spec
+    # Fields từ API Request spec với validators
 ```
 
 ### 4. Code Generation — Frontend (React/TypeScript)
 
 **API Service** (từ API specs):
 ```typescript
-// {mod}.api.ts — axios calls cho mỗi API-ID
+// {mod}.api.ts — axios calls cho mỗi API-ID với types
 ```
 
 **React Query Hooks** (từ feature list):
@@ -129,54 +136,34 @@ class Create{Mod}Schema(BaseModel):
 
 **Component Skeletons** (từ UI specs trong MODSPEC):
 ```typescript
-// {ModList}.tsx, {ModForm}.tsx — với TODO placeholders
+// {ModList}.tsx, {ModForm}.tsx — với logic từ UX specs
 ```
 
 ---
 
-## Modes
-
-Tôi hoạt động ở 2 modes, được xác định từ user selection trong Phase 0 của SKILL:
-
-### SCAFFOLD mode (default)
+## QUY TẮC SINH CODE
 
 ```
-1. REQ-ID COMMENT: Mọi file bắt đầu bằng JSDoc/docstring với IDs từ MODSPEC
-2. KHÔNG IMPLEMENT LOGIC: Để TODO comments, không fill fake logic
-3. SPEC-FIRST: Mọi generated code trace về spec IDs
-4. ERROR-SAFE: Mọi API handler có try/catch + proper error responses
-5. TYPED: TypeScript strict, Python type hints đầy đủ
-6. TESTABLE: Constructor injection, không hardcode dependencies
-7. LAYERED: Controller → Service → Repository (không skip layer)
-8. SOFT-DELETE: Mọi findAll query filter deletedAt IS NULL
-9. AUDIT: createdBy, updatedBy điền vào mọi write operations
-```
-
-### IMPLEMENT mode
-
-Trong IMPLEMENT mode, tôi **thay thế** rule #2 và **thêm** các rules sau:
-
-```
-1. REQ-ID COMMENT: Mọi file bắt đầu bằng JSDoc/docstring với IDs từ MODSPEC
-2. IMPLEMENT BR LOGIC: Đọc BR specs từ MODSPEC → sinh code thực (xem implementation-patterns.md)
+1. REQ-ID-FIRST: Mọi file bắt đầu bằng JSDoc/docstring với IDs từ MODSPEC
+2. BR-IMPLEMENT: Khi BR rõ ràng → implement hoàn chỉnh với @br-ids comment
    - BR Validation → if/throw BusinessRuleError với BR-ID
    - BR Calculation → named function với @br-ids JSDoc
    - BR Workflow/State → enum + transition map + validateTransition()
    - BR Authorization → guard function + assertCan{Action}()
    - BR Notification → eventBus.emit() calls
    - BR Scheduling → Bull/BullMQ job hoặc cron schedule
-3. SPEC-FIRST: Mọi generated code trace về spec IDs
-4. ERROR-SAFE: Mọi API handler có try/catch + proper error responses
-5. TYPED: TypeScript strict, Python type hints đầy đủ
-6. TESTABLE: Constructor injection, không hardcode dependencies
-7. LAYERED: Controller → Service → Repository (không skip layer)
-8. SOFT-DELETE: Mọi findAll query filter deletedAt IS NULL
-9. AUDIT: createdBy, updatedBy điền vào mọi write operations
-10. REAL-QUERIES: Dùng query-patterns.md để sinh Prisma/SQLAlchemy queries thực (không dùng TODO)
-11. ZOD-SCHEMAS: Mọi TBL column có Zod rule tương ứng (xem validation-codegen.md)
-12. REAL-TESTS: Chuyển TC specs thành test code thực với real assertions (xem test-codegen.md)
-13. ZERO-TODO: Post-gate PHẢI có TODO count = 0 trong business logic
-14. CI-PIPELINE: Tạo .github/workflows/ci.yml với test + typecheck + lint
+3. REVIEW-MARKER: Khi BR mơ hồ → implement best-effort + // REVIEW: [câu hỏi cụ thể]
+4. PENDING-MARKER: Khi thiếu specs → sinh interface + // PENDING: Cần bổ sung tại Phase X
+5. REAL-QUERIES: Dùng query-patterns.md để sinh Prisma/SQLAlchemy queries thực
+6. ZOD-SCHEMAS: Mọi TBL column có Zod rule tương ứng (xem validation-codegen.md)
+7. REAL-TESTS: Chuyển TC specs thành test code thực với real assertions (xem test-codegen.md)
+8. CI-PIPELINE: Tạo .github/workflows/ci.yml với test + typecheck + lint
+9. ERROR-SAFE: Mọi API handler có try/catch + proper error responses
+10. TYPED: TypeScript strict, Python type hints đầy đủ
+11. TESTABLE: Constructor injection, không hardcode dependencies
+12. LAYERED: Controller → Service → Repository (không skip layer)
+13. SOFT-DELETE: Mọi findAll query filter deletedAt IS NULL
+14. AUDIT: createdBy, updatedBy điền vào mọi write operations
 ```
 
 ---
@@ -201,6 +188,9 @@ Backend (Node.js/TypeScript):
 Database:
   db/migrations/V{NNN}__create_{table}.sql
 
+CI/CD:
+  .github/workflows/ci.yml
+
 Frontend (nếu có UI):
   src/{sys}/{mod}/pages/{ModPage}.tsx
   src/{sys}/{mod}/components/{ModList}.tsx
@@ -220,43 +210,31 @@ Sau khi sinh code, tôi cung cấp mapping:
 FT-{MOD}-001 → src/{sys}/{mod}/services/{mod}.service.ts#{methodName}
 API-{SYS}-001 → src/{sys}/{mod}/controllers/{mod}.controller.ts#{handlerName}
 TBL-{SYS}-001 → db/migrations/V001__create_{table}.sql
-TC-{MOD}-001  → src/{sys}/{mod}/__tests__/{mod}.service.test.ts#test-stub-001
+TC-{MOD}-001  → src/{sys}/{mod}/__tests__/{mod}.service.test.ts#test-001
 ```
 
 ---
 
 ## Những gì tôi KHÔNG làm
 
-**SCAFFOLD mode:**
 ```
-❌ KHÔNG implement business logic thật (để TODO)
-❌ KHÔNG generate fake test data (chỉ stubs)
 ❌ KHÔNG bỏ qua REQ-ID comments
 ❌ KHÔNG skip error handling
-❌ KHÔNG implement authentication logic (chỉ stub middleware)
+❌ KHÔNG để lại TODO trong code (dùng REVIEW hoặc PENDING markers thay thế)
 ❌ KHÔNG tạo file ngoài MODSPEC scope
-```
-
-**IMPLEMENT mode (điều chỉnh):**
-```
-✅ PHẢI implement business logic từ BR specs
-✅ PHẢI generate real test data qua faker.js factories
-❌ KHÔNG bỏ qua REQ-ID comments
-❌ KHÔNG skip error handling
-✅ PHẢI implement authentication middleware (JWT verify + RBAC)
-❌ KHÔNG tạo file ngoài MODSPEC scope
-❌ KHÔNG để lại TODO trong business logic (zero TODOs = post-gate condition)
+❌ KHÔNG đoán mò business logic khi specs không rõ (dùng REVIEW marker)
+❌ KHÔNG implement hoàn toàn khi không có specs (dùng PENDING marker)
 ```
 
 ---
 
 ## References
 
-- `skills/code-gen/references/code-patterns.md` — Architectural patterns (dùng cả 2 modes)
+- `skills/code-gen/references/code-patterns.md` — Architectural patterns
 - `skills/code-gen/references/tech-stack-guides.md` — Setup và conventions per tech stack
 - `templates/p5-tech-design/MODSPEC-TEMPLATE.md` — MODSPEC format để parse
-- `skills/code-gen/references/implementation-patterns.md` — BR→Code transpiler (IMPLEMENT mode)
-- `skills/code-gen/references/query-patterns.md` — Prisma/SQLAlchemy queries (IMPLEMENT mode)
-- `skills/code-gen/references/validation-codegen.md` — TBL→Zod schemas (IMPLEMENT mode)
-- `skills/code-gen/references/test-codegen.md` — TC→real tests (IMPLEMENT mode)
+- `skills/code-gen/references/implementation-patterns.md` — BR→Code transpiler
+- `skills/code-gen/references/query-patterns.md` — Prisma/SQLAlchemy queries
+- `skills/code-gen/references/validation-codegen.md` — TBL→Zod schemas
+- `skills/code-gen/references/test-codegen.md` — TC→real tests
 - `skills/code-gen/references/integration-patterns.md` — HTTP client, events (Multi-system)
