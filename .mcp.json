@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "mcv3-project-memory": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./mcp-servers/project-memory/dist/index.js"],
+      "env": {
+        "MCV3_PROJECT_ROOT": "."
+      },
+      "description": "MCV3 Project Memory Server — Quản lý tài liệu dự án trong .mc-data/"
+    }
+  }
+}

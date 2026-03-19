@@ -1,0 +1,12 @@
+{
+  "name": "mcv3-devkit",
+  "version": "3.4.0",
+  "description": "MasterCraft DevKit — Biến ý tưởng phần mềm thành bộ tài liệu hoàn chỉnh",
+  "author": {
+    "name": "MCV3 Team"
+  },
+  "skills": "./skills/",
+  "agents": "./agents/",
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./.mcp.json"
+}

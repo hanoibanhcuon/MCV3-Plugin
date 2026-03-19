@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(./scripts/*.sh:*)",
+      "Bash(bash:*)",
+      "Read(*)",
+      "Write(.mc-data/**)",
+      "Edit(.mc-data/**)",
+      "Write(src/**)",
+      "Edit(src/**)",
+      "Write(db/**)",
+      "Edit(db/**)"
+    ]
+  },
+  "env": {
+    "MCV3_DATA_DIR": ".mc-data",
+    "MCV3_TEMPLATES_DIR": "./templates",
+    "MCV3_LOG_LEVEL": "info",
+    "MCV3_SPRINT": "4",
+    "MCV3_VERSION": "3.4.0"
+  }
+}

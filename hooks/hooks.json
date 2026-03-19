@@ -1,0 +1,300 @@
+{
+  "_comment": "MCV3 Hooks Configuration — Sprint 4",
+  "_doc": "Hooks tự động hóa các tác vụ MCV3. Đọc scripts/ để biết cách cấu hình.",
+  "_version": "3.4.0",
+
+  "SessionStart": [
+    {
+      "id": "load-project-context",
+      "name": "Auto-load project context khi bắt đầu session",
+      "script": "./scripts/load-project-context.sh",
+      "description": "Tự động load checkpoint và key-facts khi Claude bắt đầu session mới",
+      "enabled": true,
+      "runCondition": "always"
+    }
+  ],
+
+  "SessionStop": [
+    {
+      "id": "auto-checkpoint",
+      "name": "Auto-save checkpoint khi kết thúc session",
+      "script": "./scripts/auto-checkpoint.sh",
+      "description": "Tự động lưu checkpoint trước khi session kết thúc để resume được lần sau",
+      "enabled": true,
+      "runCondition": "if-project-active"
+    }
+  ],
+
+  "PrePhaseTransition": [
+    {
+      "id": "validate-before-phase",
+      "name": "Validate tài liệu trước khi chuyển phase",
+      "script": "./scripts/validate-phase-transition.sh",
+      "description": "Kiểm tra tài liệu của phase hiện tại đã đầy đủ trước khi sang phase tiếp theo",
+      "enabled": true,
+      "runCondition": "on-phase-change",
+      "_phases_checked": [
+        "phase1→phase2: PROJECT-OVERVIEW.md phải tồn tại",
+        "phase2→phase3: EXPERT-LOG.md phải tồn tại",
+        "phase3→phase4: Ít nhất 1 BIZ-POLICY phải tồn tại",
+        "phase4→phase5: Ít nhất 1 URS phải tồn tại",
+        "phase5→phase6: Ít nhất 1 MODSPEC phải tồn tại",
+        "phase6→phase7: Ít nhất 1 TEST-*.md phải tồn tại trong P3-QA-DOCS/",
+        "phase7→phase8: src/ phải có files với REQ-ID comments",
+        "phase8→deploy: _VERIFY-CROSS/verification-report.md phải tồn tại và READY"
+      ]
+    }
+  ],
+
+  "PostPhaseCompletion": [
+    {
+      "id": "auto-snapshot-milestone",
+      "name": "Tạo snapshot khi hoàn thành phase",
+      "script": "./scripts/auto-snapshot-milestone.sh",
+      "description": "Tự động tạo snapshot đầy đủ khi một phase được đánh dấu hoàn thành",
+      "enabled": true,
+      "runCondition": "on-phase-complete",
+      "_note": "Sprint 2 — dùng mc_snapshot thay cho mc_checkpoint"
+    },
+    {
+      "id": "update-changelog-phase",
+      "name": "Ghi changelog milestone hoàn thành phase",
+      "script": "./scripts/update-changelog-phase.sh",
+      "description": "Tự động thêm milestone entry vào structured changelog khi phase xong",
+      "enabled": true,
+      "runCondition": "on-phase-complete"
+    }
+  ],
+
+  "PreRequirementsGeneration": [
+    {
+      "id": "check-bizdocs-complete",
+      "name": "Kiểm tra BizDocs trước khi viết URS",
+      "script": "./scripts/check-bizdocs-ready.sh",
+      "description": "Đảm bảo BIZ-POLICY và PROCESS đã có trước khi bắt đầu viết Requirements",
+      "enabled": true,
+      "runCondition": "before-requirements",
+      "failBehavior": "warn",
+      "_checks": [
+        "Ít nhất 1 BIZ-POLICY-*.md tồn tại",
+        "Ít nhất 1 PROCESS-*.md tồn tại",
+        "DATA-DICTIONARY.md tồn tại (warning nếu thiếu)"
+      ]
+    }
+  ],
+
+  "PreQADocs": [
+    {
+      "id": "check-modspec-ready",
+      "name": "Kiểm tra MODSPEC trước khi tạo QA Docs",
+      "script": "./scripts/check-modspec-ready.sh",
+      "description": "Đảm bảo MODSPEC đã có cho module cần QA trước khi bắt đầu Phase 6",
+      "enabled": true,
+      "runCondition": "before-qa-docs",
+      "failBehavior": "warn",
+      "_checks": [
+        "MODSPEC-{MOD}.md tồn tại trong P2-DESIGN/",
+        "MODSPEC có ít nhất 1 API-ID",
+        "URS-{MOD}.md tồn tại với AC-IDs"
+      ]
+    }
+  ],
+
+  "PreCodeGen": [
+    {
+      "id": "check-qa-docs-complete",
+      "name": "Kiểm tra QA Docs trước khi Code Gen",
+      "script": "./scripts/validate-test-coverage.sh",
+      "description": "Đảm bảo TEST-{MOD}.md đã có trước khi bắt đầu Code Generation",
+      "enabled": true,
+      "runCondition": "before-code-gen",
+      "failBehavior": "warn",
+      "_checks": [
+        "TEST-{MOD}.md tồn tại trong P3-QA-DOCS/",
+        "AC Coverage ≥ 80% (warning nếu thấp hơn)",
+        "Có ít nhất 1 TC-ID"
+      ]
+    }
+  ],
+
+  "PreVerify": [
+    {
+      "id": "check-code-gen-done",
+      "name": "Kiểm tra code generation trước khi Verify",
+      "script": "./scripts/check-code-gen-ready.sh",
+      "description": "Đảm bảo src/ có files với REQ-ID comments trước khi chạy verification",
+      "enabled": true,
+      "runCondition": "before-verify",
+      "failBehavior": "warn",
+      "_checks": [
+        "src/ tồn tại và có ít nhất 1 source file",
+        "Ít nhất 1 file có REQ-ID comment"
+      ]
+    },
+    {
+      "id": "generate-traceability-snapshot",
+      "name": "Tạo traceability report trước verify",
+      "script": "./scripts/generate-traceability-report.sh",
+      "description": "Tự động generate traceability report để làm baseline cho verification",
+      "enabled": false,
+      "runCondition": "before-verify",
+      "_note": "Disable mặc định — bật nếu muốn auto-generate report"
+    }
+  ],
+
+  "PreDeployOps": [
+    {
+      "id": "check-verify-ready",
+      "name": "Kiểm tra verification report trước Deploy-Ops",
+      "script": "./scripts/check-verify-ready.sh",
+      "description": "Đảm bảo _VERIFY-CROSS/verification-report.md tồn tại và status READY",
+      "enabled": true,
+      "runCondition": "before-deploy-ops",
+      "failBehavior": "block",
+      "_checks": [
+        "verification-report.md tồn tại",
+        "Overall status = READY (hoặc NEEDS ATTENTION với user confirmation)"
+      ]
+    },
+    {
+      "id": "final-snapshot-pre-deploy",
+      "name": "Tạo snapshot đầy đủ trước khi tạo Deploy-Ops docs",
+      "script": "./scripts/auto-snapshot-milestone.sh",
+      "description": "Auto-tạo pre-production snapshot khi chuẩn bị deploy documentation",
+      "enabled": true,
+      "runCondition": "before-deploy-ops"
+    }
+  ],
+
+  "PreChangeManager": [
+    {
+      "id": "check-change-manager-prerequisites",
+      "name": "Kiểm tra prerequisites trước khi chạy Change Manager",
+      "script": "./scripts/check-lifecycle-prerequisites.sh",
+      "args": ["change-manager"],
+      "description": "Đảm bảo project đã ở Phase 4+ và có documents để manage changes",
+      "enabled": true,
+      "runCondition": "before-change-manager",
+      "failBehavior": "warn",
+      "_checks": [
+        "Project đã khởi tạo (mc_status trả về project)",
+        "Ít nhất 1 URS-*.md tồn tại trong P1-REQUIREMENTS/",
+        "Ít nhất 1 BIZ-POLICY hoặc BR-ID tồn tại"
+      ]
+    },
+    {
+      "id": "snapshot-before-change",
+      "name": "Tạo safety snapshot trước Change Manager",
+      "script": "./scripts/auto-snapshot-milestone.sh",
+      "description": "Auto-tạo safety snapshot trước khi bắt đầu change management workflow",
+      "enabled": true,
+      "runCondition": "before-change-manager",
+      "_note": "Change Manager tự có snapshot logic, đây là extra safety"
+    }
+  ],
+
+  "PreEvolve": [
+    {
+      "id": "check-evolve-prerequisites",
+      "name": "Kiểm tra prerequisites trước khi chạy Evolve",
+      "script": "./scripts/check-lifecycle-prerequisites.sh",
+      "args": ["evolve"],
+      "description": "Đảm bảo project đã hoàn thành đủ phases để có thể evolve",
+      "enabled": true,
+      "runCondition": "before-evolve",
+      "failBehavior": "warn",
+      "_checks": [
+        "Project đã ở Phase 5+ (ít nhất 1 MODSPEC tồn tại)",
+        "MASTER-INDEX.md tồn tại",
+        "Không có pending changes chưa được apply (check _mcv3-work/change-log/)"
+      ]
+    },
+    {
+      "id": "snapshot-before-evolve",
+      "name": "Tạo milestone snapshot trước Evolve",
+      "script": "./scripts/auto-snapshot-milestone.sh",
+      "description": "Auto-tạo snapshot toàn bộ project trước khi bắt đầu evolution (có thể rollback)",
+      "enabled": true,
+      "runCondition": "before-evolve"
+    }
+  ],
+
+  "PreMigrate": [
+    {
+      "id": "check-migrate-prerequisites",
+      "name": "Kiểm tra prerequisites trước khi chạy Migrate",
+      "script": "./scripts/check-lifecycle-prerequisites.sh",
+      "args": ["migrate"],
+      "description": "Đảm bảo project đã khởi tạo trước khi migrate tài liệu cũ vào",
+      "enabled": true,
+      "runCondition": "before-migrate",
+      "failBehavior": "warn",
+      "_checks": [
+        "Project đã khởi tạo với mc_init_project",
+        "_config.json tồn tại",
+        "Source documents hoặc codebase được chỉ định rõ ràng"
+      ]
+    }
+  ],
+
+  "PreTechDesign": [
+    {
+      "id": "check-urs-complete",
+      "name": "Kiểm tra URS trước khi thiết kế kỹ thuật",
+      "script": "./scripts/check-urs-ready.sh",
+      "description": "Đảm bảo URS đã có cho module cần design trước khi bắt đầu Tech Design",
+      "enabled": true,
+      "runCondition": "before-tech-design",
+      "failBehavior": "warn",
+      "_checks": [
+        "URS-{MOD}.md tồn tại trong P1-REQUIREMENTS/",
+        "URS có ít nhất 3 User Stories",
+        "Traceability: ít nhất 1 BR-ID tồn tại"
+      ]
+    },
+    {
+      "id": "snapshot-before-design",
+      "name": "Tạo snapshot trước khi bắt đầu Tech Design",
+      "script": "./scripts/pre-design-snapshot.sh",
+      "description": "Auto-tạo safety snapshot trước khi bắt đầu thiết kế kỹ thuật (có thể rollback nếu cần)",
+      "enabled": false,
+      "runCondition": "before-tech-design",
+      "_note": "Disable mặc định — bật nếu team muốn auto-snapshot"
+    }
+  ],
+
+  "PostDocumentSave": [
+    {
+      "id": "validate-document-format",
+      "name": "Validate format sau khi lưu document",
+      "script": "./scripts/validate-doc-format.sh",
+      "description": "Tự động chạy mc_validate sau khi mc_save để phát hiện issues sớm",
+      "enabled": false,
+      "runCondition": "on-document-save",
+      "_note": "Disable mặc định — có thể chậm với files lớn. Bật nếu muốn strict validation"
+    },
+    {
+      "id": "update-traceability",
+      "name": "Cập nhật traceability khi document thay đổi",
+      "script": "./scripts/update-traceability.sh",
+      "description": "Tự động extract và update IDs trong traceability khi document được lưu",
+      "enabled": false,
+      "runCondition": "on-urs-or-modspec-save",
+      "_note": "Sprint 2 — thử nghiệm, disable mặc định"
+    }
+  ],
+
+  "_settings": {
+    "mcDataDir": ".mc-data",
+    "autoCheckpointLabel": "auto-session-end",
+    "contextLoadLayer": 1,
+    "logLevel": "info",
+    "snapshotOnMilestone": true,
+    "validateOnSave": false,
+    "traceabilityAutoUpdate": false,
+    "_sprint": "Sprint 4",
+    "_version": "3.4.0",
+    "_lifecycle_skills": ["change-manager", "evolve", "migrate", "onboard"],
+    "_note": "Sprint 4: Thêm hooks cho Lifecycle Skills (PreChangeManager, PreEvolve, PreMigrate)"
+  }
+}
