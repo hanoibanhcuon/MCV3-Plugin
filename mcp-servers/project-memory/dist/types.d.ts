@@ -2,7 +2,7 @@
  * types.ts — Định nghĩa các TypeScript types dùng chung trong MCP Server
  *
  * Cấu trúc dữ liệu chính:
- * - ProjectConfig: Cấu hình dự án được lưu trong _config.md
+ * - ProjectConfig: Cấu hình dự án được lưu trong _config.json
  * - McDataStructure: Cấu trúc thư mục .mc-data/
  * - ToolResult: Kết quả trả về của mỗi MCP tool
  */
@@ -37,6 +37,13 @@ export interface SystemInfo {
     techStack: string;
     /** Trạng thái: planned, in-progress, done */
     status: 'planned' | 'in-progress' | 'done';
+    /**
+     * Phase hiện tại của system này (per-system phase tracking).
+     * Dùng cho dự án in-progress: mỗi system có thể đang ở phase khác nhau.
+     * VD: ERP đang ở phase5-design, WEB đang ở phase3-bizdocs.
+     * Nếu không set → hiển thị theo projectConfig.currentPhase (project-level).
+     */
+    currentPhase?: ProjectPhase;
 }
 /** Các phase của workflow MCV3 */
 export type ProjectPhase = 'phase0-init' | 'phase1-discovery' | 'phase2-expert' | 'phase3-bizdocs' | 'phase4-requirements' | 'phase5-design' | 'phase6-qa' | 'phase7-codegen' | 'phase8-verify';
@@ -71,6 +78,15 @@ export interface McInitParams {
     domain: string;
     /** Đường dẫn gốc dự án (mặc định: thư mục hiện tại) */
     projectRoot?: string;
+    /**
+     * Danh sách systems với per-system phase (tùy chọn).
+     * Dùng khi init dự án in-progress: mỗi system đang ở phase khác nhau.
+     * Nếu không truyền → tất cả systems bắt đầu từ phase0-init.
+     */
+    systems?: Array<Partial<SystemInfo> & {
+        code: string;
+        name: string;
+    }>;
 }
 /** Tham số cho mc_save */
 export interface McSaveParams {

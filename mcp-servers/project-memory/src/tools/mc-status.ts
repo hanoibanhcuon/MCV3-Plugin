@@ -142,7 +142,9 @@ async function checkPhaseStatus(
   const totalRequired = phaseConfig.requiredFiles.length + phaseConfig.requiredDirs.length;
 
   if (totalRequired === 0) {
-    // Phase không có required files → check by document count
+    // Phase này kiểm tra động (dynamic content như URS, MODSPEC per-system)
+    // Luôn trả về 'not-started' vì không thể tự động check được từ file list tĩnh.
+    // mc_status sẽ cần user hoặc mc_validate để confirm phase completion.
     return 'not-started';
   }
 

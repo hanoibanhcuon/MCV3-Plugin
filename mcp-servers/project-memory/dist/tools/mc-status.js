@@ -155,7 +155,9 @@ async function checkPhaseStatus(projectPath, phaseConfig) {
     }
     const totalRequired = phaseConfig.requiredFiles.length + phaseConfig.requiredDirs.length;
     if (totalRequired === 0) {
-        // Phase không có required files → check by document count
+        // Phase này kiểm tra động (dynamic content như URS, MODSPEC per-system)
+        // Luôn trả về 'not-started' vì không thể tự động check được từ file list tĩnh.
+        // mc_status sẽ cần user hoặc mc_validate để confirm phase completion.
         return 'not-started';
     }
     const totalCompleted = completedFiles + completedDirs;
@@ -213,7 +215,18 @@ function formatStatusText(summary) {
     if (summary.systems.length > 0) {
         lines.push('\n### Systems:');
         for (const sys of summary.systems) {
-            lines.push(`- **${sys.code}**: ${sys.name} (${sys.status})`);
+            // Hiển thị per-system phase nếu có (dự án in-progress)
+            const sysPhase = sys.currentPhase
+                ? ` | phase: \`${sys.currentPhase}\``
+                : '';
+            lines.push(`- **${sys.code}**: ${sys.name} (${sys.status}${sysPhase})`);
+        }
+        // Nếu có bất kỳ system nào có per-system phase → in chú thích
+        const hasPerSystemPhase = summary.systems.some(s => s.currentPhase);
+        if (hasPerSystemPhase) {
+            lines.push('');
+            lines.push('> 💡 **Per-system phases:** Dự án này có các systems đang ở phases khác nhau.');
+            lines.push('> Dùng `/mcv3:assess` để xem assessment đầy đủ và remediation plan.');
         }
     }
     else {
@@ -244,6 +257,12 @@ function formatStatusText(summary) {
     }
     else {
         lines.push('🎉 Tất cả phases hoàn thành!');
+    }
+    // Gợi ý assess nếu có systems với per-system phases (dự án in-progress)
+    const hasPerSystemPhase = summary.systems.some(s => s.currentPhase);
+    if (hasPerSystemPhase) {
+        lines.push('');
+        lines.push('→ Hoặc `/mcv3:assess` để xem gap analysis và remediation plan cho từng system');
     }
     return lines.join('\n');
 }

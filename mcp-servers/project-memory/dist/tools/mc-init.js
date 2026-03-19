@@ -160,7 +160,7 @@ Dự án vừa được khởi tạo. Chưa có phase nào được thực hiệ
 
 ## Bước tiếp theo
 
-1. Chạy \`/mcv3:navigator\` để xem hướng dẫn
+1. Chạy \`/mcv3:status\` để xem tiến độ dự án
 2. Bắt đầu với \`/mcv3:discovery\` để phỏng vấn & thu thập yêu cầu
 
 ## Working Context
@@ -372,7 +372,6 @@ async function mcInitProject(params, projectRoot) {
     const slug = params.projectSlug || (0, file_io_js_1.createSlug)(params.projectName);
     const mcDataRoot = path.join(projectRoot, '.mc-data');
     const projectPath = path.join(mcDataRoot, 'projects', slug);
-    const templatesRoot = path.join(mcDataRoot, 'templates'); // Link đến templates plugin
     // Kiểm tra project đã tồn tại chưa
     if (await (0, file_io_js_1.exists)(projectPath)) {
         return {
@@ -383,6 +382,19 @@ async function mcInitProject(params, projectRoot) {
     }
     // ── Tạo cấu hình dự án ────────────────────────────────────────────────
     const now = new Date().toISOString();
+    // Xử lý systems được truyền vào (cho dự án in-progress với per-system phases)
+    // Nếu params.systems có giá trị, merge vào config với per-system currentPhase
+    const initialSystems = params.systems
+        ? params.systems.map(s => ({
+            code: s.code.toUpperCase(),
+            name: s.name,
+            description: s.description || '',
+            techStack: s.techStack || '',
+            status: (s.status || 'in-progress'),
+            // Per-system phase: nếu có truyền vào → dùng, không thì để undefined
+            ...(s.currentPhase ? { currentPhase: s.currentPhase } : {}),
+        }))
+        : [];
     const config = {
         name: params.projectName.trim(),
         slug,
@@ -391,7 +403,7 @@ async function mcInitProject(params, projectRoot) {
         updatedAt: now,
         mcv3Version: '3.4.0',
         currentPhase: 'phase0-init',
-        systems: [],
+        systems: initialSystems,
     };
     // ── Tạo cấu trúc thư mục ─────────────────────────────────────────────
     const createdDirs = [];

@@ -77,14 +77,19 @@ const VALID_ID_PATTERNS = [
   /\bBG-[A-Z]+-\d{3}\b/g,        // Background: BG-BUS-001
 ];
 
-/** Placeholder patterns cần được điền */
+/**
+ * Placeholder patterns cần được điền.
+ * KHÔNG dùng flag `g` (global) vì sẽ gây lastIndex drift khi gọi .test()
+ * nhiều lần trên các string khác nhau — dẫn đến false negatives xen kẽ.
+ * Chỉ dùng flag `i` (case-insensitive) khi cần.
+ */
 const PLACEHOLDER_PATTERNS = [
-  /\[TÊN\s/gi,
-  /\[NGÀY\]/gi,
-  /\[XXX\]/g,
-  /TODO:/gi,
-  /PLACEHOLDER/gi,
-  /\{{\s*[\w_]+\s*}}/g,  // Template variables chưa điền: {{variable}}
+  /\[TÊN\s/i,
+  /\[NGÀY\]/i,
+  /\[XXX\]/,
+  /TODO:/i,
+  /PLACEHOLDER/i,
+  /\{\{\s*[\w_]+\s*\}\}/,  // Template variables chưa điền: {{variable}}
 ];
 
 /** Sections bắt buộc theo loại tài liệu */
@@ -377,7 +382,9 @@ export async function mcValidate(
       allIssues.push(...validateCompleteness(content, params.filePath));
     }
 
-    // Validate per-system phases nếu đang validate _config.json
+    // Validate per-system phases khi: (a) đang validate _config.json trực tiếp,
+    // hoặc (b) chạy full validation (type=all) trên bất kỳ file nào — để đảm bảo
+    // tính nhất quán của project config song song với nội dung document.
     if (params.filePath === '_config.json' || validationType === 'all') {
       const projectPath = path.join(
         projectRoot, '.mc-data', 'projects', params.projectSlug

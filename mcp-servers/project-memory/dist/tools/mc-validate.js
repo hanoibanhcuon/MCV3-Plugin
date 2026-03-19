@@ -68,14 +68,19 @@ const VALID_ID_PATTERNS = [
     /\bPROB-\d{3}\b/g, // Problem: PROB-001
     /\bBG-[A-Z]+-\d{3}\b/g, // Background: BG-BUS-001
 ];
-/** Placeholder patterns cần được điền */
+/**
+ * Placeholder patterns cần được điền.
+ * KHÔNG dùng flag `g` (global) vì sẽ gây lastIndex drift khi gọi .test()
+ * nhiều lần trên các string khác nhau — dẫn đến false negatives xen kẽ.
+ * Chỉ dùng flag `i` (case-insensitive) khi cần.
+ */
 const PLACEHOLDER_PATTERNS = [
-    /\[TÊN\s/gi,
-    /\[NGÀY\]/gi,
-    /\[XXX\]/g,
-    /TODO:/gi,
-    /PLACEHOLDER/gi,
-    /\{{\s*[\w_]+\s*}}/g, // Template variables chưa điền: {{variable}}
+    /\[TÊN\s/i,
+    /\[NGÀY\]/i,
+    /\[XXX\]/,
+    /TODO:/i,
+    /PLACEHOLDER/i,
+    /\{\{\s*[\w_]+\s*\}\}/, // Template variables chưa điền: {{variable}}
 ];
 /** Sections bắt buộc theo loại tài liệu */
 const REQUIRED_SECTIONS = {
@@ -211,6 +216,75 @@ function validateCompleteness(content, filePath) {
     }
     return issues;
 }
+// ─── Per-System Phase Validation ──────────────────────────────────────────
+/**
+ * Các phases hợp lệ trong MCV3 pipeline (theo thứ tự)
+ */
+const VALID_PHASES = [
+    'phase0-init',
+    'phase1-discovery',
+    'phase2-expert',
+    'phase3-bizdocs',
+    'phase4-requirements',
+    'phase5-design',
+    'phase6-qa',
+    'phase7-codegen',
+    'phase8-verify',
+];
+/**
+ * Validate tính nhất quán của per-system phases trong _config.json.
+ * Kiểm tra:
+ * - Mỗi system.currentPhase là phase hợp lệ
+ * - Không có system nào có phase cao hơn project-level phase quá nhiều
+ *   (cảnh báo nếu system đang ở phase8 nhưng project-level chỉ phase0)
+ *
+ * @param projectPath - Đường dẫn thư mục project trong .mc-data/
+ * @returns Danh sách validation issues liên quan đến per-system phases
+ */
+async function validatePerSystemPhases(projectPath) {
+    const issues = [];
+    const config = await (0, file_io_js_1.readJson)(path.join(projectPath, '_config.json'));
+    if (!config)
+        return issues;
+    const systems = config.systems || [];
+    const projectPhaseIndex = VALID_PHASES.indexOf(config.currentPhase);
+    for (const sys of systems) {
+        if (!sys.currentPhase)
+            continue; // Không có per-system phase → bỏ qua
+        // Kiểm tra phase hợp lệ
+        if (!VALID_PHASES.includes(sys.currentPhase)) {
+            issues.push({
+                severity: 'ERROR',
+                type: 'PER_SYSTEM_PHASE_INVALID',
+                message: `System ${sys.code}: currentPhase "${sys.currentPhase}" không hợp lệ`,
+                suggestion: `Dùng một trong: ${VALID_PHASES.join(', ')}`,
+            });
+            continue;
+        }
+        // Kiểm tra per-system phase không vượt quá project phase quá nhiều
+        const sysPhaseIndex = VALID_PHASES.indexOf(sys.currentPhase);
+        const phaseDiff = sysPhaseIndex - projectPhaseIndex;
+        if (phaseDiff > 3) {
+            issues.push({
+                severity: 'WARNING',
+                type: 'PER_SYSTEM_PHASE_INCONSISTENT',
+                message: `System ${sys.code} đang ở ${sys.currentPhase} nhưng project-level chỉ ở ${config.currentPhase}`,
+                suggestion: 'Cân nhắc cập nhật project-level currentPhase để phản ánh đúng tiến độ',
+            });
+        }
+    }
+    // Cảnh báo nếu có systems với per-system phase nhưng project phase vẫn là phase0-init
+    const systemsWithPhase = systems.filter(s => s.currentPhase && s.currentPhase !== 'phase0-init');
+    if (systemsWithPhase.length > 0 && config.currentPhase === 'phase0-init') {
+        issues.push({
+            severity: 'INFO',
+            type: 'PER_SYSTEM_PHASE_RECOMMEND_UPDATE',
+            message: `${systemsWithPhase.length} systems có per-system phase nhưng project-level vẫn là phase0-init`,
+            suggestion: 'Cân nhắc cập nhật project currentPhase sang phase cao nhất trong systems',
+        });
+    }
+    return issues;
+}
 // ─── Main Tool Function ───────────────────────────────────────────────────
 /**
  * Thực thi tool mc_validate
@@ -257,6 +331,13 @@ async function mcValidate(params, projectRoot) {
         }
         if (validationType === 'completeness' || validationType === 'all') {
             allIssues.push(...validateCompleteness(content, params.filePath));
+        }
+        // Validate per-system phases khi: (a) đang validate _config.json trực tiếp,
+        // hoặc (b) chạy full validation (type=all) trên bất kỳ file nào — để đảm bảo
+        // tính nhất quán của project config song song với nội dung document.
+        if (params.filePath === '_config.json' || validationType === 'all') {
+            const projectPath = path.join(projectRoot, '.mc-data', 'projects', params.projectSlug);
+            allIssues.push(...await validatePerSystemPhases(projectPath));
         }
         // ── Tổng hợp kết quả ─────────────────────────────────────────────────
         const result = {

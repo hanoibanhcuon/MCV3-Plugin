@@ -142,7 +142,7 @@ Dự án vừa được khởi tạo. Chưa có phase nào được thực hiệ
 
 ## Bước tiếp theo
 
-1. Chạy \`/mcv3:navigator\` để xem hướng dẫn
+1. Chạy \`/mcv3:status\` để xem tiến độ dự án
 2. Bắt đầu với \`/mcv3:discovery\` để phỏng vấn & thu thập yêu cầu
 
 ## Working Context
@@ -364,7 +364,6 @@ export async function mcInitProject(
   const slug = params.projectSlug || createSlug(params.projectName);
   const mcDataRoot = path.join(projectRoot, '.mc-data');
   const projectPath = path.join(mcDataRoot, 'projects', slug);
-  const templatesRoot = path.join(mcDataRoot, 'templates'); // Link đến templates plugin
 
   // Kiểm tra project đã tồn tại chưa
   if (await exists(projectPath)) {
