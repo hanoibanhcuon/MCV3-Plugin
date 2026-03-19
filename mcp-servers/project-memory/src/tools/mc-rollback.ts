@@ -194,7 +194,10 @@ export async function mcRollback(
     for (const relativePath of currentFiles) {
       if (!relativePath.includes('_mcv3-work')) {
         const fullPath = path.join(projectPath, relativePath);
-        await fs.unlink(fullPath).catch(() => {}); // Ignore nếu không xóa được
+        // Chỉ bỏ qua ENOENT (file đã bị xóa trước đó), throw các lỗi khác
+        await fs.unlink(fullPath).catch((err: NodeJS.ErrnoException) => {
+          if (err.code !== 'ENOENT') throw err;
+        });
       }
     }
 

@@ -97,9 +97,9 @@ export async function mcLoad(
     return { success: false, message: 'Thiếu filePath', error: 'INVALID_PARAMS' };
   }
 
-  // Security: ngăn path traversal
+  // Security: ngăn path traversal — kiểm tra sơ bộ trước khi resolve
   const normalizedPath = path.normalize(params.filePath).replace(/\\/g, '/');
-  if (normalizedPath.startsWith('..')) {
+  if (normalizedPath.startsWith('..') || path.isAbsolute(params.filePath)) {
     return { success: false, message: 'filePath không hợp lệ', error: 'INVALID_PATH' };
   }
 
@@ -130,6 +130,13 @@ export async function mcLoad(
   }
 
   const fullPath = path.join(projectPath, targetFilePath);
+
+  // Security: xác minh resolved path nằm trong projectPath (chặn mọi path traversal còn lại)
+  const resolvedFull = path.resolve(fullPath);
+  const resolvedProject = path.resolve(projectPath);
+  if (!resolvedFull.startsWith(resolvedProject + path.sep) && resolvedFull !== resolvedProject) {
+    return { success: false, message: 'filePath không hợp lệ: path traversal bị chặn', error: 'INVALID_PATH' };
+  }
 
   // ── Đọc file ─────────────────────────────────────────────────────────
   const content = await readFile(fullPath);

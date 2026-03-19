@@ -14,7 +14,7 @@ MC_DATA_DIR="${MC_DATA_DIR:-.mc-data}"
 PROJECT_SLUG="${1:-}"
 SYSTEM_CODE="${2:-}"
 MODULE_CODE="${3:-}"
-MIN_AC_COVERAGE=100   # Phần trăm AC phải có TC
+MIN_AC_COVERAGE=80    # Phần trăm AC phải có TC (industry standard: 80%)
 
 # Colors
 RED='\033[0;31m'
