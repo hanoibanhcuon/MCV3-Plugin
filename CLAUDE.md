@@ -1,6 +1,6 @@
-# CLAUDE.md — MasterCraft DevKit v3.4 (MCV3)
+# CLAUDE.md — MasterCraft DevKit v3.7 (MCV3)
 
-Plugin này giúp Claude Code làm việc với **dự án phần mềm** theo quy trình 8 phases của MCV3. Sprint 4 hoàn thành toàn bộ plugin: Pipeline 8 Phase + Lifecycle Management (Change Manager, Onboard, Evolve, Migrate).
+Plugin này giúp Claude Code làm việc với **dự án phần mềm** theo quy trình 8 phases của MCV3. v3.7 hoàn chỉnh với: Pipeline 8 Phase + Lifecycle Management + Assess Skill + Embedded/IoT Module + Scale Flexibility & Industry Expansion (12 ngành).
 
 ---
 
@@ -505,9 +505,9 @@ Enterprise (regulated)              → Full 8 phases + compliance gates
 
 Reference: `skills/discovery/references/scale-decision-matrix.md`
 
-### Industry Knowledge Bases mở rộng (11 ngành)
+### Industry Knowledge Bases mở rộng (12 ngành tổng cộng)
 
-Domain Expert Agent giờ hỗ trợ 11 ngành:
+Domain Expert Agent giờ hỗ trợ 12 ngành (11 từ Batch C + Embedded/IoT từ Batch B):
 F&B, Logistics, Retail, SaaS, Healthcare, Fintech, E-Commerce,
 **Real Estate** (BĐS + Luật Đất đai 2024),
 **Manufacturing** (BOM, MRP, ISO 9001, C/O),
