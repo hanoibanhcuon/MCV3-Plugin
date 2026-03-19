@@ -18,6 +18,7 @@ Templates: templates/p1-discovery/PROJECT-OVERVIEW-TEMPLATE.md
 References:
   - skills/discovery/references/interview-frameworks/{domain}.md
   - skills/discovery/references/project-overview-schema.md
+  - skills/discovery/references/scale-decision-matrix.md
 ```
 
 ---
@@ -39,6 +40,9 @@ TRƯỚC KHI BẮT ĐẦU:
    → Nếu có: hỏi user "Cập nhật hay tạo mới?"
    → Nếu chưa: tiến hành phỏng vấn
 3. Đọc references/project-overview-schema.md để nắm output format
+4. Sau bước phỏng vấn Block 1, đọc references/scale-decision-matrix.md
+   → Recommend pipeline variant phù hợp (Micro/Small/Medium/Large/Enterprise)
+   → Thông báo cho user: "Dự án này phù hợp với pipeline [X], sẽ skip phases [Y, Z]"
 ```
 
 ---
@@ -61,6 +65,10 @@ Dựa vào câu trả lời của user, detect ngành để load interview frame
 | cửa hàng, bán lẻ, POS, inventory | Retail | `interview-frameworks/retail.md` |
 | nhà hàng, quán, F&B, food | F&B | `interview-frameworks/fnb.md` |
 | SaaS, subscription, cloud, API | SaaS | `interview-frameworks/saas.md` |
+| bệnh viện, phòng khám, bác sĩ, BHYT, y tế | Healthcare | `interview-frameworks/healthcare.md` |
+| fintech, ví điện tử, thanh toán, KYC, AML | Fintech | `interview-frameworks/fintech.md` |
+| bán hàng online, TMĐT, marketplace, giỏ hàng | E-Commerce | `interview-frameworks/ecommerce.md` |
+| bất động sản, BĐS, môi giới, căn hộ, sổ đỏ | Real Estate | `interview-frameworks/realestate.md` |
 | _(không rõ)_ | General | `interview-frameworks/general.md` |
 
 **Đọc framework tương ứng** từ `references/interview-frameworks/` trước khi đặt câu hỏi.

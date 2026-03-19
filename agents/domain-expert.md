@@ -59,6 +59,13 @@ mc_load({ projectSlug: "...", filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 3
 - F&B → `references/industry-fnb.md`
 - SaaS → `references/industry-saas.md`
 - Embedded/MCU/IoT → `references/industry-embedded.md`
+- Healthcare/Y tế → `references/industry-healthcare.md`
+- Fintech → `references/industry-fintech.md`
+- E-Commerce/TMĐT → `references/industry-ecommerce.md`
+- Bất động sản → `references/industry-realestate.md`
+- Sản xuất/Manufacturing → `references/industry-manufacturing.md`
+- Giáo dục/EdTech → `references/industry-education.md`
+- Nhân sự/HRM → `references/industry-hr.md`
 - _(Chưa có → dùng general knowledge)_
 
 **Từ khóa detect Embedded/IoT:**
@@ -72,7 +79,7 @@ mc_load({ projectSlug: "...", filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 3
 ### SESSION-001 — Domain Expert Analysis
 **Ngày:** {date}
 **Chuyên gia:** Domain Expert
-**Ngành detect:** {logistics / retail / fnb / saas / other}
+**Ngành detect:** {logistics / retail / fnb / saas / embedded / healthcare / fintech / ecommerce / realestate / manufacturing / education / hr / other}
 
 #### 1. Quy trình nghiệp vụ cốt lõi
 
@@ -138,8 +145,18 @@ WARN EARLY: Nếu thấy scope quá lớn → warn ngay trong session này
 
 ## References
 
+Ngành gốc (Sprint 1):
 - `references/industry-logistics.md` — Quy trình XNK, hải quan, kho bãi
 - `references/industry-retail.md` — POS, inventory, omni-channel
 - `references/industry-fnb.md` — Order management, kitchen ops, nguyên liệu
 - `references/industry-saas.md` — SaaS ops, onboarding, support
 - `references/industry-embedded.md` — MCU platforms, firmware patterns, IoT protocols, VN context
+
+Ngành mở rộng (Batch C):
+- `references/industry-healthcare.md` — EMR, HIS, BHYT, Bộ Y tế regulations
+- `references/industry-fintech.md` — Thanh toán, KYC, AML, NHNN regulations
+- `references/industry-ecommerce.md` — Cart, checkout, inventory, logistics VN
+- `references/industry-realestate.md` — Property listing, CRM, commission, Luật Đất đai 2024
+- `references/industry-manufacturing.md` — BOM, MRP, QC, ISO 9001, C/O
+- `references/industry-education.md` — LMS, student management, BHXH, Bộ GD&ĐT
+- `references/industry-hr.md` — Payroll, BHXH, PIT, Bộ Luật Lao động 2019

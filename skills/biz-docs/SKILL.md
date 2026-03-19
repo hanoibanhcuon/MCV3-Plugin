@@ -25,7 +25,8 @@ Enables: /mcv3:requirements (Phase 4 — URS)
 Agents: doc-writer
 References:
   - skills/biz-docs/references/skeleton/ (skeleton templates)
-  - skills/biz-docs/references/industry/ (industry-specific examples)
+  - skills/biz-docs/references/industry/ (industry-specific KPIs, BRs, compliance)
+    Available: fnb, logistics, retail, healthcare, fintech, ecommerce, saas
   - templates/p3-biz-docs/BIZ-POLICY-TEMPLATE.md
   - templates/p3-biz-docs/PROCESS-TEMPLATE.md
   - templates/p3-biz-docs/DATA-DICTIONARY-TEMPLATE.md
@@ -83,6 +84,9 @@ Với mỗi domain, áp dụng Guided Generation Protocol:
 
 Load industry knowledge nếu có:
   - references/industry/{domain}.md
+  - Available: fnb, logistics, retail, healthcare, fintech, ecommerce, saas
+  - Nội dung bao gồm: KPIs, business processes, compliance requirements,
+    common BRs, pain points, data dictionary suggestions
 ```
 
 ### 2b. Generate skeleton document

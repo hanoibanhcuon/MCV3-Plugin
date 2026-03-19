@@ -148,6 +148,13 @@ Nếu user hỏi về dự án cũ hoặc có code nhưng chưa có docs:
 → Sau assess → làm theo REMEDIATION-PLAN
 ```
 
+Nếu user hỏi "dự án nhỏ cần làm hết 8 phases không?" hoặc tương tự:
+```
+→ Gợi ý đọc scale-decision-matrix: "Dùng /mcv3:discovery để được recommend pipeline phù hợp"
+→ Hint: Micro/Small project có thể skip một số phases an toàn
+→ Tham khảo: skills/discovery/references/scale-decision-matrix.md
+```
+
 ---
 
 ## Tools sử dụng
