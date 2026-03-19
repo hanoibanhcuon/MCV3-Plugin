@@ -32,6 +32,7 @@ References:
   - skills/deploy-ops/references/deploy-patterns.md
   - skills/deploy-ops/references/monitoring-guide.md
   - skills/deploy-ops/references/sla-templates.md
+  - skills/deploy-ops/references/mobile-deploy-guide.md (Mobile App — React Native / Flutter)
   - skills/deploy-ops/references/firmware-deploy-guide.md (Embedded/Firmware)
   - templates/p8b-deploy-ops/DEPLOY-OPS-TEMPLATE.md
 ```
@@ -43,6 +44,13 @@ References:
 - Sau khi `/mcv3:verify` hoàn thành và báo READY
 - Cần tạo tài liệu triển khai cho go-live
 - Cần SLA definitions và monitoring setup guide
+- **Mobile App project** (React Native / Flutter): Load `mobile-deploy-guide.md`, thay thế nội dung:
+  - "Deployment Commands" → EAS Build (RN) hoặc Fastlane (Flutter/RN), không còn docker/kubectl
+  - "Infrastructure" → App Store Connect (iOS) + Google Play Console (Android) thay server infrastructure
+  - "Go-Live Checklist" → Code signing, Privacy Labels, Store submission, TestFlight/Internal Testing
+  - "Rollback Plan" → OTA rollback (nhanh, EAS Update) hoặc phased rollout halt (Google Play)
+  - "Monitoring" → Crashlytics crash-free rate, ANR rate, App Store rating thay server metrics
+  - Hỏi thêm: "EAS Build hay Fastlane? TestFlight hay Firebase App Distribution cho staging?"
 - **Embedded/Firmware project**: Load `firmware-deploy-guide.md`, thay thế nội dung:
   - "Deployment Commands" → Flash programming (esptool.py, STM32CubeProgrammer)
   - "OTA Strategy" → A/B partition, rollback, boot count health check

@@ -35,6 +35,7 @@ References:
   - skills/qa-docs/references/test-strategy-patterns.md
   - skills/qa-docs/references/test-case-writing-guide.md
   - skills/qa-docs/references/quality-metrics.md
+  - skills/qa-docs/references/mobile-test-guide.md (Mobile App — React Native / Flutter)
   - skills/qa-docs/references/embedded-test-guide.md (Embedded/Firmware)
   - templates/p6-qa-docs/TEST-TEMPLATE.md
   - templates/p6-qa-docs/USER-GUIDE-TEMPLATE.md
@@ -48,6 +49,12 @@ References:
 - Sau khi `/mcv3:tech-design` hoàn thành (có ít nhất 1 MODSPEC)
 - Cần tạo test cases chính thức cho QA team
 - Cần tài liệu hướng dẫn cho end users và admins
+- **Mobile App project** (React Native / Flutter): Load `mobile-test-guide.md`, điều chỉnh test strategy:
+  - Tier 1 (Unit): Jest (RN) hoặc flutter_test — store/state logic, API client, validators
+  - Tier 2 (Component/Widget): React Native Testing Library (RNTL) hoặc Widget Test — screens, forms
+  - Tier 3 (E2E): Detox (RN) hoặc integration_test (Flutter) — full user flows trên simulator/emulator
+  - Platform-specific: test permissions, offline behavior, push notification handling
+  - Test tools phải hỏi thêm: "Có cần test trên iOS và Android cả hai không? Có E2E Detox không?"
 - **Embedded/Firmware project**: Load `embedded-test-guide.md`, điều chỉnh test strategy:
   - Tier 1 (Host): Unity tests với mock HAL (PlatformIO native)
   - Tier 2 (On-target): Hardware integration tests trên device thật
@@ -94,8 +101,10 @@ Từ MODSPEC, lập danh sách:
 
 ### 1c. Xác định Test Strategy
 
-Hỏi user:
+Hỏi user (tự động adapt theo project type):
+
 ```
+[Web/Backend project:]
 "Tôi sẽ tạo test cases theo strategy:
 - Unit Tests: Test từng function/method riêng lẻ
 - Integration Tests: Test API endpoints end-to-end
@@ -103,6 +112,17 @@ Hỏi user:
 
 Bạn muốn thêm loại test nào khác?
 (E2E browser tests / Performance tests / Security tests)"
+
+[Mobile project — load mobile-test-guide.md:]
+"Tôi sẽ tạo test cases theo Mobile Testing 3-tier strategy:
+- Tier 1 Unit: Store logic, API client, business validators (Jest / flutter_test)
+- Tier 2 Component: Screen render, form interaction (RNTL / Widget Test)
+- Tier 3 E2E: Full user flows (Detox / integration_test)
+
+Câu hỏi bổ sung:
+1. Cần test trên iOS và Android cả hai không?
+2. Có cần E2E Detox / integration_test không (CI/CD setup phức tạp hơn)?
+3. Có offline behavior cần test không?"
 ```
 
 ---

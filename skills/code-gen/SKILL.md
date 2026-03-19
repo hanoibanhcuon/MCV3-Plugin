@@ -96,6 +96,18 @@ References:
    Hãy chạy /mcv3:tech-design trước.
 ```
 
+**Mobile Project Path:**
+```
+Nếu project là Mobile App (React Native / Flutter — phát hiện từ MODSPEC hoặc PROJECT-OVERVIEW):
+  - Dùng MOBILE-MODSPEC-TEMPLATE thay vì MODSPEC-TEMPLATE
+  - Load tech-stack-mobile.md (Zustand/Riverpod, TanStack Query/Dio, EAS)
+  - Output structure: src/{sys}/{mod}/ theo cấu trúc mobile (xem Phase 2c bên dưới)
+  - Không generate db/migrations hay docker-compose (backend riêng)
+  - Generate thêm: eas.json, app.json env config, mobile CI pipeline
+  - Test: Jest + RNTL (RN) hoặc flutter_test + Widget Test (Flutter)
+  - Không có backend routes — thay bằng API client + Zustand/Riverpod stores
+```
+
 **Embedded Project Path:**
 ```
 Nếu project là Firmware/Embedded (phát hiện từ MODSPEC hoặc PROJECT-OVERVIEW):
@@ -221,6 +233,66 @@ src/{sys_lower}/{mod_lower}/
 │   └── {mod}.types.ts            # TypeScript types
 └── __tests__/
     └── {ModPage}.test.tsx        # Component tests
+```
+
+### 2c. Mobile Structure — React Native (Expo Router)
+
+```
+src/
+├── app/
+│   └── (tabs)/
+│       └── {mod_lower}/
+│           ├── index.tsx         # COMP-{SYS}-NNN: List screen
+│           ├── [id].tsx          # COMP-{SYS}-NNN: Detail screen
+│           └── create.tsx        # COMP-{SYS}-NNN: Create/Edit screen
+├── components/
+│   └── {mod_lower}/
+│       ├── {Mod}Card.tsx         # List item component
+│       ├── {Mod}Form.tsx         # Form component
+│       ├── {Mod}Skeleton.tsx     # Loading skeleton
+│       └── {Mod}Empty.tsx        # Empty state
+├── hooks/
+│   └── use{Mod}.ts               # FT-{SYS}-NNN: TanStack Query hooks
+├── services/api/
+│   └── {mod_lower}.api.ts        # API-{SYS}-NNN: Axios API calls
+├── stores/
+│   └── {mod_lower}.store.ts      # FT-{SYS}-NNN: Zustand store
+└── __tests__/
+    ├── {mod_lower}.store.test.ts  # Store unit tests
+    └── {Mod}ListScreen.test.tsx   # RNTL component tests
+```
+
+### 2d. Mobile Structure — Flutter (Feature-First)
+
+```
+lib/
+└── features/
+    └── {mod_lower}/
+        ├── data/
+        │   ├── datasources/
+        │   │   └── {mod_lower}_remote_datasource.dart   # Dio API calls
+        │   ├── models/
+        │   │   └── {mod_lower}_model.dart               # JSON-serializable DTO
+        │   └── repositories/
+        │       └── {mod_lower}_repository_impl.dart     # Repository implementation
+        ├── domain/
+        │   ├── entities/
+        │   │   └── {mod_lower}.dart                     # Business entity
+        │   ├── repositories/
+        │   │   └── {mod_lower}_repository.dart          # Repository interface
+        │   └── usecases/
+        │       ├── get_{mod_lower}s.dart                # FT-{SYS}-NNN
+        │       └── create_{mod_lower}.dart              # FT-{SYS}-NNN
+        └── presentation/
+            ├── providers/
+            │   └── {mod_lower}_provider.dart            # Riverpod provider + state
+            ├── pages/
+            │   ├── {mod_lower}_list_page.dart           # SCR-{MOD}-001
+            │   ├── {mod_lower}_detail_page.dart         # SCR-{MOD}-002
+            │   └── create_{mod_lower}_page.dart         # SCR-{MOD}-003
+            └── widgets/
+                ├── {mod_lower}_card.dart
+                └── {mod_lower}_form.dart
 ```
 
 ---
@@ -443,6 +515,7 @@ services:
 
 ### 4c. CI Pipeline
 
+**Web/Backend:**
 ```yaml
 # .github/workflows/ci.yml
 name: CI
@@ -458,6 +531,43 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+```
+
+**Mobile (React Native / Expo):**
+```yaml
+# .github/workflows/ci-mobile.yml
+name: Mobile CI
+on: [push, pull_request]
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci
+      - run: npx tsc --noEmit        # TypeScript check
+      - run: npm run lint
+      - run: npm test -- --coverage --passWithNoTests --forceExit
+  # EAS Build (production) — trigger riêng khi merge vào main
+  # Xem: skills/deploy-ops/references/mobile-deploy-guide.md
+
+**Mobile (Flutter):**
+```yaml
+# .github/workflows/ci-flutter.yml
+name: Flutter CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { flutter-version: 'stable' }
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test --coverage
+      - run: dart format --set-exit-if-changed lib/ test/
 ```
 
 ---

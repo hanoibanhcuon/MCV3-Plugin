@@ -69,6 +69,7 @@ Dựa vào câu trả lời của user, detect ngành để load interview frame
 | fintech, ví điện tử, thanh toán, KYC, AML | Fintech | `interview-frameworks/fintech.md` |
 | bán hàng online, TMĐT, marketplace, giỏ hàng | E-Commerce | `interview-frameworks/ecommerce.md` |
 | bất động sản, BĐS, môi giới, căn hộ, sổ đỏ | Real Estate | `interview-frameworks/realestate.md` |
+| app mobile, ứng dụng điện thoại, React Native, Flutter, iOS, Android | Mobile App | `interview-frameworks/mobile.md` |
 | _(không rõ)_ | General | `interview-frameworks/general.md` |
 
 **Đọc framework tương ứng** từ `references/interview-frameworks/` trước khi đặt câu hỏi.
