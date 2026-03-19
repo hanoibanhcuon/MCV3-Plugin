@@ -34,10 +34,14 @@ MCP Tools:
 References:
   - skills/tech-design/references/api-design-patterns.md
   - skills/tech-design/references/data-modeling-guide.md
+  - skills/tech-design/references/multi-system-design.md ← Multi-system dependency analysis
   - templates/p5-tech-design/MODSPEC-TEMPLATE.md
   - templates/p5-tech-design/ARCHITECTURE-TEMPLATE.md
   - templates/p5-tech-design/DATA-MODEL-TEMPLATE.md
   - templates/p5-tech-design/FIRMWARE-MODSPEC-TEMPLATE.md (Embedded/Firmware)
+  - templates/_shared-services/AUTH-SPEC-TEMPLATE.md     ← Shared Auth service spec
+  - templates/_shared-services/NOTIFICATION-SPEC-TEMPLATE.md ← Shared Notification spec
+  - templates/_shared-services/FILE-SERVICE-SPEC-TEMPLATE.md ← Shared File service spec
 ```
 
 ---

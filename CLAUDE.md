@@ -1,6 +1,6 @@
-# CLAUDE.md — MasterCraft DevKit v3.7 (MCV3)
+# CLAUDE.md — MasterCraft DevKit v3.8 (MCV3)
 
-Plugin này giúp Claude Code làm việc với **dự án phần mềm** theo quy trình 8 phases của MCV3. v3.7 hoàn chỉnh với: Pipeline 8 Phase + Lifecycle Management + Assess Skill + Embedded/IoT Module + Scale Flexibility & Industry Expansion (12 ngành).
+Plugin này giúp Claude Code làm việc với **dự án phần mềm** theo quy trình 8 phases của MCV3. v3.8 hoàn chỉnh với: Pipeline 8 Phase + Lifecycle Management + Assess Skill + Embedded/IoT Module + Scale Flexibility & Industry Expansion (12 ngành) + **Full Implementation Engine** (IMPLEMENT mode cho Code-Gen) + **Multi-System Orchestration** (build order, shared services, integration patterns).
 
 ---
 
@@ -534,6 +534,63 @@ Code-Gen giờ có guides cho:
 - **NoSQL & BaaS**: MongoDB, Firebase, Supabase, Redis, SQLite
 
 Reference: `skills/code-gen/references/`
+
+---
+
+## Batch D — Full Implementation Engine & Multi-System Orchestration
+
+Nâng cấp thêm vào MCV3 (v3.8):
+
+### Full Implementation Engine (Phase 7 IMPLEMENT mode)
+
+Code-Gen Skill giờ có 2 modes:
+
+```
+SCAFFOLD (cũ): Sinh stubs với TODO comments — nhanh, tự implement sau
+IMPLEMENT (mới): Sinh code thực với zero TODOs từ BR/TBL/TC specs
+```
+
+IMPLEMENT mode features:
+- **BR-to-Code Transpiler**: BR Validation→if/throw, BR Calculation→function, BR Workflow→state machine
+- **Real Queries**: Prisma/SQLAlchemy CRUD với filter, sort, pagination, transaction
+- **Zod Schemas**: Auto-generate từ TBL column specs
+- **Real Tests**: TC specs → integration tests với faker.js factories
+- **CI Pipeline**: GitHub Actions với test + typecheck + lint
+
+References mới:
+- `skills/code-gen/references/implementation-patterns.md`
+- `skills/code-gen/references/query-patterns.md`
+- `skills/code-gen/references/validation-codegen.md`
+- `skills/code-gen/references/test-codegen.md`
+
+### Multi-System Orchestration (Phase 5 + Phase 7)
+
+Orchestrator Agent giờ có **Multi-System Build Order Protocol**:
+
+```
+1. Đọc systems từ _config.json
+2. Phân tích INT-{SYS}-NNN dependencies
+3. Topological sort → build layers
+4. Output: ordered list + parallel opportunities
+```
+
+Layer model:
+```
+Layer 0: Auth + Infrastructure (foundation)
+Layer 1: Master data (Catalog, CRM, ...)
+Layer 2: Business services (Order, Inventory, ...)
+Layer 3: Integration (Notification, Reporting, ...)
+Layer 4: Frontend (Web, Mobile)
+```
+
+Shared Services Templates (Layer 0/3):
+- `templates/_shared-services/AUTH-SPEC-TEMPLATE.md`
+- `templates/_shared-services/NOTIFICATION-SPEC-TEMPLATE.md`
+- `templates/_shared-services/FILE-SERVICE-SPEC-TEMPLATE.md`
+
+Multi-system design reference:
+- `skills/tech-design/references/multi-system-design.md`
+- `skills/code-gen/references/integration-patterns.md` (HTTP client, circuit breaker, events)
 
 ---
 

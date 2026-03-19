@@ -134,7 +134,11 @@ class Create{Mod}Schema(BaseModel):
 
 ---
 
-## Quy tắc tôi LUÔN theo
+## Modes
+
+Tôi hoạt động ở 2 modes, được xác định từ user selection trong Phase 0 của SKILL:
+
+### SCAFFOLD mode (default)
 
 ```
 1. REQ-ID COMMENT: Mọi file bắt đầu bằng JSDoc/docstring với IDs từ MODSPEC
@@ -146,6 +150,33 @@ class Create{Mod}Schema(BaseModel):
 7. LAYERED: Controller → Service → Repository (không skip layer)
 8. SOFT-DELETE: Mọi findAll query filter deletedAt IS NULL
 9. AUDIT: createdBy, updatedBy điền vào mọi write operations
+```
+
+### IMPLEMENT mode
+
+Trong IMPLEMENT mode, tôi **thay thế** rule #2 và **thêm** các rules sau:
+
+```
+1. REQ-ID COMMENT: Mọi file bắt đầu bằng JSDoc/docstring với IDs từ MODSPEC
+2. IMPLEMENT BR LOGIC: Đọc BR specs từ MODSPEC → sinh code thực (xem implementation-patterns.md)
+   - BR Validation → if/throw BusinessRuleError với BR-ID
+   - BR Calculation → named function với @br-ids JSDoc
+   - BR Workflow/State → enum + transition map + validateTransition()
+   - BR Authorization → guard function + assertCan{Action}()
+   - BR Notification → eventBus.emit() calls
+   - BR Scheduling → Bull/BullMQ job hoặc cron schedule
+3. SPEC-FIRST: Mọi generated code trace về spec IDs
+4. ERROR-SAFE: Mọi API handler có try/catch + proper error responses
+5. TYPED: TypeScript strict, Python type hints đầy đủ
+6. TESTABLE: Constructor injection, không hardcode dependencies
+7. LAYERED: Controller → Service → Repository (không skip layer)
+8. SOFT-DELETE: Mọi findAll query filter deletedAt IS NULL
+9. AUDIT: createdBy, updatedBy điền vào mọi write operations
+10. REAL-QUERIES: Dùng query-patterns.md để sinh Prisma/SQLAlchemy queries thực (không dùng TODO)
+11. ZOD-SCHEMAS: Mọi TBL column có Zod rule tương ứng (xem validation-codegen.md)
+12. REAL-TESTS: Chuyển TC specs thành test code thực với real assertions (xem test-codegen.md)
+13. ZERO-TODO: Post-gate PHẢI có TODO count = 0 trong business logic
+14. CI-PIPELINE: Tạo .github/workflows/ci.yml với test + typecheck + lint
 ```
 
 ---
@@ -196,19 +227,36 @@ TC-{MOD}-001  → src/{sys}/{mod}/__tests__/{mod}.service.test.ts#test-stub-001
 
 ## Những gì tôi KHÔNG làm
 
+**SCAFFOLD mode:**
 ```
 ❌ KHÔNG implement business logic thật (để TODO)
-❌ KHÔNG generate fake test data
+❌ KHÔNG generate fake test data (chỉ stubs)
 ❌ KHÔNG bỏ qua REQ-ID comments
 ❌ KHÔNG skip error handling
 ❌ KHÔNG implement authentication logic (chỉ stub middleware)
 ❌ KHÔNG tạo file ngoài MODSPEC scope
 ```
 
+**IMPLEMENT mode (điều chỉnh):**
+```
+✅ PHẢI implement business logic từ BR specs
+✅ PHẢI generate real test data qua faker.js factories
+❌ KHÔNG bỏ qua REQ-ID comments
+❌ KHÔNG skip error handling
+✅ PHẢI implement authentication middleware (JWT verify + RBAC)
+❌ KHÔNG tạo file ngoài MODSPEC scope
+❌ KHÔNG để lại TODO trong business logic (zero TODOs = post-gate condition)
+```
+
 ---
 
 ## References
 
-- `skills/code-gen/references/code-patterns.md` — Architectural patterns
+- `skills/code-gen/references/code-patterns.md` — Architectural patterns (dùng cả 2 modes)
 - `skills/code-gen/references/tech-stack-guides.md` — Setup và conventions per tech stack
 - `templates/p5-tech-design/MODSPEC-TEMPLATE.md` — MODSPEC format để parse
+- `skills/code-gen/references/implementation-patterns.md` — BR→Code transpiler (IMPLEMENT mode)
+- `skills/code-gen/references/query-patterns.md` — Prisma/SQLAlchemy queries (IMPLEMENT mode)
+- `skills/code-gen/references/validation-codegen.md` — TBL→Zod schemas (IMPLEMENT mode)
+- `skills/code-gen/references/test-codegen.md` — TC→real tests (IMPLEMENT mode)
+- `skills/code-gen/references/integration-patterns.md` — HTTP client, events (Multi-system)
