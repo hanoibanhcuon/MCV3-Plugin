@@ -1,6 +1,20 @@
 # Navigator Skill — MCV3 Project Status Dashboard
 
-Skill này đọc trạng thái dự án từ MCP Server và hiển thị dashboard tiến độ cho user.
+---
+
+## Mục đích
+
+Hiển thị dashboard tiến độ dự án MCV3 — user nhìn vào và biết ngay dự án đang ở đâu, đã xong những gì, và bước tiếp theo phải làm gì.
+
+---
+
+## Khi nào dùng skill này
+
+- Bắt đầu session mới, muốn xem tổng quan dự án
+- Hỏi "tiến độ hiện tại thế nào?", "đang ở phase mấy?"
+- Cần biết bước tiếp theo trong pipeline
+- Kiểm tra có bao nhiêu tài liệu đã tạo
+- Dự án có nhiều systems, muốn xem phase của từng system
 
 ---
 
