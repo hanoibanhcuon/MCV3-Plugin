@@ -78,9 +78,10 @@ Với mỗi domain, áp dụng Guided Generation Protocol:
 
 ```
 Đọc skeleton phù hợp:
-  - Logistics: references/skeleton/process-skeleton.md
+  - Logistics / XNK: references/skeleton/process-skeleton.md
   - Retail: references/skeleton/sales-skeleton.md
-  - General: references/skeleton/pricing-skeleton.md (nếu có pricing)
+  - HR / HRM: references/skeleton/hr-skeleton.md
+  - General / Pricing: references/skeleton/pricing-skeleton.md (nếu có pricing)
 
 Load industry knowledge nếu có:
   - references/industry/{domain}.md

@@ -255,9 +255,9 @@ UNTIL user confirm "OK, tiếp tục"
 3. mc_traceability({
      action: "register",
      source: "URS-{MOD}.md",
-     ids: ["US-{MOD}-001", "FT-{MOD}-001", ...]
+     ids: ["US-{MOD}-001", "FT-{MOD}-001", "AC-{MOD}-001-01", "NFR-001", ...]
    })
-   → Đăng ký IDs vào traceability matrix
+   → Đăng ký tất cả IDs (US, FT, AC, NFR) vào traceability matrix
 
 4. mc_checkpoint({
      label: "sau-urs-{mod}",

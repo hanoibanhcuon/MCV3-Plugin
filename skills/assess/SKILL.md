@@ -509,20 +509,29 @@ Nếu đã có project MCV3:
   → Xem trạng thái hiện tại
 ```
 
-### 6b. Cập nhật _config.json với per-system phases
+### 6b. Ghi nhận per-system phases vào MASTER-INDEX
 
-Dựa trên ASSESSMENT-MATRIX từ Phase 2, cập nhật config với `currentPhase` per system:
+Dựa trên ASSESSMENT-MATRIX từ Phase 2, ghi rõ currentPhase per system vào tài liệu:
 
 ```
-Với mỗi system trong project:
-  mc_save({
-    filePath: "_config.json",
-    // Cập nhật systems[i].currentPhase theo assessment
-    // VD: ERP system đang ở phase5-design
-    //     WEB system đang ở phase3-bizdocs
-  })
+// _config.json được quản lý nội bộ bởi MCP server — không dùng mc_save trực tiếp.
+// Thay vào đó, ghi nhận phase per system vào ASSESSMENT-MATRIX.md đã lưu,
+// và cập nhật MASTER-INDEX.md với thông tin phase hiện tại:
 
-→ Kết quả: mc_status hiển thị đúng phase per system
+mc_save({
+  filePath: "MASTER-INDEX.md",
+  // Thêm/cập nhật section "Systems & Current Phases" với thông tin từ assessment
+  // VD:
+  // | ERP | phase5-design  | MODSPEC-WH.md, MODSPEC-SALES.md |
+  // | WEB | phase3-bizdocs | BIZ-POLICY-ECOM.md              |
+  documentType: "master-index"
+})
+
+// Thông báo cho user về phases per system:
+→ "📋 Kết quả assessment per system:
+   - ERP: phase5-design (có MODSPEC, chưa có TEST + code)
+   - WEB: phase3-bizdocs (có BIZ-POLICY, chưa có URS)
+   Dùng /mcv3:status để xem tiến độ mới nhất."
 ```
 
 ### 6c. Import existing docs vào đúng folders

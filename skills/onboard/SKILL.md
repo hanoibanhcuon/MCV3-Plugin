@@ -95,7 +95,7 @@ MODSPEC là 'all-in-one spec': AI đọc 1 file → code được cả module."
 
 19 tools chia thành 3 nhóm:
 
-Core (5): mc_init, mc_save, mc_load, mc_list, mc_status
+Core (5): mc_init_project, mc_save, mc_load, mc_list, mc_status
 Session (5): mc_checkpoint, mc_resume, mc_validate, mc_export, mc_search
 Advanced (9): mc_snapshot, mc_rollback, mc_impact_analysis,
               mc_traceability, mc_dependency, mc_compare,

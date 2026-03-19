@@ -23,7 +23,7 @@ mc_status(projectSlug: "<slug>")     # Chi tiết 1 project
 
 **Nếu chưa có project nào:**
 - Thông báo chưa khởi tạo dự án
-- Hướng dẫn: "Chạy `mc_init_project` hoặc `/mcv3:start` để bắt đầu"
+- Hướng dẫn: "Chạy `mc_init_project` để khởi tạo, hoặc `/mcv3:onboard` để xem hướng dẫn"
 
 **Nếu có nhiều projects:** hiển thị danh sách, hỏi user muốn xem chi tiết project nào.
 
@@ -115,13 +115,6 @@ User nhìn vào dashboard và biết ngay:
 ## Ví dụ output
 
 Xem `references/status-display.md` để biết format hiển thị chi tiết.
-
----
-
-## Tools sử dụng
-
-- `mc_status` — đọc trạng thái project
-- `mc_list` — liệt kê tài liệu (nếu cần)
 
 ---
 

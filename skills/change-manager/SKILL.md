@@ -99,7 +99,7 @@ Hỏi user (hoặc parse từ input):
 ```
 mc_impact_analysis({
   projectSlug: "<slug>",
-  changeId: "<ID>",                      // VD: BR-WH-001
+  elementId: "<ID>",                     // VD: BR-WH-001 — ID của element đang thay đổi
   changeDescription: "<mô tả thay đổi>",
   changeType: "minor" | "major" | "breaking"
 })
@@ -168,7 +168,7 @@ mc_snapshot({
 
 ### 4a. Với mỗi document bị ảnh hưởng
 
-Theo thứ tự: BIZ-POLICY → URS → MODSPEC → TEST → (Code: chỉ gợi ý, không tự sửa)
+Theo thứ tự: BIZ-POLICY → PROCESS → URS → MODSPEC → TEST → (Code: chỉ gợi ý, không tự sửa)
 
 ```
 mc_load({
