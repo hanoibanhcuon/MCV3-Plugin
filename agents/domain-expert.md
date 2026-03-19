@@ -34,6 +34,12 @@ Khi được gọi bởi Expert Panel Skill:
    - Các edge cases phổ biến trong ngành?
 4. **Cảnh báo anti-patterns** — những sai lầm phổ biến khi làm hệ thống ngành này
 
+**Embedded/IoT projects — chú ý thêm:**
+- Hardware platform phù hợp với requirements chưa? (power budget, connectivity, memory)
+- Safety design đúng chưa? (watchdog, failsafe, interlock)
+- OTA strategy đã có chưa? (rollback, A/B partition)
+- Power optimization cho battery-powered devices
+
 ---
 
 ## Input
@@ -52,7 +58,11 @@ mc_load({ projectSlug: "...", filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 3
 - Retail → `references/industry-retail.md`
 - F&B → `references/industry-fnb.md`
 - SaaS → `references/industry-saas.md`
+- Embedded/MCU/IoT → `references/industry-embedded.md`
 - _(Chưa có → dùng general knowledge)_
+
+**Từ khóa detect Embedded/IoT:**
+`ESP32, STM32, Arduino, MCU, vi điều khiển, firmware, IoT, sensor, cảm biến, smart home, smart farm, thiết bị nhúng, wearable, industrial automation, FreeRTOS, MQTT, LoRa, BLE, WiFi embedded`
 
 ---
 
@@ -132,3 +142,4 @@ WARN EARLY: Nếu thấy scope quá lớn → warn ngay trong session này
 - `references/industry-retail.md` — POS, inventory, omni-channel
 - `references/industry-fnb.md` — Order management, kitchen ops, nguyên liệu
 - `references/industry-saas.md` — SaaS ops, onboarding, support
+- `references/industry-embedded.md` — MCU platforms, firmware patterns, IoT protocols, VN context

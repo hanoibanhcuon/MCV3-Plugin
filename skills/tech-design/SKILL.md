@@ -37,6 +37,7 @@ References:
   - templates/p5-tech-design/MODSPEC-TEMPLATE.md
   - templates/p5-tech-design/ARCHITECTURE-TEMPLATE.md
   - templates/p5-tech-design/DATA-MODEL-TEMPLATE.md
+  - templates/p5-tech-design/FIRMWARE-MODSPEC-TEMPLATE.md (Embedded/Firmware)
 ```
 
 ---
@@ -46,6 +47,11 @@ References:
 - Sau khi `/mcv3:requirements` hoàn thành (ít nhất 1 URS file)
 - Cần thiết kế API, database schema từ requirements
 - Cần architecture decisions cho tech stack
+- **Embedded/Firmware project**: Dùng FIRMWARE-MODSPEC-TEMPLATE thay vì MODSPEC-TEMPLATE
+  - Thiết kế: Pin assignment, peripheral config, RTOS tasks, state machine, communication protocol
+  - Phần "API Design" → thay bằng "Communication Protocol" (MQTT topics, BLE GATT, UART packets)
+  - Phần "Database Schema" → thay bằng "Memory Layout" (Flash partitions, RAM budget)
+  - Phần "Component Design" → thay bằng "RTOS Task Design" (tasks, queues, semaphores)
 
 ---
 

@@ -36,7 +36,10 @@ MCP Tools:
 References:
   - skills/code-gen/references/code-patterns.md
   - skills/code-gen/references/tech-stack-guides.md
+  - skills/code-gen/references/embedded-tech-stack-guide.md (Embedded/Firmware)
+  - skills/code-gen/references/embedded-code-patterns.md (Embedded/Firmware)
   - templates/p5-tech-design/MODSPEC-TEMPLATE.md
+  - templates/p5-tech-design/FIRMWARE-MODSPEC-TEMPLATE.md (Embedded/Firmware)
 ```
 
 ---
@@ -68,6 +71,16 @@ References:
 ```
 ⚠️ Chưa có MODSPEC cho module này.
    Hãy chạy /mcv3:tech-design trước.
+```
+
+**Embedded Project Path:**
+```
+Nếu project là Firmware/Embedded (phát hiện từ MODSPEC hoặc PROJECT-OVERVIEW):
+  - Dùng FIRMWARE-MODSPEC-TEMPLATE thay vì MODSPEC-TEMPLATE
+  - Load embedded-tech-stack-guide.md + embedded-code-patterns.md
+  - Output structure khác: src/{sys}/{mod}/*.c, *.h thay vì .ts
+  - Không generate db/migrations hay docker-compose
+  - Generate: PlatformIO project structure, FreeRTOS tasks, HAL wrappers
 ```
 
 ---

@@ -364,7 +364,7 @@ export class InventoryService { ... }
 |-------|------|---------|
 | orchestrator | agents/orchestrator.md | Điều phối chung |
 | doc-writer | agents/doc-writer.md | Viết tài liệu |
-| domain-expert | agents/domain-expert.md | Phân tích nghiệp vụ (7 industries) |
+| domain-expert | agents/domain-expert.md | Phân tích nghiệp vụ (8 industries, gồm Embedded) |
 | tech-expert | agents/tech-expert.md | Tư vấn kỹ thuật |
 | ux-expert | agents/ux-expert.md | UX/UI design |
 | finance-expert | agents/finance-expert.md | Tài chính |
@@ -384,6 +384,7 @@ export class InventoryService { ... }
 | Healthcare | domain-expert/references/industry-healthcare.md | EMR, HIS, BHYT, KCB law |
 | Fintech | domain-expert/references/industry-fintech.md | Core banking, AML, PCI-DSS |
 | E-Commerce | domain-expert/references/industry-ecommerce.md | Cart, checkout, marketplace |
+| **Embedded/IoT** | **domain-expert/references/industry-embedded.md** | **MCU platforms, firmware patterns, IoT protocols, smart farm/home VN** |
 
 ---
 
@@ -464,6 +465,7 @@ Templates trong `templates/` — tổ chức theo phase (dùng làm base khi t�
 
 **`templates/p5-tech-design/` — Phase 5: Tech Design:**
 - `MODSPEC-TEMPLATE.md` ← All-in-one: BR + FT + Schema + API + UI
+- `FIRMWARE-MODSPEC-TEMPLATE.md` ← Embedded/Firmware: Pin map + RTOS tasks + State machine + Protocol
 - `ARCHITECTURE-TEMPLATE.md`
 - `DATA-MODEL-TEMPLATE.md`
 - `SERVICE-SPEC-TEMPLATE.md`
