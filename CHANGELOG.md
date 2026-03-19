@@ -6,6 +6,70 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [3.7.0] — Batch C — Scale Flexibility & Industry Expansion — 2026-03-19
+
+### Added — Scale Decision Matrix
+
+- **`skills/discovery/references/scale-decision-matrix.md`** — Hướng dẫn chọn pipeline theo quy mô:
+  - Micro (< 10 endpoints, 1 dev) → Phase 1 → 5 → 7
+  - Small (< 30 endpoints, 1-2 devs) → Phase 1 → 4 → 5 → 7 → 8a
+  - Medium / Large / Enterprise — full pipeline tùy mức độ
+- `CLAUDE.md` cập nhật "Scale-aware pipeline" rule (quy tắc 2)
+
+### Added — Industry Knowledge Bases (4 ngành mới)
+
+- **`agents/domain-expert/references/industry-realestate.md`** — BĐS VN, Luật Đất đai 2024, CRM môi giới
+- **`agents/domain-expert/references/industry-manufacturing.md`** — BOM, MRP, QC, ISO 9001, C/O, Lean
+- **`agents/domain-expert/references/industry-education.md`** — LMS, quản lý học sinh, Bộ GD&ĐT
+- **`agents/domain-expert/references/industry-hr.md`** — Payroll, BHXH, PIT, Bộ Luật LĐ 2019
+
+### Added — Interview Frameworks mới (4 frameworks)
+
+- `skills/discovery/references/interview-frameworks/ecommerce.md`
+- `skills/discovery/references/interview-frameworks/fintech.md`
+- `skills/discovery/references/interview-frameworks/healthcare.md`
+- `skills/discovery/references/interview-frameworks/realestate.md`
+
+### Added — Biz-Docs Industry References mới (4 ngành)
+
+- `skills/biz-docs/references/industry/ecommerce.md` — KPIs, BRs, compliance E-Commerce
+- `skills/biz-docs/references/industry/fintech.md` — KPIs, BRs, PCI-DSS, NHNN
+- `skills/biz-docs/references/industry/healthcare.md` — KPIs, BRs, Luật KCB 2023
+- `skills/biz-docs/references/industry/saas.md` — KPIs, BRs, SLA, subscription
+
+### Added — Tech Stack Guides mới (3 guides)
+
+- **`skills/code-gen/references/tech-stack-nextjs.md`** — Next.js 14+ App Router, Server Actions, Prisma, NextAuth
+- **`skills/code-gen/references/tech-stack-mobile.md`** — React Native / Flutter, Expo, EAS, Zustand, TanStack Query
+- **`skills/code-gen/references/database-nosql-guide.md`** — MongoDB, Firebase, Supabase, Redis, SQLite
+
+---
+
+## [3.6.0] — Batch B — Embedded/MCU Module — 2026-03-19
+
+### Added — Embedded/IoT Industry Knowledge Base
+
+- **`agents/domain-expert/references/industry-embedded.md`** — MCU platforms, firmware patterns, IoT protocols, smart farm/home VN
+  - Platforms: ESP32, STM32, Arduino, Raspberry Pi
+  - Protocols: MQTT, CoAP, Modbus RTU/TCP, BACnet, LoRaWAN
+  - RTOS patterns: FreeRTOS tasks, semaphores, state machines
+  - Smart Farm & Smart Home use cases cho thị trường VN
+
+### Added — Firmware Templates & Guides
+
+- **`templates/p5-tech-design/FIRMWARE-MODSPEC-TEMPLATE.md`** — Template cho Embedded:
+  - Pin map, RTOS task table, State machine diagram, Protocol spec
+- **`skills/code-gen/references/embedded-code-patterns.md`** — Code patterns MCU/firmware
+- **`skills/code-gen/references/embedded-tech-stack-guide.md`** — Tech stack guide Embedded (734 dòng, 44 code blocks)
+- **`skills/qa-docs/references/embedded-test-guide.md`** — Testing strategies cho firmware/hardware
+- **`skills/deploy-ops/references/firmware-deploy-guide.md`** — OTA update, flash procedures, rollback
+
+### Added — Interview Framework
+
+- **`skills/discovery/references/interview-frameworks/embedded.md`** — Questions cho Embedded/IoT projects
+
+---
+
 ## [3.5.0] — Phase A — Ongoing Project Support — 2026-03-19
 
 ### Added — Skill mới: `/mcv3:assess`

@@ -1,7 +1,7 @@
 {
-  "_comment": "MCV3 Hooks Configuration — Sprint 4",
+  "_comment": "MCV3 Hooks Configuration — v3.7 (Batch C)",
   "_doc": "Hooks tự động hóa các tác vụ MCV3. Đọc scripts/ để biết cách cấu hình.",
-  "_version": "3.4.0",
+  "_version": "3.7.0",
 
   "SessionStart": [
     {
@@ -318,10 +318,10 @@
     "snapshotOnMilestone": true,
     "validateOnSave": false,
     "traceabilityAutoUpdate": false,
-    "_sprint": "Sprint 5",
-    "_version": "3.5.0",
+    "_sprint": "Batch C (v3.7)",
+    "_version": "3.7.0",
     "_lifecycle_skills": ["change-manager", "evolve", "migrate", "onboard"],
     "_assess_skill": ["assess"],
-    "_note": "Sprint 5: Thêm hook PreAssess cho Assess Skill (ongoing project support)"
+    "_note": "v3.7: Batch C — Scale Flexibility & Industry Expansion (12 industries)"
   }
 }
