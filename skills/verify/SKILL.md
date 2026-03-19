@@ -189,6 +189,41 @@ grep -r "REQ-ID\|@req-ids\|# REQ:" src/{sys}/{mod}/
 - [ ] Code có đủ layers: controller/router, service, repository?
 - [ ] TypeScript compile không có errors?
 
+### 4b. IMPLEMENT Mode Completeness (chỉ khi dùng IMPLEMENT mode)
+
+Nếu Phase 7 chạy ở IMPLEMENT mode, kiểm tra thêm:
+
+**Zero TODO check:**
+```bash
+# IMPLEMENT mode không được có TODO/FIXME còn sót
+grep -rn "TODO\|FIXME" src/{sys}/{mod}/
+# Expected: 0 kết quả
+```
+
+**BR Implementation check:**
+- [ ] Mọi BR-ID trong MODSPEC có code implementation tương ứng (`// BR-{ID}` comment)?
+- [ ] BR Validation type → có `if/throw BusinessRuleError` pattern?
+- [ ] BR Calculation type → có function riêng trả về kết quả?
+- [ ] BR Workflow type → có state machine hoặc switch/if chain?
+
+**Real Query check:**
+- [ ] Service methods có Prisma/SQLAlchemy queries thực (không phải stub)?
+- [ ] Multi-step operations được wrap trong transaction?
+- [ ] List APIs có filter, sort, pagination?
+
+**Zod Schema check:**
+- [ ] Mỗi TBL column có Zod rule tương ứng trong DTO?
+- [ ] Constraints từ TBL spec (min, max, regex) được reflect trong Zod?
+
+**Real Test check:**
+- [ ] Test files có assertions cụ thể (không phải `expect(true).toBe(true)`)?
+- [ ] faker.js/factory được dùng để tạo test data?
+- [ ] Integration tests có DB setup/teardown?
+
+**CI Pipeline check:**
+- [ ] `.github/workflows/ci.yml` tồn tại?
+- [ ] CI workflow có các steps: install → typecheck → lint → test?
+
 ---
 
 ## Phase 5 — End-to-End Traceability Matrix

@@ -6,6 +6,54 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [3.8.0] — Batch D — Full Implementation Engine & Multi-System Orchestration — 2026-03-19
+
+### Added — Full Implementation Engine (Phase 7 IMPLEMENT mode)
+
+- **`skills/code-gen/SKILL.md`** — Thêm 2 modes: SCAFFOLD (cũ) và IMPLEMENT (mới, zero TODOs)
+  - IMPLEMENT mode: BR-to-Code transpiler, real queries, Zod schemas, real tests, CI pipeline
+  - Mode selector prompt khi bắt đầu Phase 7
+- **`skills/code-gen/references/implementation-patterns.md`** — BR-to-Code transpiler rules (6 loại BR):
+  - Validation → if/throw, Calculation → function, Workflow → state machine
+  - BusinessRuleError class, error codes, GitHub Actions CI YAML
+- **`skills/code-gen/references/query-patterns.md`** — Prisma/SQLAlchemy CRUD thực:
+  - Create/Read/Update/Delete với nested relations, pagination, sorting
+  - Aggregation queries, transaction patterns
+- **`skills/code-gen/references/validation-codegen.md`** — TBL column → Zod schemas:
+  - Column type mapping, BR refinements, DTO validation middleware
+- **`skills/code-gen/references/test-codegen.md`** — TC specs → real test code:
+  - faker.js factories, integration tests với DB, error case testing, jest config
+- **`agents/code-gen.md`** — Mode-aware rules (SCAFFOLD vs IMPLEMENT), post-gate zero-TODO enforcement
+
+### Added — Multi-System Orchestration (Phase 5 + Phase 7)
+
+- **`skills/tech-design/references/multi-system-design.md`** — Kiến trúc đa system:
+  - System dependency analysis (data, API, event), build order algorithm (5 layers)
+  - Saga pattern cho distributed transactions
+- **`skills/code-gen/references/integration-patterns.md`** — HTTP client patterns:
+  - Axios wrapper với retry, circuit breaker, event pub/sub (EventEmitter + Redis)
+- **`agents/orchestrator.md`** — Multi-System Build Order Protocol:
+  - 5-step algorithm, topological sort, parallel build opportunities per layer
+- **`templates/_shared-services/AUTH-SPEC-TEMPLATE.md`** — JWT RS256, RBAC, DB schema
+- **`templates/_shared-services/NOTIFICATION-SPEC-TEMPLATE.md`** — Channels, templates, event listeners
+- **`templates/_shared-services/FILE-SERVICE-SPEC-TEMPLATE.md`** — Upload/download, storage abstraction
+
+### Added — Audit Fixes (post-Batch D)
+
+- **`skills/verify/SKILL.md`** — Thêm Phase 4b: IMPLEMENT Mode Completeness checks
+  - Zero TODO check, BR implementation check, real query check, Zod schema check, CI pipeline check
+- **`mcp-servers/project-memory/src/types.ts`** — Thêm `ModuleProgress` interface
+  - Track per-module code-gen status (mode, status, filesGenerated, todoCount)
+- **`mcp-servers/project-memory/src/tools/mc-checkpoint.ts`** — Thêm `implementationProgress` field
+  - Checkpoint có thể lưu Code-Gen Progress table per module
+
+### Changed
+
+- **`settings.json`** — Version bump: `3.7.0` → `3.8.0`, Sprint: `7` → `8`
+- **`CLAUDE.md`** — Cập nhật description với Full Implementation Engine + Multi-System Orchestration
+
+---
+
 ## [3.7.0] — Batch C — Scale Flexibility & Industry Expansion — 2026-03-19
 
 ### Added — Scale Decision Matrix

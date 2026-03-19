@@ -19,7 +19,7 @@
     "MCV3_DATA_DIR": ".mc-data",
     "MCV3_TEMPLATES_DIR": "./templates",
     "MCV3_LOG_LEVEL": "info",
-    "MCV3_SPRINT": "7",
-    "MCV3_VERSION": "3.7.0"
+    "MCV3_SPRINT": "8",
+    "MCV3_VERSION": "3.8.0"
   }
 }

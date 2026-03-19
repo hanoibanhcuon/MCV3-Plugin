@@ -36,6 +36,8 @@ export interface McCheckpointParams {
   nextActions?: string[];
   /** Có lưu versioned snapshot không (default: true) */
   saveSnapshot?: boolean;
+  /** Tiến độ code-gen theo module (Phase 7 IMPLEMENT/SCAFFOLD mode) */
+  implementationProgress?: import('../types.js').ModuleProgress[];
 }
 
 /** Dữ liệu checkpoint */
@@ -48,6 +50,7 @@ interface CheckpointData {
   sessionSummary: string;
   nextActions: string[];
   documentsSaved: string[];
+  implementationProgress?: import('../types.js').ModuleProgress[];
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -84,6 +87,14 @@ function generateCheckpointContent(data: CheckpointData): string {
     ? data.documentsSaved.map(d => `- \`${d}\``).join('\n')
     : '_(chưa có tài liệu nào)_';
 
+  const implSection = data.implementationProgress && data.implementationProgress.length > 0
+    ? `\n---\n\n## Code-Gen Progress (Phase 7)\n\n| System | Module | Mode | Status | TODOs | Files |\n|--------|--------|------|--------|-------|-------|\n${
+        data.implementationProgress.map(m =>
+          `| ${m.systemCode} | ${m.moduleCode} | ${m.mode} | ${m.status === 'done' ? '✅ done' : m.status === 'in-progress' ? '🔄 in-progress' : '⏳ pending'} | ${m.todoCount} | ${m.filesGenerated.length} |`
+        ).join('\n')
+      }\n`
+    : '';
+
   return `# CHECKPOINT — ${data.projectName}
 <!-- MCV3 working state — auto-managed, không cần sửa thủ công -->
 
@@ -109,7 +120,7 @@ ${nextActionsList}
 ## Tài liệu đã có
 
 ${docsList}
-
+${implSection}
 ---
 
 ## Working Context (AI Resume Point)
@@ -194,6 +205,7 @@ export async function mcCheckpoint(
       sessionSummary: params.sessionSummary || '',
       nextActions: params.nextActions || [],
       documentsSaved: docs,
+      implementationProgress: params.implementationProgress,
     };
 
     const content = generateCheckpointContent(checkpointData);

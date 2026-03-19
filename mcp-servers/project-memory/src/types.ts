@@ -225,3 +225,19 @@ export interface PhaseProgressItem {
   status: 'not-started' | 'in-progress' | 'done';
   documentCount: number;
 }
+
+/** Trạng thái implementation của một module (Phase 7 IMPLEMENT mode) */
+export interface ModuleProgress {
+  /** Module code (VD: "INV", "ORD") */
+  moduleCode: string;
+  /** System code (VD: "ERP", "WEB") */
+  systemCode: string;
+  /** Mode đã dùng để gen code */
+  mode: 'SCAFFOLD' | 'IMPLEMENT';
+  /** Trạng thái hiện tại */
+  status: 'pending' | 'in-progress' | 'done';
+  /** Danh sách files đã tạo */
+  filesGenerated: string[];
+  /** Số TODO còn lại (IMPLEMENT mode phải = 0) */
+  todoCount: number;
+}

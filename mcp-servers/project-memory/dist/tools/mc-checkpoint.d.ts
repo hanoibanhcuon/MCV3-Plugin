@@ -25,6 +25,8 @@ export interface McCheckpointParams {
     nextActions?: string[];
     /** Có lưu versioned snapshot không (default: true) */
     saveSnapshot?: boolean;
+    /** Tiến độ code-gen theo module (Phase 7 IMPLEMENT/SCAFFOLD mode) */
+    implementationProgress?: import('../types.js').ModuleProgress[];
 }
 /**
  * Thực thi tool mc_checkpoint
