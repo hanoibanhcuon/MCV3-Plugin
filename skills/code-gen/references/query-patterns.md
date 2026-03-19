@@ -1,6 +1,6 @@
 # Query Patterns — Code-Gen Reference
 
-Hướng dẫn sinh **database queries thực** từ TBL specs (dùng trong IMPLEMENT mode).
+Hướng dẫn sinh **database queries thực** từ TBL specs khi code-gen.
 
 ---
 

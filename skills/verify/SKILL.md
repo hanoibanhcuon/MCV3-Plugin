@@ -189,15 +189,21 @@ grep -r "REQ-ID\|@req-ids\|# REQ:" src/{sys}/{mod}/
 - [ ] Code có đủ layers: controller/router, service, repository?
 - [ ] TypeScript compile không có errors?
 
-### 4b. IMPLEMENT Mode Completeness (chỉ khi dùng IMPLEMENT mode)
+### 4b. Code Completeness Checks
 
-Nếu Phase 7 chạy ở IMPLEMENT mode, kiểm tra thêm:
+Kiểm tra chất lượng code output từ `/mcv3:code-gen`:
 
-**Zero TODO check:**
+**Marker check:**
 ```bash
-# IMPLEMENT mode không được có TODO/FIXME còn sót
+# Kiểm tra các markers để biết phần nào cần follow-up
+grep -rn "// REVIEW:" src/{sys}/{mod}/
+# → Liệt kê những chỗ specs mơ hồ, cần xác nhận với BA
+
+grep -rn "// PENDING:" src/{sys}/{mod}/
+# → Liệt kê những chỗ thiếu specs, cần bổ sung Phase 4/5
+
 grep -rn "TODO\|FIXME" src/{sys}/{mod}/
-# Expected: 0 kết quả
+# → Expected: 0 kết quả (TODOs không được dùng trong code-gen mới)
 ```
 
 **BR Implementation check:**
