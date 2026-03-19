@@ -34,6 +34,7 @@ References:
   - skills/qa-docs/references/test-strategy-patterns.md
   - skills/qa-docs/references/test-case-writing-guide.md
   - skills/qa-docs/references/quality-metrics.md
+  - skills/qa-docs/references/embedded-test-guide.md (Embedded/Firmware)
   - templates/p6-qa-docs/TEST-TEMPLATE.md
   - templates/p6-qa-docs/USER-GUIDE-TEMPLATE.md
   - templates/p6-qa-docs/ADMIN-GUIDE-TEMPLATE.md
@@ -46,6 +47,11 @@ References:
 - Sau khi `/mcv3:tech-design` hoàn thành (có ít nhất 1 MODSPEC)
 - Cần tạo test cases chính thức cho QA team
 - Cần tài liệu hướng dẫn cho end users và admins
+- **Embedded/Firmware project**: Load `embedded-test-guide.md`, điều chỉnh test strategy:
+  - Tier 1 (Host): Unity tests với mock HAL (PlatformIO native)
+  - Tier 2 (On-target): Hardware integration tests trên device thật
+  - Protocol tests: Serial/MQTT message validation scripts
+  - UAT: Hardware-in-the-loop acceptance testing
 
 ---
 

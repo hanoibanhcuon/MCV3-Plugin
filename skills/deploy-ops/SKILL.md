@@ -32,6 +32,7 @@ References:
   - skills/deploy-ops/references/deploy-patterns.md
   - skills/deploy-ops/references/monitoring-guide.md
   - skills/deploy-ops/references/sla-templates.md
+  - skills/deploy-ops/references/firmware-deploy-guide.md (Embedded/Firmware)
   - templates/p8b-deploy-ops/DEPLOY-OPS-TEMPLATE.md
 ```
 
@@ -42,6 +43,11 @@ References:
 - Sau khi `/mcv3:verify` hoàn thành và báo READY
 - Cần tạo tài liệu triển khai cho go-live
 - Cần SLA definitions và monitoring setup guide
+- **Embedded/Firmware project**: Load `firmware-deploy-guide.md`, thay thế nội dung:
+  - "Deployment Commands" → Flash programming (esptool.py, STM32CubeProgrammer)
+  - "OTA Strategy" → A/B partition, rollback, boot count health check
+  - "Go-Live Checklist" → Factory test, batch flash, provisioning, field deployment
+  - "Monitoring" → Device online rate, OTA success rate, error rate dashboard
 
 ---
 
