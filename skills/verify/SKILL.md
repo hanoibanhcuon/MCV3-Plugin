@@ -36,7 +36,7 @@ Enables: /mcv3:deploy-ops (Phase 8 Deploy)
 Agents: verifier
 MCP Tools:
   - mc_status, mc_load, mc_list, mc_save
-  - mc_validate, mc_compare, mc_traceability, mc_impact-analysis
+  - mc_validate, mc_compare, mc_traceability, mc_impact_analysis
 References:
   - skills/verify/references/traceability-guide.md
   - templates/p8a-verify/VERIFY-P1-TEMPLATE.md
@@ -367,20 +367,30 @@ grep -rn "VERIFICATION REPORT\|COMPILE-ERROR\|TEST-FAIL\|SECURITY-WARNING" src/{
    })
 
 2. mc_save({
-     filePath: "_VERIFY-CROSS/traceability-matrix.md",
+     filePath: "_VERIFY-CROSS/VERIFY-{SYS}-P2-{MOD}.md",
      documentType: "verify"
    })
 
 3. mc_save({
+     filePath: "_VERIFY-CROSS/VERIFY-{SYS}-P3-{MOD}.md",
+     documentType: "verify"
+   })
+
+4. mc_save({
+     filePath: "_VERIFY-CROSS/traceability-matrix.md",
+     documentType: "verify"
+   })
+
+5. mc_save({
      filePath: "_VERIFY-CROSS/verification-report.md",
      documentType: "verify"
    })
 
-4. mc_traceability({
+6. mc_traceability({
      action: "validate"  // Kiểm tra toàn bộ traceability links
    })
 
-5. mc_checkpoint({
+7. mc_checkpoint({
      label: "verify-complete",
      sessionSummary: "Verification: {N} FTs traced, {M} gaps, {G} critical",
      nextActions: [

@@ -91,6 +91,13 @@ mc_init_project({ projectName, domain })
 mc_status() → xác nhận project
 mc_list() → xem documents hiện có
 → "Import vào project: {project_name}"
+
+// Tạo safety snapshot trước khi migrate (bảo vệ documents hiện có)
+mc_snapshot({
+  projectSlug: "<slug>",
+  label: "before-migration-{source}",
+  description: "Snapshot trước khi import từ {source} — có thể rollback nếu cần"
+})
 ```
 
 ---

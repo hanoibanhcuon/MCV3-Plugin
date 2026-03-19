@@ -379,16 +379,28 @@ Với mỗi quyết định kỹ thuật quan trọng:
      documentType: "modspec"
    })
 
-2. mc_validate({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md" })
+// Lưu ARCHITECTURE.md nếu đã tạo trong phase này (lần đầu hoặc cập nhật)
+2. mc_save({
+     filePath: "{SYSTEM}/P2-DESIGN/ARCHITECTURE.md",
+     documentType: "custom"
+   })
+
+// Lưu DATA-MODEL.md nếu đã tạo/cập nhật ERD
+3. mc_save({
+     filePath: "{SYSTEM}/P2-DESIGN/DATA-MODEL.md",
+     documentType: "custom"
+   })
+
+4. mc_validate({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md" })
    → Xử lý issues
 
-3. mc_dependency({
+5. mc_dependency({
      action: "register",
      source: "MODSPEC-{MOD}.md",
      dependsOn: ["URS-{MOD}.md", "DATA-DICTIONARY.md"]
    })
 
-4. mc_traceability({
+6. mc_traceability({
      action: "link",
      items: [
        { from: "FT-WH-001", to: "API-ERP-001" },
@@ -396,7 +408,7 @@ Với mỗi quyết định kỹ thuật quan trọng:
      ]
    })
 
-5. mc_checkpoint({
+7. mc_checkpoint({
      label: "sau-modspec-{mod}",
      sessionSummary: "Thiết kế MODSPEC-{MOD}: {N} APIs, {M} tables",
      nextActions: ["Tiếp tục module khác hoặc /mcv3:qa-docs"]
@@ -417,7 +429,8 @@ Với mỗi quyết định kỹ thuật quan trọng:
 
 → "✅ Phase 5 Technical Design hoàn thành!
    {N} MODSPEC files, {X} APIs, {Y} tables thiết kế.
-   Tiếp theo: /mcv3:qa-docs hoặc /mcv3:code-gen."
+   Tiếp theo: /mcv3:qa-docs (đầy đủ — khuyến nghị)
+   Hoặc: /mcv3:code-gen trực tiếp (chỉ cho Micro/Small project, skip Phase 6)."
 ```
 
 ---

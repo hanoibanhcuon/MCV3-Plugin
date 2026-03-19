@@ -514,6 +514,7 @@ CI/CD:
 ---
 
 ## Phase 9 — Verification & Auto-Fix Loop
+> Lưu ý: "Phase 9" là tên khái niệm trong MCV3 pipeline (Batch E), chạy **giữa** Phase 5 (Review) và Phase 6 (Save) trong luồng code-gen.
 
 SAU KHI gen code cho mỗi module, **BẮT BUỘC** chạy verification loop.
 Không được bỏ qua hoặc rút ngắn dù specs đơn giản.

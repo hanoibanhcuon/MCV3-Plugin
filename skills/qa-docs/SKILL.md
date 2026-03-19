@@ -24,7 +24,8 @@ Produces:
   - {SYSTEM}/P3-QA-DOCS/TEST-{MOD}.md (Test Cases + UAT)
   - _PROJECT/USER-GUIDE.md (cập nhật mỗi module)
   - _PROJECT/ADMIN-GUIDE.md (cập nhật mỗi module)
-  - _VERIFY-CROSS/traceability-matrix.md (cập nhật TC coverage)
+Updates: (qua mc_traceability — không tạo file mới)
+  - Traceability links: AC → TC, FT → TC (file matrix tạo bởi /mcv3:verify)
 Enables: /mcv3:code-gen (Phase 7), /mcv3:verify (Phase 8)
 Agents: doc-writer
 MCP Tools:
