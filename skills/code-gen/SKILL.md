@@ -36,6 +36,9 @@ MCP Tools:
 References:
   - skills/code-gen/references/code-patterns.md
   - skills/code-gen/references/tech-stack-guides.md
+  - skills/code-gen/references/tech-stack-nextjs.md     ← Next.js 14+ App Router
+  - skills/code-gen/references/tech-stack-mobile.md     ← React Native + Flutter
+  - skills/code-gen/references/database-nosql-guide.md  ← MongoDB, Firebase, Supabase, Redis
   - templates/p5-tech-design/MODSPEC-TEMPLATE.md
 ```
 
@@ -84,13 +87,19 @@ mc_load({ filePath: "_PROJECT/PROJECT-ARCHITECTURE.md", layer: 2 })
 ### 1b. Parse từ MODSPEC
 
 Từ MODSPEC, extract:
-- Tech stack (Node.js / Python / Java / Go)
-- Database (PostgreSQL / MySQL / MongoDB)
-- Framework (Express / FastAPI / Spring / Gin)
-- Frontend framework (React / Vue / Angular — nếu có)
+- Tech stack (Node.js / Python / Java / Go / Next.js / React Native / Flutter)
+- Database (PostgreSQL / MySQL / MongoDB / Firebase / Supabase / SQLite)
+- Framework (Express / FastAPI / Spring / Gin / Next.js App Router)
+- Frontend framework (React / Vue / Angular / Next.js — nếu có)
 - API-{SYS}-NNN specs (endpoints)
 - TBL-{SYS}-NNN specs (tables)
 - COMP-{SYS}-NNN specs (components/services)
+
+**Load reference phù hợp với tech stack:**
+- Next.js → `references/tech-stack-nextjs.md` (App Router, Server Actions, Prisma)
+- React Native / Expo → `references/tech-stack-mobile.md` (Zustand, TanStack Query, EAS)
+- Flutter → `references/tech-stack-mobile.md` (Riverpod, go_router, Dio)
+- MongoDB / Firebase / Supabase / Redis → `references/database-nosql-guide.md`
 
 ### 1c. Confirm với user
 
