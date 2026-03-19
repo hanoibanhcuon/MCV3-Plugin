@@ -1,6 +1,6 @@
-# CLAUDE.md — MasterCraft DevKit v3.8 (MCV3)
+# CLAUDE.md — MasterCraft DevKit v3.10 (MCV3)
 
-Plugin này giúp Claude Code làm việc với **dự án phần mềm** theo quy trình 8 phases của MCV3. v3.8 hoàn chỉnh với: Pipeline 8 Phase + Lifecycle Management + Assess Skill + Embedded/IoT Module + Scale Flexibility & Industry Expansion (12 ngành) + **Smart Code-Gen** (sinh code thông minh theo mức độ chi tiết specs) + **Multi-System Orchestration** (build order, shared services, integration patterns).
+Plugin này giúp Claude Code làm việc với **dự án phần mềm** theo quy trình 8 phases của MCV3. v3.10 hoàn chỉnh với: Pipeline 8 Phase + Lifecycle Management + Assess Skill + Embedded/IoT Module + Scale Flexibility & Industry Expansion (12 ngành) + **Smart Code-Gen** (sinh code thông minh theo mức độ chi tiết specs) + **Multi-System Orchestration** (build order, shared services, integration patterns) + **Code Quality Assurance** (verification loop tự động: compile → lint → test → security scan → coverage).
 
 ---
 
@@ -595,6 +595,44 @@ Shared Services Templates (Layer 0/3):
 Multi-system design reference:
 - `skills/tech-design/references/multi-system-design.md`
 - `skills/code-gen/references/integration-patterns.md` (HTTP client, circuit breaker, events)
+
+---
+
+## Batch E — Code Quality Assurance (v3.9)
+
+Nâng cấp `/mcv3:code-gen` với **Verification & Auto-Fix Loop** tự động sau mỗi module:
+
+### Phase 9 — Verification Loop
+
+`/mcv3:code-gen` tự động chạy sau khi gen code cho mỗi module:
+
+```
+Bước 1: Compile Check  → tsc --noEmit / py_compile / go build
+Bước 2: Lint Check     → ESLint / Ruff — tự fix auto-fixable
+Bước 3: Test Run       → Jest / pytest — phân tích failure + tự fix
+Bước 4: Security Scan  → Checklist tự động (không cần external tool)
+Bước 5: Integration    → Cross-layer consistency (controller↔service↔repo)
+Bước 6: Migration Test → Up + Down migration có rollback scripts
+Bước 7: Coverage       → Lines ≥ 80%, Branches ≥ 70%
+Bước 8: Final Report   → Tổng hợp kết quả cho user
+```
+
+**Self-Healing:** Tối đa 3 retry cycles per bước. Nếu vẫn fail → đánh dấu rõ + báo user.
+
+**Security Auto-Fix:**
+- CRITICAL findings (SQL injection, missing auth, hardcoded secrets) → tự fix ngay
+- HIGH findings → đánh dấu `// SECURITY-WARNING:` + ghi vào report
+
+**Rollback Safety:**
+- `mc_checkpoint` trước khi gen code (pre-codegen checkpoint)
+- Rollback sạch nếu fail không tự fix được
+- Không xóa code user đã viết
+
+### References mới (Phase 9)
+
+- `skills/code-gen/references/verification-loop.md` — Chi tiết 8 bước verification + self-healing
+- `skills/code-gen/references/security-checklist.md` — Security checklist tự động
+- `skills/code-gen/references/rollback-mechanism.md` — Rollback & safety checkpoint
 
 ---
 
