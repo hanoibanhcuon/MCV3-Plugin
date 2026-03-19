@@ -1,8 +1,8 @@
-# MasterCraft DevKit v3.4 (MCV3)
+# MasterCraft DevKit v3.10 (MCV3)
 
 > **Claude Code Plugin** — Biến ý tưởng phần mềm thành bộ tài liệu hoàn chỉnh
 
-[![Version](https://img.shields.io/badge/version-3.4.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.10.0-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![MCP Tools](https://img.shields.io/badge/MCP%20Tools-19-orange)](mcv3-devkit/mcp-servers/project-memory/)
 
@@ -16,10 +16,15 @@ MCV3 là một **Claude Code Plugin** giúp bạn hệ thống hóa toàn bộ q
 
 - **Formal ID System**: Truy vết từ vấn đề → yêu cầu → thiết kế → code → test
 - **MODSPEC All-in-One**: AI đọc 1 file → code được 1 module hoàn chỉnh
+- **Smart Code-Gen**: Sinh code thông minh — đầy đủ specs → code hoàn chỉnh; mơ hồ → REVIEW markers
+- **Code Quality Assurance**: Verification & Auto-Fix Loop (compile → lint → test → security → coverage)
+- **Multi-System Orchestration**: Build order tự động theo layer model, shared services, integration patterns
 - **Smart Context Layering**: Quản lý context window hiệu quả cho dự án lớn
+- **Scale Decision Matrix**: Pipeline linh hoạt — Micro (3 phases) đến Enterprise (full 8 phases)
+- **12 Industries**: F&B, Logistics, Retail, SaaS, Healthcare, Fintech, E-Commerce, Real Estate, Manufacturing, Education, HR/HRM, Embedded/IoT
 - **19 MCP Tools**: Từ init đến snapshot, traceability, change management
 - **Pipeline 8 Phase**: Từ Discovery → Deploy, không bỏ sót bước nào
-- **Lifecycle Management**: Change Manager, Evolution, Migration cho dự án đang chạy
+- **Lifecycle Management**: Change Manager, Evolution, Migration, Assess cho dự án đang chạy
 
 ---
 
@@ -78,7 +83,7 @@ QA → CodeGen → Verify → Deploy
 | 4. Requirements | `/mcv3:requirements` | URS-{MOD}.md (US, FT, AC, NFR) |
 | 5. Tech Design | `/mcv3:tech-design` | MODSPEC-{MOD}.md (API, DB, ADR) |
 | 6. QA & Docs | `/mcv3:qa-docs` | TEST-{MOD}.md, USER/ADMIN GUIDE |
-| 7. Code Gen | `/mcv3:code-gen` | src/ scaffolding + migrations |
+| 7. Code Gen | `/mcv3:code-gen` | Smart code-gen + Verification Loop (compile/lint/test/security) |
 | 8a. Verify | `/mcv3:verify` | Traceability matrix + report |
 | 8b. Deploy-Ops | `/mcv3:deploy-ops` | DEPLOY-OPS.md + checklist |
 
@@ -90,11 +95,12 @@ Dùng sau khi project đã ở Phase 5+:
 
 | Lệnh | Mục đích |
 |------|---------|
+| `/mcv3:status` | Dashboard tiến độ dự án (tất cả phases/systems) |
 | `/mcv3:change-manager` | Quản lý requirements changes với impact analysis |
 | `/mcv3:evolve` | Thêm features/modules/systems mới vào dự án |
 | `/mcv3:migrate` | Import tài liệu cũ vào MCV3 format (incl. Scope 6: Ongoing) |
 | `/mcv3:onboard` | Hướng dẫn user mới sử dụng plugin |
-| `/mcv3:status` | Dashboard tiến độ dự án |
+| `/mcv3:assess` | Đánh giá dự án in-progress, tìm gaps, tạo remediation plan |
 
 ---
 
@@ -238,12 +244,12 @@ mc_load({ filePath: "...", layer: 3 })  →  Full   All content (default)
 
 ```
 mcv3-devkit/
-├── .claude-plugin/plugin.json     # Plugin manifest (v3.4.0)
+├── .claude-plugin/plugin.json     # Plugin manifest (v3.10.0)
 ├── .mcp.json                      # MCP server config
 ├── settings.json                  # Permissions & env vars
 ├── CLAUDE.md                      # Hướng dẫn cho Claude
 ├── CHANGELOG.md                   # Lịch sử thay đổi
-├── skills/                        # 14 skills
+├── skills/                        # 15 skills
 │   ├── discovery/                 # Phase 1
 │   ├── expert-panel/              # Phase 2
 │   ├── biz-docs/                  # Phase 3
@@ -257,11 +263,12 @@ mcv3-devkit/
 │   ├── change-manager/            # Lifecycle: Change management
 │   ├── onboard/                   # Lifecycle: User onboarding
 │   ├── evolve/                    # Lifecycle: Feature evolution
-│   └── migrate/                   # Lifecycle: Document migration
-├── agents/                        # 11 agents
+│   ├── migrate/                   # Lifecycle: Document migration
+│   └── assess/                    # Phase A: Ongoing project assessment
+├── agents/                        # 10 agents
 │   ├── orchestrator.md
 │   ├── doc-writer.md
-│   ├── domain-expert.md + 7 industry refs (FnB, Logistics, Retail, SaaS, Healthcare, Fintech, E-Commerce)
+│   ├── domain-expert.md + 12 industry refs (F&B, Logistics, Retail, SaaS, Healthcare, Fintech, E-Commerce, Real Estate, Manufacturing, Education, HR/HRM, Embedded/IoT)
 │   ├── tech-expert.md
 │   ├── ux-expert.md
 │   ├── finance-expert.md + 3 refs
@@ -334,16 +341,16 @@ Khi dùng MCV3 trên một dự án, dữ liệu lưu tại `.mc-data/`:
 
 | Agent | Dùng khi |
 |-------|---------|
-| `orchestrator` | Điều phối chung |
+| `orchestrator` | Điều phối chung, multi-system build order |
 | `doc-writer` | Viết tài liệu MCV3 format |
-| `domain-expert` | Phân tích nghiệp vụ (7 industries) |
+| `domain-expert` | Phân tích nghiệp vụ (12 industries) |
 | `tech-expert` | Tư vấn kỹ thuật, architecture |
 | `ux-expert` | UX/UI design |
 | `finance-expert` | Tài chính, pricing, ROI |
 | `legal-compliance-expert` | Pháp lý, compliance |
 | `strategy-expert` | Chiến lược, GTM, KPIs |
 | `verifier` | Kiểm tra document quality |
-| `code-gen` | Generate code scaffolding |
+| `code-gen` | Generate code + Verification Loop |
 
 ---
 
@@ -355,10 +362,16 @@ Khi dùng MCV3 trên một dự án, dữ liệu lưu tại `.mc-data/`:
 | `SessionStop` | Kết thúc session | Auto-save checkpoint |
 | `PrePhaseTransition` | Chuyển phase | Validate documents đầy đủ |
 | `PostPhaseCompletion` | Xong phase | Auto-snapshot milestone |
+| `PreRequirementsGeneration` | Trước /mcv3:requirements | Check BizDocs ready |
+| `PreTechDesign` | Trước /mcv3:tech-design | Check URS ready |
 | `PreQADocs` | Trước /mcv3:qa-docs | Check MODSPEC ready |
 | `PreCodeGen` | Trước /mcv3:code-gen | Check test coverage |
 | `PreVerify` | Trước /mcv3:verify | Check code có REQ-IDs |
 | `PreDeployOps` | Trước /mcv3:deploy-ops | Block nếu not READY |
+| `PreChangeManager` | Trước /mcv3:change-manager | Check lifecycle prerequisites |
+| `PreEvolve` | Trước /mcv3:evolve | Check lifecycle prerequisites |
+| `PreMigrate` | Trước /mcv3:migrate | Check lifecycle prerequisites |
+| `PreAssess` | Trước /mcv3:assess | Check lifecycle prerequisites |
 
 ---
 
@@ -382,13 +395,19 @@ Khi dùng MCV3 trên một dự án, dữ liệu lưu tại `.mc-data/`:
 
 # Load project context (gọi bởi SessionStart hook)
 ./scripts/load-project-context.sh
+
+# Sprint 4: Validate trước lifecycle skills (change-manager, evolve, migrate, assess)
+./scripts/check-lifecycle-prerequisites.sh <skill> <project_slug>
+
+# Phase A: Quét codebase để hỗ trợ /mcv3:assess
+./scripts/scan-codebase.sh [project_root] [output.json]
 ```
 
 ---
 
 ## Industry Support
 
-Domain Expert agent có knowledge base cho:
+Domain Expert agent có knowledge base cho 12 ngành:
 
 | Industry | Knowledge Base | Trọng tâm |
 |----------|---------------|---------|
@@ -396,9 +415,14 @@ Domain Expert agent có knowledge base cho:
 | Logistics | industry-logistics.md | WMS, TMS, last-mile |
 | Retail | industry-retail.md | POS, inventory, omnichannel |
 | SaaS | industry-saas.md | Subscription, onboarding, churn |
-| **Healthcare** | industry-healthcare.md | EMR, HIS, BHYT, KCB law |
-| **Fintech** | industry-fintech.md | Core banking, AML, PCI-DSS |
-| **E-Commerce** | industry-ecommerce.md | Cart, checkout, marketplace |
+| Healthcare | industry-healthcare.md | EMR, HIS, BHYT, KCB law |
+| Fintech | industry-fintech.md | Core banking, AML, PCI-DSS |
+| E-Commerce | industry-ecommerce.md | Cart, checkout, marketplace |
+| **Real Estate** | industry-realestate.md | BĐS, CRM, commission, Luật Đất đai 2024 |
+| **Manufacturing** | industry-manufacturing.md | BOM, MRP, QC, ISO 9001, C/O |
+| **Education** | industry-education.md | LMS, quản lý học sinh, Bộ GD&ĐT |
+| **HR/HRM** | industry-hr.md | Payroll, BHXH, PIT, Bộ Luật LĐ 2019 |
+| **Embedded/IoT** | industry-embedded.md | MCU platforms, firmware patterns, IoT protocols |
 
 ---
 
@@ -410,15 +434,18 @@ Domain Expert agent có knowledge base cho:
 
 # Bắt đầu dự án mới:
 Nói với Claude: "Tạo dự án mới tên X, ngành Y"
-/mcv3:discovery        → Bắt đầu pipeline
+/mcv3:discovery        → Bắt đầu pipeline (discovery tự recommend scale phù hợp)
 
 # Dự án đang chạy:
-/mcv3:status           → Xem tiến độ hiện tại
+/mcv3:status           → Xem tiến độ hiện tại (per system)
 /mcv3:change-manager   → Quản lý requirements changes
 /mcv3:evolve           → Thêm features mới
 
 # Import tài liệu cũ:
 /mcv3:migrate          → Convert từ Word/Confluence/code
+
+# Dự án in-progress (code hoặc docs cũ, chưa đồng bộ):
+/mcv3:assess           → Đánh giá toàn diện, tìm gaps, nhận remediation plan
 ```
 
 ---

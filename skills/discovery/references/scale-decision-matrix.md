@@ -20,12 +20,12 @@ Hướng dẫn chọn pipeline phù hợp theo quy mô dự án.
 
 ## Micro Project
 
-**Ví dụ:** Landing page, Portfolio, Brochure site, Static tool, Chrome Extension
+**Ví dụ:** Landing page, Portfolio, Brochure site, Static tool, Chrome Extension, Todo app, Note app, 1-module CRUD app đơn giản
 
 **Scope:**
-- 1–5 trang hoặc endpoints, static hoặc near-static
+- 1–5 trang hoặc endpoints, static hoặc near-static; hoặc 1 module CRUD đơn giản (VD: quản lý task, ghi chú, bookmark)
 - 1 developer, 1–2 stakeholders
-- Không có backend phức tạp, không có auth nghiêm ngặt
+- Không có backend phức tạp, không có auth nghiêm ngặt (hoặc auth chỉ là simple JWT)
 - Không có compliance requirements
 
 **Pipeline rút gọn:**

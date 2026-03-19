@@ -1,5 +1,34 @@
 # Tech Stack Guides — Code-Gen Reference
 
+## Stacks được hỗ trợ đầy đủ
+
+| Stack | File Guide | Status |
+|-------|-----------|--------|
+| Node.js + TypeScript + Express | tech-stack-guides.md (section này) | ✅ Full guide |
+| Python + FastAPI + SQLAlchemy | tech-stack-guides.md (section này) | ✅ Full guide |
+| React + TypeScript (SPA) | tech-stack-guides.md (section này) | ✅ Full guide |
+| Next.js 14+ (App Router) | tech-stack-nextjs.md | ✅ Full guide |
+| React Native (Expo) | tech-stack-mobile.md | ✅ Full guide |
+| Flutter | tech-stack-mobile.md | ✅ Full guide |
+| PostgreSQL / MySQL | tech-stack-guides.md + query-patterns.md | ✅ Full guide |
+| MongoDB / Firebase / Supabase | database-nosql-guide.md | ✅ Full guide |
+| Embedded C/C++ (ESP32, STM32) | embedded-tech-stack-guide.md | ✅ Full guide |
+
+## Stacks chưa có guide riêng
+
+Các stacks sau chưa có dedicated guide. Nếu user dùng, áp dụng patterns từ stack gần nhất + common patterns:
+
+| Stack | Fallback | Ghi chú |
+|-------|---------|---------|
+| Go (Golang) | Node.js patterns (adapter pattern, controller/service/repo) | Cần `gin`/`echo` + `gorm` + `testify` |
+| Java + Spring Boot | Node.js patterns + TypeScript interface → Java class | Cần Maven/Gradle + JPA + JUnit |
+| Vue.js | React patterns (component/store/composable tương đương) | Composition API tương tự React Hooks |
+| Angular | React patterns (module/service/component tương đương) | DI system khác nhưng structure tương tự |
+
+> **Quy tắc khi không có guide:** Sinh code theo cấu trúc controller/service/repository phổ biến, thêm `// REVIEW: Verify patterns cho [stack] này` để user kiểm tra.
+
+---
+
 ## Hướng dẫn cho từng Tech Stack
 
 ---

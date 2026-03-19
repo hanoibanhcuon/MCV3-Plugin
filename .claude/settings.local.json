@@ -9,7 +9,12 @@
       "Bash(grep -rn templates/ /z/Working/MCV3-Plugin --include=*.md --include=*.ts --include=*.json)",
       "Bash(npx tsc:*)",
       "Bash(npm run:*)",
-      "Bash(grep -rn mcv3-devkit/templates Z:/Working/MCV3-Plugin --include=*.md --include=*.ts)"
+      "Bash(grep -rn mcv3-devkit/templates Z:/Working/MCV3-Plugin --include=*.md --include=*.ts)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//z/Working/MCV3-Plugin/.claude/worktrees/angry-hofstadter/**)",
+      "Bash(done)",
+      "Bash(grep -r version.*3. /z/Working/MCV3-Plugin/package.json /z/Working/MCV3-Plugin/README.md /z/Working/MCV3-Plugin/CHANGELOG.md)"
     ]
   }
 }

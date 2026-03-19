@@ -211,6 +211,108 @@ lib_deps =
 monitor_speed = 115200
 ```
 
+### `platformio.ini` — RP2040 (Raspberry Pi Pico)
+
+```ini
+[env:pico]
+platform = raspberrypi
+board = pico
+framework = arduino
+
+; Build flags
+build_flags =
+    -DBOARD_RP2040
+    -DARDUINO_ARCH_RP2040
+
+; Thư viện phổ biến
+lib_deps =
+    Wire
+    SPI
+    earlephilhower/ArduinoJson @ ^6.21.0
+
+monitor_speed = 115200
+upload_protocol = picotool
+```
+
+**RP2040 — Đặc điểm nổi bật:**
+- Dual-core Cortex-M0+ (133MHz), 264KB SRAM, không có Flash on-chip (dùng external)
+- PIO (Programmable I/O) — lập trình state machine tùy chỉnh cho protocol bất kỳ
+- Hỗ trợ cả C/C++ SDK và MicroPython
+- Board phổ biến: Raspberry Pi Pico, Pico W (với WiFi), SparkFun Pro Micro RP2040
+
+**RP2040 C SDK — Cấu trúc cơ bản:**
+
+```cmake
+# CMakeLists.txt
+cmake_minimum_required(VERSION 3.13)
+include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+
+project(my_project C CXX ASM)
+pico_sdk_init()
+
+add_executable(my_project main.c)
+target_link_libraries(my_project pico_stdlib hardware_i2c hardware_spi)
+pico_enable_stdio_usb(my_project 1)   # UART qua USB
+pico_add_extra_outputs(my_project)    # Tạo .uf2 file để flash
+```
+
+```c
+// main.c — RP2040 C SDK
+#include "pico/stdlib.h"
+#include "hardware/gpio.h"
+#include "hardware/adc.h"
+
+#define LED_PIN    25   // Onboard LED
+#define SENSOR_PIN 26   // ADC0 = GPIO26
+
+int main(void) {
+    stdio_init_all();
+
+    // GPIO setup
+    gpio_init(LED_PIN);
+    gpio_set_dir(LED_PIN, GPIO_OUT);
+
+    // ADC setup
+    adc_init();
+    adc_gpio_init(SENSOR_PIN);
+    adc_select_input(0);  // ADC0
+
+    while (true) {
+        uint16_t raw = adc_read();           // 0-4095 (12-bit)
+        float voltage = raw * 3.3f / 4095.0f;
+
+        gpio_put(LED_PIN, 1);
+        sleep_ms(500);
+        gpio_put(LED_PIN, 0);
+        sleep_ms(500);
+    }
+    return 0;
+}
+```
+
+**RP2040 MicroPython:**
+
+```python
+# main.py — RP2040 MicroPython (Pico W)
+from machine import Pin, ADC, I2C
+import network
+import time
+
+# WiFi (Pico W)
+wlan = network.WLAN(network.STA_IF)
+wlan.active(True)
+wlan.connect('SSID', 'password')
+while not wlan.isconnected():
+    time.sleep(0.5)
+
+# GPIO + ADC
+led = Pin(25, Pin.OUT)
+sensor = ADC(Pin(26))  # ADC0
+
+def read_voltage():
+    return sensor.read_u16() * 3.3 / 65535
+```
+
 ---
 
 ## Arduino Framework — Patterns
