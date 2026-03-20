@@ -40,12 +40,9 @@ section() { echo ""; echo "${BOLD}${BLUE}── $* ─────────�
 get_version() {
   local manifest="$PLUGIN_ROOT/.claude-plugin/plugin.json"
   [ -f "$manifest" ] || fail "Không tìm thấy .claude-plugin/plugin.json"
-  if command -v node &>/dev/null; then
-    node -e "const p=require('$manifest');console.log(p.version)" 2>/dev/null || echo "unknown"
-  else
-    grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$manifest" \
-      | head -1 | grep -o '"[^"]*"$' | tr -d '"' || echo "unknown"
-  fi
+  # Dùng grep để tránh vấn đề path Windows/Unix khi chạy Node.js
+  grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$manifest" \
+    | head -1 | grep -o '"[^"]*"$' | tr -d '"' || echo "unknown"
 }
 
 # ── Đọc .pluginignore ───────────────────────────────────────────────────────
@@ -89,9 +86,13 @@ main() {
   log "Output : $output_plugin"
   echo ""
 
-  # Kiểm tra zip availability
+  # Kiểm tra zip availability (hỗ trợ Windows PowerShell fallback)
   if ! command -v zip &>/dev/null; then
-    fail "zip command chưa được cài đặt.\n  Mac: brew install zip\n  Ubuntu: sudo apt install zip"
+    if command -v powershell &>/dev/null || command -v pwsh &>/dev/null; then
+      warn "zip không có sẵn — sẽ dùng PowerShell Compress-Archive (Windows mode)"
+    else
+      fail "zip command chưa được cài đặt.\n  Mac: brew install zip\n  Ubuntu: sudo apt install zip\n  Windows: cài Git for Windows hoặc 7-Zip"
+    fi
   fi
 
   # Kiểm tra prerequisites
@@ -254,13 +255,38 @@ create_archive() {
   local output_zip="$4"
 
   log "Nén thành .plugin file..."
-  (
-    cd "$temp_dir"
-    zip -r "$output_plugin" "$package_name/" -x "*.DS_Store" "*.gitkeep" 2>/dev/null
-  )
 
-  # Tạo alias .zip
-  cp "$output_plugin" "$output_zip"
+  if command -v zip &>/dev/null; then
+    # Unix: dùng zip
+    (
+      cd "$temp_dir"
+      zip -r "$output_plugin" "$package_name/" -x "*.DS_Store" "*.gitkeep" 2>/dev/null
+    )
+  else
+    # Windows fallback: dùng Python zipfile (bao gồm wrapper folder mcv3-devkit-X.Y.Z/)
+    local src_dir="$temp_dir/$package_name"
+    python3 - "$src_dir" "$output_zip" <<'PYEOF'
+import sys, zipfile, os
+src_dir = sys.argv[1]
+out_zip = sys.argv[2]
+parent = os.path.dirname(src_dir)
+with zipfile.ZipFile(out_zip, 'w', zipfile.ZIP_DEFLATED) as zf:
+    for root, dirs, files in os.walk(src_dir):
+        for file in files:
+            full_path = os.path.join(root, file)
+            arc_name = os.path.relpath(full_path, parent)
+            zf.write(full_path, arc_name)
+PYEOF
+  fi
+
+  # Tạo alias (hoặc copy nếu đã tạo zip trực tiếp)
+  if [ "$output_plugin" != "$output_zip" ]; then
+    if [ -f "$output_zip" ] && [ ! -f "$output_plugin" ]; then
+      cp "$output_zip" "$output_plugin"
+    elif [ -f "$output_plugin" ]; then
+      cp "$output_plugin" "$output_zip"
+    fi
+  fi
 
   ok "Archive đã tạo"
 }
