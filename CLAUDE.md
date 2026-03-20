@@ -1,4 +1,4 @@
-# CLAUDE.md — MasterCraft DevKit v3.10 (MCV3)
+# CLAUDE.md — MasterCraft DevKit v3.10.1 (MCV3)
 
 Plugin này giúp Claude Code làm việc với **dự án phần mềm** theo quy trình 8 phases của MCV3. v3.10 hoàn chỉnh với: Pipeline 8 Phase + Lifecycle Management + Assess Skill + Embedded/IoT Module + Scale Flexibility & Industry Expansion (12 ngành) + **Smart Code-Gen** (sinh code thông minh theo mức độ chi tiết specs) + **Multi-System Orchestration** (build order, shared services, integration patterns) + **Code Quality Assurance** (verification loop tự động: compile → lint → test → security scan → coverage).
 

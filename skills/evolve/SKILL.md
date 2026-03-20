@@ -34,6 +34,32 @@ References:
 
 ---
 
+## Error Recovery
+
+**mc_save / mc_load thất bại:**
+- Retry 1 lần với cùng parameters
+- Nếu vẫn fail → báo user: "⚠️ Không thể lưu/đọc [file]. Kiểm tra MCP server còn chạy không."
+- Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
+
+**Dự án chưa đạt Phase 5 (chưa có MODSPEC):**
+- Báo user: "⚠️ Evolve yêu cầu dự án đã có ít nhất MODSPEC (Phase 5+). Chạy /mcv3:tech-design trước."
+- Nếu dự án mới chỉ có URS → gợi ý `/mcv3:tech-design` để tạo MODSPEC
+
+**mc_snapshot thất bại (trước khi evolve):**
+- Không tiếp tục — báo user: "❌ Không thể tạo safety snapshot. Kiểm tra MCP server và thử lại."
+- Lý do: SNAPSHOT-FIRST là quy tắc bắt buộc, evolve mà không có snapshot rất nguy hiểm
+
+**mc_compare / mc_merge conflict:**
+- Hiển thị diff rõ ràng cho user
+- Hỏi user: "Giữ version nào? [cũ / mới / merge thủ công]"
+- KHÔNG tự quyết định khi có conflict cấu trúc
+
+**Version conflict (document đã ở v{N+1} nhưng config vẫn v{N}):**
+- Dùng mc_compare để xem diff trước khi ghi đè
+- Cập nhật _config.json sau khi confirm với user
+
+---
+
 ## Khi nào dùng skill này
 
 - Dự án đang chạy production, cần thêm tính năng mới

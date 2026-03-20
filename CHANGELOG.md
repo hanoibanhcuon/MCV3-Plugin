@@ -6,6 +6,34 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [3.10.1] — Skill Quality Improvements — Semantic Descriptions + Error Handling — 2026-03-20
+
+### Changed
+
+- **15 Command files** (`.claude/commands/mcv3/*.md`) — Cập nhật semantic descriptions:
+  - Mỗi file giờ có 1 dòng mô tả rõ skill làm gì, output gì, trigger khi nào
+  - Không còn description chung "Đọc file SKILL.md..." — thay bằng context-aware trigger conditions
+  - Cải thiện discoverability khi user cần chọn skill phù hợp
+
+- **10 Pipeline SKILL.md files** — Thêm Error Recovery + token efficiency:
+  - `skills/discovery/SKILL.md`, `skills/expert-panel/SKILL.md`, `skills/biz-docs/SKILL.md`
+  - `skills/requirements/SKILL.md`, `skills/tech-design/SKILL.md`, `skills/qa-docs/SKILL.md`
+  - `skills/code-gen/SKILL.md`, `skills/verify/SKILL.md`, `skills/deploy-ops/SKILL.md`
+  - `skills/assess/SKILL.md`
+  - Mỗi file có section `## Error Recovery` với cases cụ thể: mc_save/load fail, missing prereqs, conflict resolution
+  - Checkpoint instructions rõ ràng theo từng phase
+
+- **5 Lifecycle SKILL.md files** — Semantic descriptions + Error Handling:
+  - `skills/change-manager/SKILL.md`, `skills/onboard/SKILL.md`, `skills/migrate/SKILL.md`
+  - `skills/evolve/SKILL.md` — Thêm `## Error Recovery` section (mc_save fail, Phase 5+ requirement, snapshot fail, merge conflict, version conflict)
+  - `skills/navigator/SKILL.md` — Thêm `## Checkpoint Hint` section (read-only skill, gợi ý checkpoint trước skill tiếp theo)
+
+### Rationale
+
+Skills trước đây có descriptions chung chung và thiếu error handling cho các edge cases phổ biến. Cải thiện này giúp: (1) Claude chọn đúng skill hơn nhờ semantic descriptions, (2) Skills recover gracefully khi MCP server fail hoặc missing prerequisites, (3) Users có feedback rõ ràng khi gặp lỗi thay vì session bị stuck.
+
+---
+
 ## [3.10.0] — Code Quality Assurance — Verification & Auto-Fix Loop — 2026-03-19
 
 ### Added
