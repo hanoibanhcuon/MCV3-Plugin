@@ -305,17 +305,31 @@ mc_save({
 })
 ```
 
-### 4e. Checkpoint per batch
+### 4e. Validate + Per-Document Checkpoint
+
+Sau khi save mỗi converted document:
 
 ```
+// RISK-002: BẮT BUỘC validate sau khi convert mỗi document
+mc_validate({
+  projectSlug: "<slug>",
+  filePath: "<path-of-converted-doc>",
+  validationType: "format"
+})
+→ Nếu validate FAIL → tự fix format issues trước khi sang document tiếp theo
+→ Nếu không tự fix được → đánh dấu "[NEEDS-FIX]" và ghi vào MIGRATION-REPORT gaps
+
+// RISK-003: Per-document checkpoint — để resume nếu bị interrupt
 mc_checkpoint({
-  label: "sau-migrate-{source-type}",
-  sessionSummary: "Migrated {N} documents from {source}",
-  nextActions: ["Tiếp tục source tiếp theo hoặc Phase 6 Validation"]
+  projectSlug: "<slug>",
+  label: "migrate-doc-{N}-of-{TOTAL}",
+  sessionSummary: "Migration: Đã convert {N}/{TOTAL} documents — vừa xong {doc-name}",
+  nextActions: ["Tiếp tục /mcv3:migrate — convert document {N+1}: {next-doc-name}"]
 })
 [MANDATORY — PER BATCH] Checkpoint sau mỗi batch/scope, KHÔNG gộp cuối session.
 ```
 
+> **Lưu ý:** Per-document checkpoint đặc biệt quan trọng khi migrate nhiều documents (>5). Cho phép resume đúng chỗ nếu session bị ngắt giữa chừng.
 ---
 
 ## Phase 5 — Codebase Reverse Engineering (Scope 3)
@@ -574,6 +588,15 @@ mc_traceability({
   ids: ["BR-WH-001", ..., "US-WH-001", ..., "FT-WH-001", ...]
 })
 [MANDATORY] Traceability PHẢI được register trước khi sang Phase 8.
+
+// RISK-005: Verify imported IDs đã được registered và không conflict
+mc_traceability({
+  action: "validate",
+  projectSlug: "<slug>",
+  scope: "imported-ids"   // Validate tất cả IDs từ migration này
+})
+→ Nếu có orphan IDs (registered nhưng chưa có document) → ghi vào MIGRATION-REPORT gaps
+→ Nếu có duplicate IDs với existing → ghi CRITICAL gap, đề xuất re-assign
 ```
 
 ---
@@ -700,6 +723,7 @@ REPORT-EVERYTHING: MIGRATION-REPORT phải đầy đủ để người khác rev
 Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển phase:
 
 ### Sau Phase 0 → trước Phase 1:
+- ✓ **BLOCKING:** Source documents/content phải tồn tại — nếu user chưa cung cấp nội dung cần migrate (không có paste, không có file path, không có codebase mô tả) → **DỪNG**, hỏi 1 câu: `"Paste nội dung tài liệu cần migrate hoặc mô tả path codebase."` Không tiếp tục khi không có input.
 - ✓ Migration source đã detect (Scope 1-6) — ghi DECISION nếu tự infer
 - ✓ Nếu Scope không rõ → dùng Scope phù hợp nhất từ context (không dừng hỏi)
 - ✓ Project slug đã xác định (không nhầm project khi import)
@@ -721,7 +745,7 @@ Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển phase:
 - ✓ Mapping plan có đầy đủ Source → Target cho mỗi content piece
 
 ### Sau Phase 4 → trước Phase 6:
-- ✓ Converted docs có đúng MCV3 template structure (headings, sections, IDs)
+- ✓ **BLOCKING:** Converted docs phải có đúng MCV3 template structure (headings, sections, IDs) — nếu conversion fail (output rỗng, format broken, không có IDs) → **DỪNG**, tự fix conversion issues trước khi tiếp tục. Báo user nếu không tự fix được: `"❌ Conversion thất bại cho {doc}. Kiểm tra format source và thử lại."`
 - ✓ Mọi AI-generated content đều có "Generated" tag
 - ✓ Mọi uncertain items đều có "[AMBIGUOUS]" tag
 - ✓ Batch import lớn: verify mỗi batch không introduce duplicate IDs trước khi sang batch sau

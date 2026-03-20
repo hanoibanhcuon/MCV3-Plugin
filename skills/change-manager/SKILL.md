@@ -282,6 +282,30 @@ mc_merge({
 })
 ```
 
+### 4d. Validate + Per-Document Checkpoint
+
+Sau mỗi document được update (lặp lại cho từng doc trong impact list):
+
+```
+// RISK-002: BẮT BUỘC validate sau khi update mỗi document
+mc_validate({
+  projectSlug: "<slug>",
+  filePath: "<path-of-updated-doc>",
+  validationType: "format"
+})
+→ Nếu validate FAIL → tự sửa format issues trước khi sang document tiếp theo
+
+// RISK-003: Per-document checkpoint — để resume nếu bị interrupt giữa chừng
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "change-doc-{N}-of-{TOTAL}",
+  sessionSummary: "CHG-{ID}: Đã update {N}/{TOTAL} documents — vừa xong {doc-name}",
+  nextActions: ["Tiếp tục /mcv3:change-manager — update document {N+1}: {next-doc-name}"]
+})
+```
+
+> **Lưu ý:** Checkpoint per-document giúp resume an toàn nếu session bị ngắt giữa lúc update nhiều documents. Không bỏ qua kể cả khi chỉ có 2 documents.
+
 ---
 
 ## Phase 5 — Traceability Update
@@ -295,6 +319,15 @@ mc_traceability({
     { from: "<ID cũ>", to: "<ID mới>" }
   ]
 })
+
+// RISK-005: Verify traceability chain vẫn intact sau thay đổi
+mc_traceability({
+  action: "validate",
+  projectSlug: "<slug>",
+  scope: "changed-ids"   // Chỉ validate các IDs liên quan đến change này
+})
+→ Nếu chain bị đứt (orphan IDs, missing links) → tự fix link trước khi sang Phase 6
+→ Nếu không tự fix được → ghi WARNING rõ trong completion report + báo user
 ```
 
 Với breaking changes, mark old IDs là deprecated:
@@ -491,12 +524,12 @@ VERIFY-AFTER: Khuyến nghị chạy /mcv3:verify sau major/breaking changes
 Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển phase:
 
 ### Sau Phase 1 → trước Phase 2:
-- ✓ Change element ID tồn tại trong project (không reference phantom ID)
+- ✓ **BLOCKING:** Change element ID phải tồn tại trong project — nếu element không tìm thấy trong mc_list hoặc mc_search → DỪNG ngay, báo user: `"❌ Không tìm thấy element {ID} trong project. Kiểm tra lại ID và thử lại."` Không tiếp tục impact analysis với phantom ID.
 - ✓ Mô tả thay đổi đủ rõ để phân tích impact (không quá vague)
 - ✓ Change type (minor/major/breaking) đã xác định — ghi DECISION nếu tự infer
 
 ### Sau Phase 2 → trước Phase 3:
-- ✓ Impact list đầy đủ: không bỏ sót document nào trong chain BR → US → FT → API → TC
+- ✓ **BLOCKING:** Impact list phải đầy đủ — không bỏ sót document nào trong chain BR → US → FT → API → TC. Nếu mc_impact_analysis trả về empty hoặc không xác định được documents bị ảnh hưởng → DỪNG, báo user: `"❌ Impact analysis chưa đầy đủ. Không thể xác định documents bị ảnh hưởng — không an toàn để tiếp tục."`
 - ✓ Với breaking change: downstream systems đã identify qua `mc_dependency`
 - ✓ Dự án lớn (5+ systems): cascade qua TẤT CẢ systems đã check — không chỉ system nguồn
 - ✓ Nếu impact = HIGH (≥4 docs): note vào checkpoint trước khi snapshot

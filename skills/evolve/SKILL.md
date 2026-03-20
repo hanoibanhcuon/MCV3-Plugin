@@ -361,6 +361,22 @@ mc_save({
 })
 ```
 
+### 4d. Per-Module Checkpoint
+
+Sau khi save mỗi module document (lặp lại nếu evolve nhiều modules):
+
+```
+// RISK-003: Per-module checkpoint — để resume nếu bị interrupt giữa chừng
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "evolve-module-{MOD}-done",
+  sessionSummary: "EVOL-{ID}: Đã evolve module {MOD} (v{N} → v{N+1}). URS + MODSPEC updated.",
+  nextActions: ["Tiếp tục /mcv3:evolve — evolve module tiếp theo: {next-module} hoặc sang Phase 5 (Traceability)"]
+})
+```
+
+> **Lưu ý:** Checkpoint per-module quan trọng khi evolve nhiều modules cùng lúc. Cho phép resume đúng module tiếp theo nếu session bị gián đoạn.
+
 ---
 
 ## Phase 5 — Traceability Update
@@ -381,6 +397,15 @@ mc_traceability({
     { from: "FT-{MOD}-NEW", to: "BR-{DOM}-EXISTING" }
   ]
 })
+
+// RISK-005: Verify traceability chain intact — new IDs đã registered và linked
+mc_traceability({
+  action: "validate",
+  projectSlug: "<slug>",
+  scope: "new-ids"   // Chỉ validate IDs mới trong evolution này
+})
+→ Nếu new IDs chưa link về requirements origin → tự fix links trước khi sang Phase 6
+→ Existing IDs không bị break — nếu phát hiện → ghi WARNING trong completion report
 ```
 
 ---
@@ -561,7 +586,7 @@ ADR-ALWAYS: Mỗi architectural decision phải có ADR entry
 Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển phase:
 
 ### Sau Phase 0 → trước Phase 1:
-- ✓ Dự án đã có ít nhất 1 MODSPEC (Phase 5+) — nếu chưa có → DỪNG, chuyển hướng `/mcv3:tech-design`
+- ✓ **BLOCKING:** Dự án phải có ít nhất 1 MODSPEC (Phase 5+) — nếu chưa có MODSPEC → **DỪNG ngay**, báo user: `"❌ /mcv3:evolve yêu cầu dự án đã có MODSPEC (Phase 5+). Chạy /mcv3:tech-design trước để tạo MODSPEC."` Không tiếp tục evolve khi chưa có baseline design.
 - ✓ `mc_status` trả về project hợp lệ (không phantom project)
 - ✓ MASTER-INDEX đã đọc: danh sách systems/modules hiện có đã rõ ràng
 
@@ -571,7 +596,7 @@ Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển phase:
 - ✓ Target module/system đã identify — không còn ambiguous
 
 ### Sau Phase 2 → trước Phase 3:
-- ✓ ID conflicts đã check qua `mc_traceability` — không có ID mới trùng với ID cũ
+- ✓ **BLOCKING:** ID conflicts phải được clear hoàn toàn qua `mc_traceability` — nếu phát hiện ID mới trùng với ID cũ → **DỪNG ngay**, báo user: `"❌ ID conflict phát hiện: {conflicting-IDs}. Đặt lại ID mới trước khi tiếp tục — không thể evolve khi có ID conflict."` Không tạo snapshot hay update docs khi còn conflict.
 - ✓ Backward compatibility đã đánh giá: biết rõ breaking items (hoặc xác nhận không có)
 - ✓ Downstream dependents đã check qua `mc_dependency`
 - ✓ Dự án lớn (5+ systems): cross-system impact từ evolution đã identify cho TẤT CẢ dependent systems
