@@ -93,6 +93,59 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 - Tiếp tục thiết kế với default đó — không dừng hỏi user
 - User review và điều chỉnh sau khi nhận Completion Report
 
+## SPEED OPTIMIZATION GUIDELINES
+
+> Áp dụng các kỹ thuật dưới đây để giảm latency mà **không hy sinh quality**.
+
+### Parallel MCP Calls
+
+| Điểm tối ưu | Trước | Sau | Tiết kiệm |
+|-------------|-------|-----|-----------|
+| Phase 0 init | mc_status → mc_list → mc_load(PO) (3 sequential) | [mc_status ∥ mc_list ∥ mc_load(PO layer:2)] — 1 round | ~2 round-trip |
+| Phase 0 mc_list | Gọi lại ở Phase 1 để biết modules | Reuse kết quả mc_list từ Phase 0 | 1 call / run |
+| Phase 1a context load | mc_load(URS) → mc_load(DATA-DICT) (sequential) | [mc_load(URS layer:3) ∥ mc_load(DATA-DICT layer:2)] — 1 round | ~1 round-trip / module |
+| DATA-DICTIONARY | Load lại mỗi module | Load 1 lần ở Phase 0/1, cache cho tất cả modules | N−1 calls |
+| Phase 6 save | mc_save(MODSPEC) → mc_save(ARCH) → mc_save(DATA) → mc_validate → mc_dependency → mc_traceability | [mc_save(MODSPEC) ∥ mc_save(ARCH) ∥ mc_save(DATA)] → [mc_validate ∥ mc_dependency ∥ mc_traceability] | ~3 round-trip / module |
+
+### Pre-Assign ID Ranges (Multi-Module Parallel Gen)
+
+```
+Khi có ≥ 2 modules → assign ID ranges TRƯỚC khi generate:
+  Module 1 (AUTH):    API-{SYS}-001..029, TBL-{SYS}-001..009, COMP-{SYS}-001..009
+  Module 2 (WH):      API-{SYS}-030..059, TBL-{SYS}-010..019, COMP-{SYS}-010..019
+  Module 3 (SALES):   API-{SYS}-060..089, TBL-{SYS}-020..029, COMP-{SYS}-020..029
+
+→ Cho phép generate content song song mà không conflict IDs
+→ Save vẫn tuần tự (sequential) để tránh race condition trong MCP
+```
+
+### Cache Shared Data
+
+```
+DATA-DICTIONARY.md: Load 1 lần ở Phase 0 (layer:2), dùng cho tất cả modules
+→ KHÔNG load lại mỗi module
+→ Tiết kiệm: (N_modules − 1) mc_load calls
+
+mc_list(P1-REQUIREMENTS): Gọi 1 lần ở Phase 0, reuse ở Phase 1 module detection
+→ KHÔNG gọi mc_list lần 2 trong cùng session
+```
+
+### Quy tắc áp dụng
+
+```
+✅ Phase 0 parallel: [mc_status ∥ mc_list(P1-REQUIREMENTS) ∥ mc_load(PO layer:2)] — 1 round
+✅ Phase 1a parallel: [mc_load(URS layer:3) ∥ mc_load(DATA-DICT layer:2)] — 1 round (module đầu)
+   → Module sau: chỉ load URS (DATA-DICT đã cached)
+✅ Reuse mc_list: Phase 0 → Phase 1 dùng cùng 1 kết quả mc_list
+✅ Pre-assign API/TBL/COMP ID ranges khi gen ≥ 2 modules song song
+✅ Phase 6 parallel saves: [mc_save(MODSPEC) ∥ mc_save(ARCH) ∥ mc_save(DATA-MODEL)] — 1 round
+✅ Phase 6 parallel post-save: [mc_validate ∥ mc_dependency ∥ mc_traceability] — 1 round
+   → mc_validate ERROR → fix → mc_save lại → re-validate (mc_dependency và mc_traceability vẫn giữ)
+✅ No re-validation: Pre-Completion chỉ confirm "validate PASS tại Phase 6", không re-run
+```
+
+---
+
 ## Token Efficiency
 
 **Chọn đúng template, không load tất cả:**
@@ -116,10 +169,16 @@ Multi-system với auth  → Load thêm AUTH-SPEC-TEMPLATE.md
 ## Phase 0 — Pre-Gate
 
 ```
-1. mc_status() → xác nhận project và tech stack từ _config.json
-2. mc_list({ subPath: "{SYSTEM}/P1-REQUIREMENTS" }) → liệt kê URS files có sẵn
-3. mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 2 }) → đọc tech context
-4. Tự xác định module order từ URS files available:
+// SPEED: Gộp mc_status + mc_list + mc_load vào 1 round song song
+1. PARALLEL (3 calls đồng thời — 1 round duy nhất):
+   - mc_status()  → xác nhận project và tech stack từ _config.json
+   - mc_list({ subPath: "{SYSTEM}/P1-REQUIREMENTS" })  → liệt kê URS files (CACHE — reuse ở Phase 1)
+   - mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 2 })  → đọc tech context (CACHE)
+
+   [Đồng thời load DATA-DICTIONARY nếu project đã có:]
+   - mc_load({ filePath: "_PROJECT/DATA-DICTIONARY.md", layer: 2 })  → CACHE cho tất cả modules
+
+2. Tự xác định module order từ URS files (dùng kết quả mc_list từ bước 1, không gọi lại):
    - Core/Foundation modules trước (Auth, Master data)
    - Business logic modules theo dependency
    - Xử lý tất cả modules, không hỏi user chọn
@@ -183,12 +242,18 @@ mc_checkpoint({
 ### 1a. Load URS đầy đủ
 
 ```
-// BLOCKING — nếu URS load fail: ❌ DỪNG ngay, báo user chạy /mcv3:requirements trước
-mc_load({ filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md", layer: 3 })
-→ Nếu NOT FOUND / ERROR → ❌ DỪNG: "Chưa tìm thấy URS-{MOD}.md. Chạy /mcv3:requirements trước."
+// SPEED: Module đầu tiên → load URS song song với DATA-DICT (nếu chưa cached ở Phase 0)
+// SPEED: Module sau → chỉ load URS (DATA-DICT đã cached từ Phase 0 hoặc module đầu)
 
-mc_load({ filePath: "_PROJECT/DATA-DICTIONARY.md", layer: 2 })
-→ Nếu NOT FOUND → ⚠️ WARNING (không dừng): ghi DECISION "Thiếu DATA-DICTIONARY, dùng entity names từ URS"
+// Module đầu tiên (DATA-DICT chưa cached):
+PARALLEL:
+  - mc_load({ filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md", layer: 3 })
+    // BLOCKING: NOT FOUND → ❌ DỪNG: "Chưa tìm thấy URS-{MOD}.md. Chạy /mcv3:requirements trước."
+  - mc_load({ filePath: "_PROJECT/DATA-DICTIONARY.md", layer: 2 })  // CACHE → dùng cho tất cả modules
+    // NOT FOUND → ⚠️ WARNING: ghi DECISION "Thiếu DATA-DICTIONARY, dùng entity names từ URS"
+
+// Module tiếp theo (DATA-DICT đã cached):
+mc_load({ filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md", layer: 3 })  // Chỉ load URS
 ```
 
 **Load ARCHITECTURE context (nếu có):**
@@ -479,61 +544,49 @@ Với mỗi quyết định kỹ thuật quan trọng:
 ```
 // KHÔNG hiển thị nội dung MODSPEC lên chat — chỉ show tóm tắt sau mc_save
 
-1. mc_save({
-     filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md",
-     documentType: "modspec"
-   })
-   → 📄 Đã lưu: MODSPEC-{MOD}.md — {N} APIs (API-{SYS}-001 → ...), {M} tables, {K} components
+// SPEED: Save tất cả 3 files song song — 1 round
+1. PARALLEL (3 saves đồng thời):
+   - mc_save({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md", documentType: "modspec" })
+     → 📄 Đã lưu: MODSPEC-{MOD}.md — {N} APIs (API-{SYS}-001 → ...), {M} tables, {K} components
+   - mc_save({ filePath: "{SYSTEM}/P2-DESIGN/ARCHITECTURE.md", documentType: "custom" })
+     (chỉ khi đã tạo/cập nhật ARCHITECTURE.md trong phase này)
+   - mc_save({ filePath: "{SYSTEM}/P2-DESIGN/DATA-MODEL.md", documentType: "custom" })
+     (chỉ khi đã tạo/cập nhật DATA-MODEL.md trong phase này)
 
-// Lưu ARCHITECTURE.md nếu đã tạo trong phase này (lần đầu hoặc cập nhật)
-2. mc_save({
-     filePath: "{SYSTEM}/P2-DESIGN/ARCHITECTURE.md",
-     documentType: "custom"
-   })
-
-// Lưu DATA-MODEL.md nếu đã tạo/cập nhật ERD
-3. mc_save({
-     filePath: "{SYSTEM}/P2-DESIGN/DATA-MODEL.md",
-     documentType: "custom"
-   })
-
-4. mc_validate({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md" })
-   // BLOCKING GATE (RISK-001) — phân loại kết quả (RISK-007):
-   → ERROR   → ❌ DỪNG ngay. Fix lỗi → mc_save lại → mc_validate lại (tối đa 3 lần retry)
-              Nếu vẫn ERROR sau 3 lần → báo user, không tiếp tục
-   → WARNING → Phân loại:
-       - Format warning (ID format sai, thiếu required section, sai template) → FIX trước khi tiếp tục
-       - Content warning (thiếu mô tả, chưa đủ AC detail, missing rationale) → Ghi DECISION + tiếp tục
-   → PASS    → ✅ Tiếp tục bước 5
-
-5. mc_dependency({
-     action: "register",
-     source: "MODSPEC-{MOD}.md",
-     dependsOn: ["URS-{MOD}.md", "DATA-DICTIONARY.md"]
-   })
-
-// BẮT BUỘC (RISK-002, RISK-005) — đăng ký ĐẦY ĐỦ tất cả IDs: API, TBL, COMP, ADR, INT
-6. mc_traceability({
-     action: "link",
-     items: [
-       // FT → API links (tất cả FT-IDs có API)
-       { from: "FT-WH-001", to: "API-ERP-001" },
-       // FT → TBL links (tất cả FT-IDs có TBL)
-       { from: "FT-WH-002", to: "TBL-ERP-001" },
-       // FT → COMP links (tất cả FT-IDs có COMP)
-       { from: "FT-WH-001", to: "COMP-ERP-001" },
-       // COMP → TBL links (component phụ thuộc table nào)
-       { from: "COMP-ERP-001", to: "TBL-ERP-001" },
-       // ADR links (design decision ảnh hưởng API/TBL nào)
-       { from: "ADR-ERP-001", to: "API-ERP-001" },
-       // INT links — CHỈ khi có cross-system calls
-       { from: "API-ERP-001", to: "INT-ERP-001" }
-     ]
-   })
-   // Ghi chú: Thêm đủ tất cả items theo module thực tế — ví dụ trên chỉ minh họa pattern
+// SPEED: validate ∥ dependency ∥ traceability song song sau khi saves xong
+2. PARALLEL (post-save — 3 calls đồng thời):
+   - [BẮT BUỘC] mc_validate({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md" })
+     // BLOCKING GATE (RISK-001) — phân loại kết quả (RISK-007):
+     → ERROR   → ❌ DỪNG ngay. Fix lỗi → mc_save lại → [mc_validate ∥ mc_dependency ∥ mc_traceability] lại (tối đa 3 lần retry)
+                Nếu vẫn ERROR sau 3 lần → báo user, không tiếp tục
+     → WARNING → Format warning → FIX trước; Content warning → Ghi DECISION + tiếp tục
+     → PASS    → ✅ Tiếp tục bước 3
+   - mc_dependency({
+       action: "register",
+       source: "MODSPEC-{MOD}.md",
+       dependsOn: ["URS-{MOD}.md", "DATA-DICTIONARY.md"]
+     })
+   - [BẮT BUỘC] mc_traceability({
+       action: "link",
+       items: [
+         // FT → API links (tất cả FT-IDs có API)
+         { from: "FT-WH-001", to: "API-ERP-001" },
+         // FT → TBL links (tất cả FT-IDs có TBL)
+         { from: "FT-WH-002", to: "TBL-ERP-001" },
+         // FT → COMP links (tất cả FT-IDs có COMP)
+         { from: "FT-WH-001", to: "COMP-ERP-001" },
+         // COMP → TBL links (component phụ thuộc table nào)
+         { from: "COMP-ERP-001", to: "TBL-ERP-001" },
+         // ADR links (design decision ảnh hưởng API/TBL nào)
+         { from: "ADR-ERP-001", to: "API-ERP-001" },
+         // INT links — CHỈ khi có cross-system calls
+         { from: "API-ERP-001", to: "INT-ERP-001" }
+       ]
+     })
+     // Ghi chú: Thêm đủ tất cả items theo module thực tế — ví dụ trên chỉ minh họa pattern
 
 // BẮT BUỘC per-module checkpoint (RISK-003) — lưu sau MỖI MODSPEC, kể cả khi còn modules khác
-7. mc_checkpoint({
+3. mc_checkpoint({
      label: "sau-modspec-{mod}",
      sessionSummary: "Thiết kế MODSPEC-{MOD}: {N} APIs, {M} tables, {K} components, {J} ADRs",
      nextActions: ["Tiếp tục module tiếp theo: {MOD-NEXT}" // hoặc "/mcv3:qa-docs nếu xong tất cả"]

@@ -45,6 +45,56 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 
 ---
 
+## SPEED OPTIMIZATION GUIDELINES
+
+> Áp dụng các kỹ thuật dưới đây để giảm latency mà **không hy sinh quality**.
+
+### Parallel MCP Calls
+
+| Điểm tối ưu | Trước | Sau | Tiết kiệm |
+|-------------|-------|-----|-----------|
+| Phase 0 init | mc_status → check PROJECT-OVERVIEW → check EXPERT-LOG (3 sequential) | [mc_status ∥ mc_load(PO layer:0) ∥ mc_load(EL layer:0)] — 1 round | ~2 round-trip |
+| Phase 0 full load | mc_load(PO layer:2) → mc_load(EL layer:2) (sequential) | [mc_load(PO layer:2) ∥ mc_load(EL layer:2)] song song | ~1 round-trip |
+| Phase 0 checkpoint | Sau load riêng, gọi mc_checkpoint | [mc_load(PO layer:2) ∥ mc_load(EL layer:2) ∥ mc_checkpoint] — 1 round | ~1 round-trip |
+| Phase 2a skeleton load | Load từng skeleton riêng lẻ | Load skeleton + industry ref song song | ~1 round-trip / domain |
+| Phase 5 per-domain save | mc_save(BP) → mc_validate → mc_traceability → mc_save(PROC) → mc_validate | mc_save(BP) → [mc_validate ∥ mc_traceability] → mc_save(PROC) → mc_validate | ~1 round-trip / domain |
+
+### Cache Shared Data
+
+```
+PROJECT-OVERVIEW.md và EXPERT-LOG.md: Load 1 lần ở Phase 0 → dùng cho tất cả domains
+→ KHÔNG reload cho mỗi domain riêng lẻ
+→ Tiết kiệm: (N_domains − 1) × 2 mc_load calls
+```
+
+### Parallel Gen + Sequential Save (Multi-Domain)
+
+```
+Khi có ≥ 2 domains:
+1. Pre-assign BR-ID ranges TRƯỚC khi generate (tránh conflict):
+   Domain 1: BR-{DOM1}-001 → BR-{DOM1}-049
+   Domain 2: BR-{DOM2}-001 → BR-{DOM2}-049
+   Domain 3: BR-{DOM3}-001 → BR-{DOM3}-049
+
+2. Generate content cho tất cả domains song song (không MCP → chỉ dùng context)
+
+3. Save tuần tự — mỗi domain: mc_save(BIZ-POLICY) → [mc_validate ∥ mc_traceability] → mc_save(PROCESS) → mc_validate → mc_checkpoint
+```
+
+### Quy tắc áp dụng
+
+```
+✅ Phase 0 parallel: [mc_status ∥ mc_load(PO layer:0) ∥ mc_load(EL layer:0)] — 1 round
+✅ Phase 0 full load: [mc_load(PO layer:2) ∥ mc_load(EL layer:2) ∥ mc_checkpoint] — 1 round
+   → mc_checkpoint chạy song song vì không cần nội dung từ load
+✅ Cache: PROJECT-OVERVIEW và EXPERT-LOG load 1 lần, dùng cho tất cả domains
+✅ Pre-assign BR-ID ranges khi generate ≥ 2 domains song song
+✅ Post-save parallel: mc_validate ∥ mc_traceability sau mc_save(BIZ-POLICY)
+✅ No re-validation: Pre-Completion chỉ confirm "validate đã PASS tại Phase 5", không re-run
+```
+
+---
+
 ## Khi nào dùng skill này
 
 - Sau khi `/mcv3:expert-panel` hoàn thành (hoặc ít nhất có PROJECT-OVERVIEW.md)
@@ -89,13 +139,22 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 ## Phase 0 — Pre-Gate
 
 ```
-1. mc_status() → xác nhận project
-2. Kiểm tra PROJECT-OVERVIEW.md đã có
-   → Nếu KHÔNG CÓ → ❌ BLOCKING: "Thiếu PROJECT-OVERVIEW.md → Chạy /mcv3:discovery trước."
-3. Kiểm tra EXPERT-LOG.md
-   → Nếu có: load để lấy recommendations
-   → Nếu không có: ⚠️ WARNING — ghi DECISION "Thiếu EXPERT-LOG, tiếp tục với PROJECT-OVERVIEW only" — Confidence: LOW
-4. Tự xác định domain list từ SC-IN IDs trong PROJECT-OVERVIEW + EXPERT-LOG
+// SPEED: Gộp mc_status + 2 file checks vào 1 round song song
+1. PARALLEL (3 calls đồng thời — 1 round duy nhất):
+   - mc_status()  → xác nhận project slug
+   - mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 0 })  → check tồn tại
+   - mc_load({ filePath: "_PROJECT/EXPERT-LOG.md", layer: 0 })  → check tồn tại
+
+   → PROJECT-OVERVIEW NOT FOUND → ❌ BLOCKING: "Thiếu PROJECT-OVERVIEW.md → Chạy /mcv3:discovery trước."
+   → EXPERT-LOG NOT FOUND → ⚠️ WARNING — ghi DECISION "Thiếu EXPERT-LOG, tiếp tục với PROJECT-OVERVIEW only" — Confidence: LOW
+
+2. (Nếu cả 2 tồn tại) PARALLEL full load + checkpoint:
+   - mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 2 })  // CACHE — dùng cho tất cả domains
+   - mc_load({ filePath: "_PROJECT/EXPERT-LOG.md", layer: 2 })        // CACHE — dùng cho tất cả domains
+   - mc_checkpoint({ label: "pre-biz-docs", ... })                    // Safety checkpoint song song
+   (Nếu chỉ có PROJECT-OVERVIEW) → load layer:2 + mc_checkpoint song song
+
+3. Tự xác định domain list từ SC-IN IDs trong PROJECT-OVERVIEW + EXPERT-LOG
    → Không hỏi user — tự detect tất cả domains cần làm
 
 5. [MANDATORY] Scale Detection — Đếm số domains:
@@ -108,16 +167,8 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 
 ## Phase 0 — Safety Checkpoint
 
-Trước khi bắt đầu generate, tự động lưu checkpoint để có thể resume nếu bị interrupt:
-
-```
-mc_checkpoint({
-  projectSlug: "<slug>",
-  label: "pre-biz-docs",
-  sessionSummary: "Chuẩn bị chạy /mcv3:biz-docs — tạo BIZ-POLICY, PROCESS, DATA-DICTIONARY",
-  nextActions: ["Tiếp tục /mcv3:biz-docs — Phase 1: Domain List Auto-Detection"]
-})
-```
+Safety checkpoint đã được tích hợp vào Phase 0 Pre-Gate (bước 2) để chạy song song với full load.
+Không cần gọi riêng — tham khảo Phase 0 Pre-Gate bước 2.
 
 → "✅ Safety checkpoint đã lưu. Bắt đầu tạo BizDocs..."
 
@@ -302,21 +353,22 @@ Với mỗi domain (KHÔNG hiển thị nội dung lên chat — chỉ show tóm
 1. mc_save({ filePath: "_PROJECT/BIZ-POLICY/BIZ-POLICY-{DOM}.md", documentType: "biz-policy" })
    → 📄 Đã lưu: BIZ-POLICY-{DOM}.md — {N} Business Rules (BR-{DOM}-001 → BR-{DOM}-{NNN})
 
-2. [BẮT BUỘC] mc_validate({ filePath: "_PROJECT/BIZ-POLICY/BIZ-POLICY-{DOM}.md" })
-   → Nếu có ERRORs → ❌ BLOCKING: sửa ngay trước khi tiếp tục domain tiếp theo
-   → Nếu chỉ có WARNINGs → ghi DECISION, tiếp tục
+// SPEED: mc_validate ∥ mc_traceability song song sau mc_save
+2. PARALLEL:
+   - [BẮT BUỘC] mc_validate({ filePath: "_PROJECT/BIZ-POLICY/BIZ-POLICY-{DOM}.md" })
+     → Nếu có ERRORs → ❌ BLOCKING: sửa ngay trước khi tiếp tục domain tiếp theo
+     → Nếu chỉ có WARNINGs → ghi DECISION, tiếp tục
+   - [BẮT BUỘC] mc_traceability({ projectSlug: "...", action: "register",
+       sourceId: "BR-{DOM}-NNN", targetId: "BIZ-POLICY-{DOM}.md" })
+     → Đăng ký tất cả BR-IDs từ BIZ-POLICY vào traceability matrix
 
-3. [BẮT BUỘC] mc_traceability({ projectSlug: "...", action: "register",
-     sourceId: "BR-{DOM}-NNN", targetId: "BIZ-POLICY-{DOM}.md" })
-   → Đăng ký tất cả BR-IDs từ BIZ-POLICY vào traceability matrix
-
-4. mc_save({ filePath: "_PROJECT/PROCESS/PROCESS-{DOM}.md", documentType: "process" })
+3. mc_save({ filePath: "_PROJECT/PROCESS/PROCESS-{DOM}.md", documentType: "process" })
    → 📄 Đã lưu: PROCESS-{DOM}.md — {M} quy trình (AS-IS + TO-BE)
 
-5. [BẮT BUỘC] mc_validate({ filePath: "_PROJECT/PROCESS/PROCESS-{DOM}.md" })
+4. [BẮT BUỘC] mc_validate({ filePath: "_PROJECT/PROCESS/PROCESS-{DOM}.md" })
    → Nếu có ERRORs → ❌ BLOCKING: sửa ngay trước khi tiếp tục
 
-6. [BẮT BUỘC] Per-domain checkpoint (RISK-003):
+5. [BẮT BUỘC] Per-domain checkpoint (RISK-003):
    mc_checkpoint({
      label: "biz-docs-{DOM}-complete",
      sessionSummary: "Hoàn thành BIZ-POLICY + PROCESS cho domain {DOM}",
