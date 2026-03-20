@@ -93,6 +93,17 @@ References:
 - Đánh dấu `// REVIEW: [lỗi cụ thể]` tại vị trí có vấn đề
 - Tiếp tục generate các module khác, không block toàn bộ
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — tự chọn module theo MODSPEC files, tự generate code + tests
+2. **Tự giải quyết vấn đề** — REVIEW/PENDING markers khi specs không đủ, ghi DECISION
+3. **Báo cáo sau khi xong** — list code files + verification results + security findings
+4. **User review** — giải thích REVIEW markers, cập nhật nếu user cung cấp thêm specs
+5. **Gợi ý bước tiếp** — `/mcv3:verify`
+
+---
+
 ## Token Efficiency
 
 **Dự án nhỏ (1-3 modules):**
@@ -114,14 +125,10 @@ References:
 2. mc_list({ subPath: "{SYSTEM}/P2-DESIGN" }) → liệt kê MODSPECs
 3. mc_list({ subPath: "{SYSTEM}/P3-QA-DOCS" }) → kiểm tra TEST files
 4. Kiểm tra project structure hiện tại (src/ đã có gì)
-5. Hỏi user:
-   "Bạn muốn generate code cho module nào?
-   [Danh sách MODSPEC files]
-
-   Tech stack đã confirm: {backend} / {database} / {frontend}
-   Output folder sẽ là: src/{sys_lower}/{mod_lower}/
-
-   Tiếp tục?"
+5. Tự xác định module order:
+   - MODSPEC available → dependency order (shared/auth trước, business logic sau)
+   - mc_checkpoint trước khi bắt đầu generate (pre-codegen checkpoint)
+   - Tự bắt đầu generate — không hỏi user confirm
 ```
 
 **Nếu thiếu MODSPEC:**

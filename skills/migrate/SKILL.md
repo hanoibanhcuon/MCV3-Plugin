@@ -34,6 +34,19 @@ References:
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — auto-detect migration source từ context, tự convert và save
+2. **Tự giải quyết vấn đề** — tự classify content vào đúng MCV3 phases, ghi DECISION khi ambiguous
+3. **Báo cáo sau khi xong** — MIGRATION-REPORT với count docs converted + gaps detected
+4. **User review** — user review MIGRATION-REPORT, confirm generated ACs
+5. **Gợi ý bước tiếp** — `/mcv3:requirements` hoặc `/mcv3:tech-design`
+
+**Input bắt buộc từ user:** Nội dung tài liệu cần migrate (paste hoặc mô tả codebase)
+
+---
+
 ## Khi nào dùng skill này
 
 - Đang có docs Word/PDF/Confluence muốn chuyển sang MCV3
@@ -44,32 +57,21 @@ References:
 
 ---
 
-## Phase 0 — Migration Assessment
+## Phase 0 — Auto-Detect Migration Source
+
+Tự detect source từ context — không hỏi:
 
 ```
-"🔄 Migration Mode
+Auto-detect logic từ user message và attachments:
+  - User paste nội dung markdown/text → Scope 1 (Documents)
+  - User mô tả "Confluence/Notion/Docs" → Scope 2
+  - User mô tả "codebase/src/" hoặc paste code → Scope 3
+  - User có requirements nhưng không có IDs → Scope 4
+  - User đề cập nhiều nguồn → Scope 5
+  - User đề cập "dự án đang chạy/in-progress" → Scope 6
 
-Bạn đang migrate từ đâu?
-
-[1] Documents có sẵn (Word/PDF/Markdown)
-    → Tôi đọc và convert sang MCV3 format
-
-[2] Confluence/Notion/Google Docs
-    → Paste nội dung vào đây, tôi convert
-
-[3] Codebase hiện tại (không có docs)
-    → Reverse-engineer documentation từ code
-
-[4] Dự án cũ có requirements nhưng không có formal IDs
-    → Extract và assign formal IDs
-
-[5] Kết hợp nhiều nguồn
-    → Merge nhiều sources vào 1 project MCV3
-
-[6] Dự án đang phát triển dở (Ongoing Project Integration)
-    → Mixed-phase: import assets từ nhiều phases cùng lúc
-    → Không yêu cầu hoàn thành phase trước mới import phase sau
-    → Khuyến nghị: chạy /mcv3:assess trước để có assessment"
+Nếu không rõ → ghi DECISION + dùng Scope phù hợp nhất từ context
+→ Tự chuyển sang Phase 1 ngay
 ```
 
 ---
@@ -187,21 +189,15 @@ Namespaces:
   FINANCE: BR-FIN-001...
 ```
 
-### 3b. Confirm với user
+### 3b. Auto-Start Migration
 
 ```
-"📋 Migration Plan:
-
-Tôi sẽ tạo:
-- BIZ-POLICY: {N} business rules (BR-xxx)
-- URS: {M} user stories (US-xxx) với {K} acceptance criteria
-- {Các documents khác}
-
-Assign IDs theo:
-  WH module: BR-WH-001...050, US-WH-001...020
-  SALES module: BR-SALES-001...030, US-SALES-001...015
-
-Bắt đầu migration?"
+Tự động bắt đầu migration — không chờ confirm:
+  Ghi nhận plan vào completion report:
+  - BIZ-POLICY: {N} business rules (BR-xxx)
+  - URS: {M} user stories (US-xxx)
+  - ID ranges per module
+→ Chuyển ngay sang Phase 4 (Document Conversion)
 ```
 
 ---
@@ -421,7 +417,7 @@ LINK_WITH_ASSESS: Nên có ASSESSMENT-MATRIX từ /mcv3:assess trước khi làm
 
 ### Workflow Mixed-Phase
 
-**Bước 0: Safety snapshot + kiểm tra assessment**
+**Bước 0: Safety snapshot (tự động)**
 
 ```
 // LUÔN tạo snapshot trước khi bắt đầu mixed-phase import
@@ -432,11 +428,11 @@ mc_snapshot({
 })
 → "✅ Safety snapshot đã tạo."
 
-"Bạn đã chạy /mcv3:assess chưa?
-[Y] Đã có ASSESSMENT-MATRIX → tiến hành import ngay
-[N] Chưa có → Khuyến nghị: chạy /mcv3:assess trước để có full picture
-
-Muốn bỏ qua assess và import trực tiếp? [Y/N]"
+// Tự kiểm tra ASSESSMENT-MATRIX (không hỏi user):
+mc_list({ subPath: "_mcv3-work/assessment" })
+→ Nếu có ASSESSMENT-MATRIX → dùng làm guide
+→ Nếu chưa có → ghi DECISION: "Proceed without assess — user có thể chạy /mcv3:assess sau"
+→ Tiếp tục import ngay
 ```
 
 **Bước 1: Inventory tất cả assets**
@@ -475,7 +471,7 @@ test_cases.xlsx → {SYS}/P3-QA-DOCS/TEST-{MOD}.md → Convert → Low
   Phase 1 (Discovery): Sẽ tạo PROJECT-OVERVIEW từ BRD intro + context
   Phase 2 (Expert): Tạm để trống — không block các phases khác
 
-Bắt đầu import?"
+→ Tự động chuyển sang Bước 3 (Import per-phase)"
 ```
 
 **Bước 3: Import per-phase (không theo thứ tự)**

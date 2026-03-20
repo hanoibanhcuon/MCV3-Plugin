@@ -40,6 +40,17 @@ References:
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — tự chọn module theo dependency order, tự tạo URS hoàn chỉnh
+2. **Tự giải quyết vấn đề** — tự điền AC, NFR dựa trên BRs và industry standards
+3. **Báo cáo sau khi xong** — list tất cả URS files + IDs + coverage metrics
+4. **User review** — cập nhật US/AC/FT nếu user muốn điều chỉnh
+5. **Gợi ý bước tiếp** — `/mcv3:tech-design`
+
+---
+
 ## Khi nào dùng skill này
 
 - Sau khi `/mcv3:biz-docs` hoàn thành (có BIZ-POLICY + PROCESS + DATA-DICTIONARY)
@@ -72,8 +83,10 @@ References:
 2. Kiểm tra BIZ-POLICY đã có ít nhất 1 file
 3. Tải PROJECT-OVERVIEW.md (layer: 2) → nắm bối cảnh
 4. mc_list({ subPath: "_PROJECT/BIZ-POLICY" }) → liệt kê domains có BIZ-POLICY
-5. Hỏi user: "Bạn muốn viết URS cho system/module nào trước?
-   Ví dụ: ERP/Kho hàng, WEB/Bán hàng, MOB/Giao hàng..."
+5. Tự xác định module order:
+   - Domains trong BIZ-POLICY → map sang modules
+   - Dependency order: Core modules (Auth, Master data) → Business modules → Integration
+   - Xử lý từng module theo order, không hỏi user
 ```
 
 **Nếu thiếu BIZ-POLICY:**
@@ -84,22 +97,18 @@ References:
 
 ---
 
-## Phase 1 — System/Module Selection
+## Phase 1 — System/Module Auto-Detection
 
-User xác nhận system code và module cần làm URS.
+Tự xác định system code và modules từ BIZ-POLICY files available.
 
-**Xác định:**
-- `{SYSTEM}` — mã hệ thống (VD: ERP, WEB, MOB-STAFF)
-- `{MOD}` — mã module (VD: INV, SALES, WH, HR)
-- Tên đầy đủ của module
-
-**Ví dụ:**
+**Tự xác định từ BIZ-POLICY:**
 ```
-User: "Làm ERP, module Kho hàng (WH) trước"
-→ SYSTEM = "ERP"
-→ MOD = "WH"
-→ Tên: "Warehouse — Quản lý kho hàng"
-→ Output: ERP/P1-REQUIREMENTS/URS-WH.md
+mc_list({ subPath: "_PROJECT/BIZ-POLICY" })
+→ BIZ-POLICY-WH.md → SYSTEM = "ERP", MOD = "WH"
+→ BIZ-POLICY-SALES.md → SYSTEM = "ERP", MOD = "SALES"
+→ ... (tất cả domains có BIZ-POLICY)
+
+Nếu user đã chỉ định system/module trong message → ưu tiên theo đó
 ```
 
 **Kiểm tra BIZ-POLICY tương ứng:**
@@ -205,45 +214,28 @@ Enables: MODSPEC-{MOD}.md
 |-------|-------|-------|--------|
 ```
 
-### 3b. Guided Generation Protocol
+### 3b. Auto-Complete Generation Protocol
 
-Tạo draft với placeholder rõ ràng, sau đó hỏi user từng phần:
+Tạo URS hoàn chỉnh ngay từ đầu, không dừng để hỏi user:
 
 ```
-"📋 Draft URS-WH có {N} User Stories và {M} Functional Requirements.
-
-Hãy review và bổ sung:
-
-1. US-WH-001 (Tạo phiếu nhập kho):
-   - Acceptance Criteria có đủ chưa? Còn edge cases nào?
-   - VD: Điều gì xảy ra khi số lượng nhập > PO?
-
-2. US-WH-003 (FIFO xuất kho):
-   - System có cần alert khi hết hàng không?
-   - Batch export hay từng item?
-
-3. NFR: Hệ thống cần xử lý bao nhiêu giao dịch/ngày?
-   - Hiệu năng cụ thể? (VD: <2s response time)"
+1. Tự điền đầy đủ từ BIZ-POLICY + PROCESS + DATA-DICTIONARY
+2. Tự generate AC cho mỗi US:
+   - Happy Path: từ BR positive conditions
+   - Error Cases: từ BR exceptions và validation rules
+   - Edge Cases: từ industry knowledge (VD: duplicate, concurrent, empty state)
+3. Nơi không đủ context → điền best-practice default + ghi DECISION
+4. NFR: dùng industry standard defaults nếu không specify trong docs:
+   DECISION: NFR-001 performance target = <2s dựa trên web industry standard
+   Confidence: MEDIUM — user nên review
+5. Chạy AC Quality Validation Checklist tự động trước khi save
 ```
 
 ---
 
-## Phase 4 — Enrichment Loop
+## Phase 4 — Auto-Completeness Validation
 
-Lặp lại cho đến khi user hài lòng:
-
-```
-WHILE user muốn bổ sung:
-  1. Nhận input từ user
-  2. Cập nhật URS draft:
-     - Thêm AC mới
-     - Refine FT descriptions
-     - Thêm NFR nếu user mention
-     - Cập nhật priority
-  3. Re-present phần đã thay đổi
-
-UNTIL user confirm "OK, tiếp tục"
-```
+Tự đánh giá completeness trước khi finalize — không chờ user confirm:
 
 **AC Quality Validation Checklist — kiểm tra trước khi finalize:**
 
@@ -305,16 +297,16 @@ NFR MEASURABILITY:
 
 ---
 
-## Phase 6 — Multi-Module Loop
+## Phase 6 — Multi-Module Auto Loop
 
-Nếu còn modules khác cần URS:
+Nếu còn modules khác cần URS, tự chuyển sang module tiếp theo theo dependency order:
 
 ```
-"✅ URS-{MOD} hoàn thành! ({N} User Stories, {M} Functional Requirements)
-
-Bạn muốn tiếp tục với module nào?
-□ [List các modules từ BIZ-POLICY chưa có URS]
-□ Đã xong — chuyển sang /mcv3:tech-design"
+mc_checkpoint({ label: "sau-urs-{mod}", ... })
+→ Tự load BIZ-POLICY module tiếp theo
+→ Lặp lại Phase 2-5 cho module tiếp theo
+→ Cho đến khi tất cả modules có URS
+→ Báo cáo tổng hợp sau khi xong tất cả
 ```
 
 ---

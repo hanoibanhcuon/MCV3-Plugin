@@ -47,6 +47,17 @@ References:
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — tự chọn module theo URS files, tự thiết kế API + DB + Components
+2. **Tự giải quyết vấn đề** — tech-expert agent validate kiến trúc, tự quyết design decisions
+3. **Báo cáo sau khi xong** — list MODSPEC files + API count + table count + ADRs
+4. **User review** — cập nhật design nếu user muốn điều chỉnh
+5. **Gợi ý bước tiếp** — `/mcv3:qa-docs`
+
+---
+
 ## Khi nào dùng skill này
 
 - Sau khi `/mcv3:requirements` hoàn thành (ít nhất 1 URS file)
@@ -106,8 +117,10 @@ Multi-system với auth  → Load thêm AUTH-SPEC-TEMPLATE.md
 1. mc_status() → xác nhận project và tech stack từ _config.json
 2. mc_list({ subPath: "{SYSTEM}/P1-REQUIREMENTS" }) → liệt kê URS files có sẵn
 3. mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 2 }) → đọc tech context
-4. Hỏi user: "Bạn muốn design tech cho module nào?
-   [List URS files đã có]"
+4. Tự xác định module order từ URS files available:
+   - Core/Foundation modules trước (Auth, Master data)
+   - Business logic modules theo dependency
+   - Xử lý tất cả modules, không hỏi user chọn
 ```
 
 **Nếu không có URS:**
@@ -127,19 +140,15 @@ mc_load({ filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md", layer: 3 })
 mc_load({ filePath: "_PROJECT/DATA-DICTIONARY.md", layer: 2 })
 ```
 
-### 1b. Xác nhận Tech Stack
+### 1b. Extract Tech Stack từ docs
 
-Từ PROJECT-OVERVIEW.md, extract tech stack. Hỏi user xác nhận:
+Từ PROJECT-OVERVIEW.md, extract tech stack và dùng trực tiếp — không hỏi xác nhận:
 
 ```
-"Tôi thấy project dùng tech stack:
-- Backend: {VD: Node.js + TypeScript + Express}
-- Database: {VD: PostgreSQL}
-- Frontend: {VD: React + TypeScript}
-- Cache: {VD: Redis}
-- Message Queue: {VD: RabbitMQ / không có}
-
-Đây đúng không? Hay có thay đổi gì?"
+Đọc: _PROJECT/PROJECT-OVERVIEW.md (layer: 2) + _PROJECT/PROJECT-ARCHITECTURE.md (nếu có)
+Extract: Backend, Database, Frontend, Cache, Message Queue
+Nếu không tìm thấy → ghi DECISION: "Dùng tech stack mặc định [X] dựa trên domain {domain}"
+Confidence: MEDIUM nếu dùng default
 ```
 
 ### 1c. Invoke Tech Expert Agent
@@ -240,22 +249,16 @@ Content-Type: application/json
 **Origin AC:** AC-{MOD}-NNN-01, AC-{MOD}-NNN-02
 ```
 
-### 2c. Guided API Review
+### 2c. API Design Decisions (Auto)
 
-Sau khi draft xong toàn bộ API specs:
+Sau khi draft xong toàn bộ API specs, tự quyết design decisions:
 
 ```
-"📡 Tôi đã thiết kế {N} endpoints cho module {MOD}.
-
-Review nhanh:
-1. API-ERP-001: POST /receipts — Tạo phiếu nhập kho
-   - Request có đủ fields chưa?
-   - Response trả về những gì sau khi tạo?
-
-2. Pagination: Tôi dùng cursor-based hay offset-based?
-   (Cursor tốt hơn cho large datasets, offset dễ implement hơn)
-
-3. Versioning: /api/v1/ — Khi nào cần v2?"
+Pagination: Tự chọn offset-based (default cho hầu hết cases, dễ implement)
+  → Ghi DECISION nếu chọn cursor-based (chỉ khi >1M records expected)
+Versioning: /api/v1/ — ghi ADR về versioning strategy
+Fields: Dựa trên TBL specs và AC trong URS — không cần hỏi thêm
+Responses: Follow standard pattern từ api-design-patterns.md
 ```
 
 ---

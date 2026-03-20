@@ -34,6 +34,17 @@ References:
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — tự xác định domains từ PROJECT-OVERVIEW, tự tạo docs cho tất cả
+2. **Tự giải quyết vấn đề** — load industry knowledge, tự điền nội dung, ghi DECISION khi không chắc
+3. **Báo cáo sau khi xong** — list tất cả docs tạo ra + decisions + gaps để user review
+4. **User review** — cập nhật BRs/content nếu user muốn điều chỉnh
+5. **Gợi ý bước tiếp** — `/mcv3:requirements`
+
+---
+
 ## Khi nào dùng skill này
 
 - Sau khi `/mcv3:expert-panel` hoàn thành (hoặc ít nhất có PROJECT-OVERVIEW.md)
@@ -70,24 +81,25 @@ References:
 1. mc_status() → xác nhận project
 2. Kiểm tra PROJECT-OVERVIEW.md đã có
 3. Kiểm tra EXPERT-LOG.md — nếu có: load để lấy recommendations
-4. Hỏi user: "Bạn muốn tạo tài liệu cho domain nào trước?
-   (VD: Bán hàng, Kho, HR, Tài chính, Vận chuyển...)"
+4. Tự xác định domain list từ SC-IN IDs trong PROJECT-OVERVIEW + EXPERT-LOG
+   → Không hỏi user — tự detect tất cả domains cần làm
 ```
 
 ---
 
-## Phase 1 — Domain Selection & Scope
+## Phase 1 — Domain List Auto-Detection
 
-User chọn domain(s) cần tạo tài liệu.
+Tự xác định domain list từ PROJECT-OVERVIEW.md (SC-IN IDs + Stakeholder roles) và EXPERT-LOG.md (CONSENSUS section).
 
-**Ví dụ:**
+**Tự xác định:**
 ```
-User: "Làm cho bộ phận Kho và Bán hàng trước"
-→ Domain list: ["WH" (Warehouse), "SALES"]
+Từ SC-IN-001...N: extract tên modules/domains chính
+Từ EXPERT-LOG CONSENSUS: xem domain nào được mention
+→ Domain list: ["WH" (Warehouse), "SALES", ...]
 → Sẽ tạo:
-   - BIZ-POLICY-WH.md + BIZ-POLICY-SALES.md
-   - PROCESS-WH.md + PROCESS-SALES.md
-   - DATA-DICTIONARY.md (chung cho tất cả)
+   - BIZ-POLICY-{DOM}.md cho mỗi domain
+   - PROCESS-{DOM}.md cho mỗi domain
+   - DATA-DICTIONARY.md (chung)
 ```
 
 ---
@@ -139,25 +151,26 @@ Doc-writer tạo skeleton BIZ-POLICY với:
 ...
 ```
 
-### 2c. Present to user — Review conversation
+### 2c. Auto-fill document từ industry knowledge + context
 
-Trình bày skeleton và hỏi:
+Thay vì trình bày skeleton để hỏi user, tự hoàn thành tài liệu:
 
 ```
-"📄 Tôi đã tạo draft BIZ-POLICY-WH với {N} business rules.
-Hãy review và cho tôi biết:
-
-1. BR-WH-001: Kiểm soát nhập kho — Quy tắc cụ thể của bạn là gì?
-2. BR-WH-002: FIFO — Có ngoại lệ nào không? (VD: hàng urgent)
-3. Có Business Rules quan trọng nào tôi chưa đề cập không?"
+1. Load industry references đã match với domain
+2. Áp dụng industry best practices vào BRs
+3. Điền nội dung cụ thể từ PROJECT-OVERVIEW + EXPERT-LOG
+4. Nơi nào không có đủ context → điền best-practice default + ghi DECISION:
+   DECISION-{N}: BR-{DOM}-{NNN} content dùng industry default:
+   [mô tả default] — Confidence: MEDIUM — User nên review
+5. Không để [Placeholder] hay "Chờ xác nhận" — luôn có nội dung cụ thể
 ```
 
 ### 2d. Enrich document
 
-Dựa vào câu trả lời của user → update document:
-- Điền nội dung cụ thể
-- Thêm BR mới nếu user mention
-- Cập nhật ngoại lệ / điều kiện
+Tự enrich document dựa trên industry knowledge + PROJECT-OVERVIEW:
+- Điền nội dung cụ thể từ context
+- Thêm BRs từ industry standard nếu phù hợp với scope
+- Ghi DECISION cho mỗi BR không có nguồn rõ ràng (Confidence: MEDIUM)
 
 ### 2e. Repeat cho PROCESS document
 
@@ -209,13 +222,13 @@ Sau khi tạo xong BIZ-POLICY và PROCESS:
    - `ENT-NNN` — Business Entity
    - `ENUM-NNN` — Enumeration (danh sách giá trị cố định)
 
-3. **Guided generation:**
+3. **Auto-generate definitions:**
 
 ```
-"Tôi đã nhận dạng {N} thuật ngữ/entities cần định nghĩa:
-- TERM-001: Lô hàng — [Bạn muốn định nghĩa như thế nào?]
-- ENT-001: Khách hàng — [Attributes quan trọng là gì?]
-..."
+Tự định nghĩa dựa trên industry knowledge + BIZ-POLICY + PROCESS context:
+- TERM-001: Lô hàng — [định nghĩa từ industry standard + context dự án]
+- ENT-001: Khách hàng — [attributes chuẩn + những gì extract được từ BRs]
+Nếu không chắc chắn → ghi DECISION với Confidence: MEDIUM
 ```
 
 ---

@@ -39,6 +39,17 @@ References:
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — tự đọc verification report, tự xác định tech stack và tạo DEPLOY-OPS.md
+2. **Tự giải quyết vấn đề** — dùng PROJECT-ARCHITECTURE làm nguồn, tự fill defaults có tên rõ ràng khi thiếu info
+3. **Báo cáo sau khi xong** — liệt kê các quyết định đã tự điền (infra, strategy, SLA)
+4. **User review** — user điều chỉnh config nếu cần
+5. **Gợi ý bước tiếp** — Go-Live checklist + execute deployment plan
+
+---
+
 ## Khi nào dùng skill này
 
 - Sau khi `/mcv3:verify` hoàn thành và báo READY
@@ -106,22 +117,21 @@ mc_list({ documentType: "test" })  → liệt kê tất cả TEST files
 mc_list({ subPath: "_VERIFY-CROSS" })  → liệt kê verify documents
 ```
 
-### 1b. Thu thập thông tin deployment
+### 1b. Auto-detect thông tin deployment
 
-Hỏi user bổ sung thông tin còn thiếu:
+Tự trích xuất từ PROJECT-ARCHITECTURE.md — không hỏi user:
 
 ```
-"Để tạo DEPLOY-OPS.md, tôi cần thêm thông tin:
+Từ PROJECT-ARCHITECTURE.md:
+  → Deployment strategy: detect từ architecture section (default: Blue-Green)
+  → Cloud provider: detect từ infrastructure section (default: ghi "TBD — cần điền")
+  → Container: detect từ tech stack (default: Docker Compose)
+  → Monitoring: detect từ observability stack (default: Grafana + Prometheus)
+  → Go-live date: detect từ timeline section (default: ghi "TBD")
 
-1. Deployment strategy: Blue-Green / Canary / Rolling / Big-Bang?
-2. Cloud provider: AWS / GCP / Azure / VPS / On-premise?
-3. Container: Docker + Kubernetes / Docker Compose / Bare metal?
-4. Monitoring stack: Grafana / Datadog / New Relic / custom?
-5. Rollback window: bao nhiêu giờ sau deploy?
-6. Downtime tolerance: Zero downtime required / Maintenance window OK?
-7. Go-live date target: {DATE}?
-
-(Nhập thông tin hoặc nhấn Enter để dùng defaults)"
+Khi thiếu thông tin → ghi DECISION trong document:
+  DECISION: Strategy = Blue-Green (default — điều chỉnh nếu team có preference khác)
+  Confidence: MEDIUM — user review khuyến nghị
 ```
 
 ---

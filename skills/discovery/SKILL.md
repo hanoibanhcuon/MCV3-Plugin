@@ -23,6 +23,19 @@ References:
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — không dừng hỏi user giữa chừng
+2. **Tự giải quyết vấn đề** — tham vấn docs + expert agents khi gặp thông tin mơ hồ
+3. **Báo cáo sau khi xong** — tổng hợp outputs + decisions + metrics
+4. **User review** — cập nhật nếu user có thay đổi, auto-apply với impact analysis
+5. **Gợi ý bước tiếp** — `/mcv3:expert-panel`
+
+**Lưu ý:** Discovery là skill có phỏng vấn adaptive — user cung cấp ý tưởng/vấn đề ban đầu, skill tự xử lý phân tích và tạo tài liệu mà không cần user confirm từng bước.
+
+---
+
 ## Khi nào dùng skill này
 
 - User vừa tạo dự án mới (`mc_init_project`)
@@ -54,12 +67,12 @@ References:
 TRƯỚC KHI BẮT ĐẦU:
 1. Gọi mc_status() để xác nhận project slug
 2. Kiểm tra _PROJECT/PROJECT-OVERVIEW.md đã có chưa
-   → Nếu có: hỏi user "Cập nhật hay tạo mới?"
+   → Nếu có: tự chọn chế độ update (bổ sung thông tin vào docs hiện tại)
    → Nếu chưa: tiến hành phỏng vấn
 3. Đọc references/project-overview-schema.md để nắm output format
 4. Sau bước phỏng vấn Block 1, đọc references/scale-decision-matrix.md
-   → Recommend pipeline variant phù hợp (Micro/Small/Medium/Large/Enterprise)
-   → Thông báo cho user: "Dự án này phù hợp với pipeline [X], sẽ skip phases [Y, Z]"
+   → Tự recommend pipeline variant phù hợp (Micro/Small/Medium/Large/Enterprise)
+   → Ghi vào PROJECT-OVERVIEW: "Pipeline variant: [X], skip phases: [Y, Z]"
 ```
 
 ---
@@ -185,7 +198,7 @@ Tạo tài liệu dựa trên template `PROJECT-OVERVIEW-TEMPLATE.md`:
    })
 
 3. Nếu có ERRORs → sửa ngay
-4. Nếu chỉ có WARNINGs → báo user và hỏi "Tiếp tục hay sửa?"
+4. Nếu chỉ có WARNINGs → tự quyết tiếp tục, ghi vào DECISION-LOG để user review sau
 
 5. Lưu checkpoint:
    mc_checkpoint({
@@ -210,7 +223,7 @@ Kiểm tra trước khi thông báo hoàn thành:
 ✅ Checkpoint đã lưu
 
 → Nếu tất cả pass:
-   "✅ Discovery Phase hoàn thành! Tiếp theo: chạy /mcv3:expert-panel để Expert Panel phân tích dự án."
+   Báo cáo hoàn thành theo Auto-Mode format (xem knowledge/auto-mode-protocol.md Phase 3)
 → Nếu thiếu:
    "⚠️ Discovery chưa hoàn chỉnh: [liệt kê những gì còn thiếu]"
 ```

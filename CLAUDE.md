@@ -1,6 +1,6 @@
-# CLAUDE.md — MasterCraft DevKit v3.10.1 (MCV3)
+# CLAUDE.md — MasterCraft DevKit v3.11.0 (MCV3)
 
-Plugin này giúp Claude Code làm việc với **dự án phần mềm** theo quy trình 8 phases của MCV3. v3.10 hoàn chỉnh với: Pipeline 8 Phase + Lifecycle Management + Assess Skill + Embedded/IoT Module + Scale Flexibility & Industry Expansion (12 ngành) + **Smart Code-Gen** (sinh code thông minh theo mức độ chi tiết specs) + **Multi-System Orchestration** (build order, shared services, integration patterns) + **Code Quality Assurance** (verification loop tự động: compile → lint → test → security scan → coverage).
+Plugin này giúp Claude Code làm việc với **dự án phần mềm** theo quy trình 8 phases của MCV3. v3.11 hoàn chỉnh với: Pipeline 8 Phase + Lifecycle Management + Assess Skill + Embedded/IoT Module + Scale Flexibility & Industry Expansion (12 ngành) + **Smart Code-Gen** (sinh code thông minh theo mức độ chi tiết specs) + **Multi-System Orchestration** (build order, shared services, integration patterns) + **Code Quality Assurance** (verification loop tự động: compile → lint → test → security scan → coverage) + **Auto-Mode Framework** (tất cả skills chạy tự động hoàn toàn, không dừng hỏi user).
 
 ---
 
@@ -315,6 +315,32 @@ Mọi tài liệu dùng formal IDs để traceability:
 // FEAT-ID: FT-INV-001
 export class InventoryService { ... }
 ```
+
+---
+
+## Auto-Mode Framework (v3.11.0)
+
+Tất cả skills chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+
+```
+1. AUTO EXECUTE    — Skill tự chọn module/domain, tự tạo tài liệu hoàn chỉnh
+2. SELF-CONSULT    — Khi ambiguous: tự consult docs + expert agents, ghi DECISION-LOG
+3. COMPLETION REPORT — Sau khi xong: báo cáo ✅ Done / ⚠️ Decisions / 📋 Review / 📊 Metrics / 🔜 Next
+4. USER REVIEW     — User đọc report, skill auto-applies feedback nếu user yêu cầu
+5. NEXT STEP       — Luôn gợi ý /mcv3:{skill-tiếp-theo}
+```
+
+**KHÔNG BAO GIỜ:**
+- Hỏi "module nào trước?"
+- Hỏi "confirm tiếp tục không?"
+- Dừng giữa chừng chờ user approve
+- Hỏi "tech stack đúng không?"
+
+**LUÔN LUÔN:**
+- Tự chọn module order theo dependency
+- Tự detect tech stack từ docs
+- Tự quyết + ghi DECISION khi ambiguous
+- Checkpoint sau mỗi module
 
 ---
 

@@ -44,6 +44,17 @@ References:
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — tự chọn module theo MODSPEC files, tự tạo test cases + guides
+2. **Tự giải quyết vấn đề** — tự xác định test strategy từ project type, tự cover tất cả ACs
+3. **Báo cáo sau khi xong** — test coverage metrics, IDs tạo ra, docs updated
+4. **User review** — cập nhật test cases nếu user muốn thêm edge cases
+5. **Gợi ý bước tiếp** — `/mcv3:code-gen`
+
+---
+
 ## Khi nào dùng skill này
 
 - Sau khi `/mcv3:tech-design` hoàn thành (có ít nhất 1 MODSPEC)
@@ -111,8 +122,10 @@ Báo cáo sau khi tạo xong:
 1. mc_status() → xác nhận project, phase hiện tại
 2. mc_list({ subPath: "{SYSTEM}/P2-DESIGN" }) → liệt kê MODSPEC files có sẵn
 3. mc_list({ subPath: "{SYSTEM}/P3-QA-DOCS" }) → kiểm tra files đã có
-4. Hỏi user: "Bạn muốn tạo QA docs cho module nào?
-   [Danh sách MODSPEC files]"
+4. Tự xác định module order từ MODSPEC files:
+   - Ưu tiên modules chưa có TEST file
+   - Dependency order: Core → Business → Integration
+   - Xử lý tất cả modules, không hỏi user chọn
 ```
 
 **Nếu không có MODSPEC:**
@@ -141,30 +154,23 @@ Từ MODSPEC, lập danh sách:
 - Tất cả `API-{SYS}-NNN` (Endpoints cần test)
 - Tất cả `BR-{DOM}-NNN` (Business Rules cần validate)
 
-### 1c. Xác định Test Strategy
+### 1c. Auto-detect Test Strategy
 
-Hỏi user (tự động adapt theo project type):
+Tự xác định test strategy từ project type — không hỏi user:
 
 ```
-[Web/Backend project:]
-"Tôi sẽ tạo test cases theo strategy:
-- Unit Tests: Test từng function/method riêng lẻ
-- Integration Tests: Test API endpoints end-to-end
-- UAT Scenarios: User acceptance test scenarios
+[Web/Backend project — detect từ MODSPEC/PROJECT-OVERVIEW:]
+→ Strategy: Unit Tests + Integration Tests + UAT Scenarios
+→ Tools: Jest + Supertest (default cho Node.js) / pytest (Python)
 
-Bạn muốn thêm loại test nào khác?
-(E2E browser tests / Performance tests / Security tests)"
+[Mobile project — detect MOBILE-MODSPEC hoặc React Native/Flutter keywords:]
+→ Strategy: 3-tier (Unit: Jest/flutter_test, Component: RNTL/Widget, E2E: Detox/integration_test)
+→ Ghi DECISION: test strategy cho mobile — include iOS + Android coverage theo mặc định
 
-[Mobile project — load mobile-test-guide.md:]
-"Tôi sẽ tạo test cases theo Mobile Testing 3-tier strategy:
-- Tier 1 Unit: Store logic, API client, business validators (Jest / flutter_test)
-- Tier 2 Component: Screen render, form interaction (RNTL / Widget Test)
-- Tier 3 E2E: Full user flows (Detox / integration_test)
+[Embedded project — detect FIRMWARE-MODSPEC:]
+→ Strategy: Host-tests (Unity mock HAL) + On-target + Protocol tests
 
-Câu hỏi bổ sung:
-1. Cần test trên iOS và Android cả hai không?
-2. Có cần E2E Detox / integration_test không (CI/CD setup phức tạp hơn)?
-3. Có offline behavior cần test không?"
+Tự load guide tương ứng (mobile-test-guide.md / embedded-test-guide.md) theo project type
 ```
 
 ---
@@ -288,20 +294,16 @@ curl -X POST /api/v1/{resource}
 ```
 ```
 
-### 3e. Guided Review
+### 3e. Auto-Coverage Report
 
-Sau khi draft test cases:
+Sau khi tạo test cases, chạy coverage check tự động và tiếp tục mà không chờ user:
 
 ```
-"📋 Tôi đã tạo {N} test cases cho module {MOD}:
-- {X} Unit tests (Happy path + Error cases)
-- {Y} Integration tests (API endpoints)
-- {Z} UAT scenarios
-
-Coverage: {AC_count} Acceptance Criteria → {TC_count} Test Cases
-Tỷ lệ: {ratio} TC/AC (khuyến nghị: ≥ 1.5)
-
-Bạn có muốn thêm test cases cho edge cases nào không?"
+Tự tính coverage:
+  AC Coverage: {X}/{Y} ACs → nếu <100% → tự tạo thêm TCs cho ACs còn thiếu
+  TC/AC ratio: nếu <1.5 → tự thêm edge case TCs quan trọng
+  Missing cases: tự detect và tự tạo (không hỏi "Bạn có muốn thêm không?")
+Kết quả được ghi vào Completion Report cuối
 ```
 
 ---

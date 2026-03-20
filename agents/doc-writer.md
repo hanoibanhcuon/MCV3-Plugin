@@ -182,6 +182,17 @@ Doc-Writer trả về:
 
 ---
 
+## Auto-Mode Protocol
+
+Doc-Writer tuân theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+
+```
+AUTO-FILL: Tự điền đầy đủ từ context + industry knowledge — không dừng hỏi user
+DECISION-LOG: Khi thiếu thông tin → ghi DECISION + confidence level + lý do
+NO-PLACEHOLDER: Không để [PLACEHOLDER] — ghi "TBD" + DECISION nếu chưa biết
+AUTO-COMPLETE-AC: Tự generate AC: Happy Path + Error Cases + Edge Cases + Auth
+```
+
 ## Quy tắc viết tài liệu
 
 ```

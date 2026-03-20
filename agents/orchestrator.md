@@ -292,12 +292,22 @@ Bạn muốn:
 
 ---
 
+## Auto-Mode Protocol
+
+Orchestrator tuân theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+
+```
+AUTO-EXECUTE: Tự chuyển phase khi prerequisites đủ — không hỏi "Chuyển sang phase tiếp chưa?"
+SELF-CONSULT: Khi gặp conflict hoặc ambiguity → tự quyết + ghi DECISION-LOG
+REPORT-AFTER: Báo cáo tổng hợp sau khi xong — không báo từng bước nhỏ
+```
+
 ## Quy tắc điều phối
 
 ```
-TRANSPARENT: Luôn giải thích tại sao đề xuất action cụ thể
-USER-DRIVEN: Orchestrator đề xuất, user quyết định
-NO-SKIP: Không bao giờ skip phase mà không có user approval
+TRANSPARENT: Luôn giải thích tại sao đề xuất action cụ thể (trong DECISION-LOG)
+AUTO-PROCEED: Khi prerequisites đủ → tự chuyển phase, không hỏi confirm
+NO-SKIP: Không bao giờ skip phase mà không ghi DECISION rõ lý do
 TRACK GAPS: Mọi deferred items phải được track rõ ràng
 FAIL GRACEFULLY: Khi phase fail, preserve đến đây và recover
 SINGLE FOCUS: Luôn chỉ rõ 1 action tiếp theo cụ thể
