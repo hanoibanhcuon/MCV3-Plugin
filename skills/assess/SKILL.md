@@ -83,7 +83,8 @@ Auto-detect logic:
      - Có docs, không có code → Type B (docs only)
      - Có cả code lẫn docs → Type C (both, check for drift)
      - Type C + production signals → Type D (production formalization)
-     - Không detect được gì → ghi DECISION, flag "⚠️ Non-standard structure" trong PROJECT-MANIFEST
+     - **BLOCKING context:** Không có code VÀ không có docs VÀ user chưa cung cấp thông tin gì → DỪNG, hỏi: `"Mô tả dự án cần assess (codebase path, docs có sẵn, hoặc mô tả tổng quan)."`
+     - **WARNING context:** Không detect được cấu trúc rõ ràng nhưng user đã cung cấp mô tả → ghi DECISION, flag "⚠️ Non-standard structure" trong PROJECT-MANIFEST, tiếp tục assess với thông tin hiện có
   4. Verify detection — ghi vào DECISION-LOG:
      "Type Detection: Type {X} | code dir={path} | docs dir={path} | production={yes/no}"
      Confidence: HIGH (rõ ràng) / MEDIUM (1 trong 2 không chắc) / LOW (cả hai không chắc)
@@ -317,11 +318,44 @@ mc_save({
 })
 ```
 
+// RISK-003: Per-system checkpoint — ghi nhận sau mỗi system assessed
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "assess-system-{SYS}-done",
+  sessionSummary: "Assess: Đã hoàn thành system {SYS} — currentPhase: {phase}, {N} gaps",
+  nextActions: ["Tiếp tục /mcv3:assess — assess system tiếp theo: {next-system} hoặc sang Phase 3 (Gap Analysis)"]
+})
+// Lặp lại per-system checkpoint này sau mỗi system được assess (trước khi sang system tiếp theo)
+
 Cross-system consistency check (sau khi assess TẤT CẢ systems):
 ```
 ✓ System A MODSPEC reference System B APIs → System B currentPhase ≥ phase5-design
 ✓ Shared services (auth, notification, file) → currentPhase ≤ dependent systems
 ✓ Nếu có inconsistency → ghi DECISION và flag trong ASSESSMENT-MATRIX row tương ứng
+```
+
+### RISK-006: Large Project Batch Protocol (≥5 systems)
+
+Khi dự án có ≥5 systems:
+```
+// Phát hiện tự động khi systems count ≥ 5
+IF systems.length >= 5:
+  "⚠️ Dự án lớn phát hiện: {N} systems — dùng batch assessment protocol."
+
+  // Chia thành batches 3-4 systems
+  Batch 1: [SYS1, SYS2, SYS3] → assess → checkpoint → tiếp tục
+  Batch 2: [SYS4, SYS5, SYS6] → assess → checkpoint → tiếp tục
+  ...
+
+  // Checkpoint sau mỗi batch
+  mc_checkpoint({
+    label: "assess-batch-{N}-of-{TOTAL}",
+    sessionSummary: "Assessment: Batch {N}/{TOTAL} hoàn thành — {systems} assessed",
+    nextActions: ["Tiếp tục /mcv3:assess — Batch {N+1}: {systems-in-next-batch}"]
+  })
+
+  // Sau khi tất cả batches xong → cross-system consistency check toàn bộ
+  → Không bỏ qua cross-system check kể cả đã checkpoint per-batch
 ```
 
 Checkpoint sau Phase 2 (cho dự án lớn — có thể resume tại đây nếu session bị interrupt):
@@ -752,9 +786,9 @@ Kiểm tra tính nhất quán GIỮA các phases (chạy sau Pre-Completion Veri
 
 ```
 Phase Prerequisite Check (với mỗi system):
-  ✓ Nếu phase ≥ 5 (MODSPEC done) → Phase 4 (URS) phải có ≥ 1 URS file
-  ✓ Nếu phase ≥ 6 (QA done) → Phase 5 (MODSPEC) phải có ≥ 1 MODSPEC file
-  ✓ Nếu phase ≥ 7 (code done) → Phase 6 (TEST) phải có ≥ 1 TEST file
+  ✓ **BLOCKING:** Nếu phase ≥ 5 (MODSPEC done) → Phase 4 (URS) phải có ≥ 1 URS file — nếu không → downgrade currentPhase về phase4 và ghi Critical gap
+  ✓ **BLOCKING:** Nếu phase ≥ 6 (QA done) → Phase 5 (MODSPEC) phải có ≥ 1 MODSPEC file — nếu không → downgrade currentPhase về phase5 và ghi Critical gap
+  ✓ **BLOCKING:** Nếu phase ≥ 7 (code done) → Phase 6 (TEST) phải có ≥ 1 TEST file — nếu không → downgrade currentPhase về phase6 và ghi Critical gap
   ✓ Không có system nào skip phase trung gian mà không có lý do ghi trong ASSESSMENT-MATRIX
 
 Phase-Doc Drift Check (với mỗi system ở phase 5+):
