@@ -6,6 +6,45 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [3.11.2] — Install & Update System + Claude Config Auto-Generation — 2026-03-20
+
+### Added
+
+- **`scripts/install.sh`** — Installer cho Mac/Linux/Git Bash:
+  - Copy plugin files → `mcv3-devkit/` trong dự án user
+  - Tự động tạo `.claude/CLAUDE.md` với đầy đủ MCV3 instructions (pipeline, tools, auto-mode rules)
+  - Cài slash commands → `.claude/commands/mcv3/` (cập nhật paths sang `mcv3-devkit/skills/...`)
+  - Cấu hình `.mcp.json` với `mcv3-project-memory` entry
+  - Cấu hình `.claude/settings.json` với auto-checkpoint hook
+  - Build MCP Server (hoặc dùng `dist/` đóng gói sẵn)
+  - Chạy verify sau khi cài
+
+- **`scripts/install.ps1`** — Installer cho Windows PowerShell (tương đương install.sh)
+
+- **`scripts/update.sh`** — Updater: update plugin lên version mới, bảo toàn `.mc-data/`
+
+- **`scripts/verify-install.sh`** — Kiểm tra 8 hạng mục: Node.js, plugin structure, MCP server, .mcp.json, slash commands, CLAUDE.md, hooks
+
+- **`scripts/package.sh`** — Tạo release package `.plugin` (zip) để phân phối
+
+- **`.pluginignore`** — Danh sách files exclude khi đóng gói
+
+- **`INSTALL.md`** — Hướng dẫn cài đặt chi tiết: tự động và thủ công, xử lý lỗi, uninstall
+
+### Changed
+
+- **`README.md`** — Cập nhật section "Cài đặt": thay hướng dẫn thủ công bằng install script, thêm link INSTALL.md
+
+- **`.claude-plugin/plugin.json`** — Cập nhật version 3.10.0 → 3.11.2
+
+### Notes
+
+- Install tự động tạo `.claude/CLAUDE.md` giúp Claude nhận diện MCV3 ngay khi mở dự án
+- `.mc-data/` **KHÔNG BAO GIỜ** bị xóa/sửa bởi install hoặc update
+- `dist/index.js` được đóng gói sẵn trong release — user không cần npm build
+
+---
+
 ## [3.11.1] — Output Display Protocol — Skills chỉ show tóm tắt, không dump full content — 2026-03-20
 
 ### Added
