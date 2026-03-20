@@ -72,13 +72,22 @@ Tự detect project type từ context — không hỏi user:
 Auto-detect logic:
   1. mc_status() → nếu chưa có project MCV3 → tự init với tên/domain từ message của user
   2. Scan thư mục hiện tại:
-     - Có src/ → code exists
-     - Có .mc-data/ hoặc docs/ → docs exists
+     Code dirs (bất kỳ 1 trong số): src/ | app/ | lib/ | backend/ | api/ | cmd/ | internal/
+     → code exists
+     Docs dirs (bất kỳ 1 trong số): .mc-data/ | docs/ | doc/ | documents/ | specs/ | requirements/
+     → docs exists
+     Production signals: Dockerfile + (.env.production | docker-compose.prod.yml | k8s/ | terraform/)
+     → production system
   3. Auto-classify:
-     - Chỉ có src/ → Type A (code only)
-     - Chỉ có docs → Type B (docs only)
-     - Có cả hai → Type C (both, check for drift)
-     - Nếu không rõ → Type D (full assessment), ghi DECISION
+     - Có code, không có docs → Type A (code only)
+     - Có docs, không có code → Type B (docs only)
+     - Có cả code lẫn docs → Type C (both, check for drift)
+     - Type C + production signals → Type D (production formalization)
+     - Không detect được gì → ghi DECISION, flag "⚠️ Non-standard structure" trong PROJECT-MANIFEST
+  4. Verify detection — ghi vào DECISION-LOG:
+     "Type Detection: Type {X} | code dir={path} | docs dir={path} | production={yes/no}"
+     Confidence: HIGH (rõ ràng) / MEDIUM (1 trong 2 không chắc) / LOW (cả hai không chắc)
+     Confidence LOW → note vào Completion Report "📋 CẦN USER REVIEW: Verify project type {X}"
 
 Tên dự án + domain: lấy từ message của user hoặc từ project name trong mc_status()
 → Không hỏi lại nếu đã có trong context
@@ -192,6 +201,17 @@ mc_save({
 })
 ```
 
+Tự verify PROJECT-MANIFEST trước khi sang Phase 2:
+```
+✓ Ít nhất 1 system được detect
+  → Nếu 0 systems: log WARNING "non-standard structure", assess as single-system project
+✓ Mỗi system có ít nhất 1 module (hoặc ghi rõ "modules: []" — không để trống/unknown)
+✓ Tech stack xác định được (nếu không → ghi "unknown", tiếp tục bình thường)
+✓ Multi-repo detected? → ghi DECISION: "Multi-repo: assess primary repo {path} trước, các repos khác list vào PROJECT-MANIFEST nhưng assess riêng"
+```
+→ Nếu pass: "✅ PROJECT-MANIFEST verified ({N} systems, {M} total modules). Sang Phase 2..."
+→ Nếu 0 systems: "⚠️ Không phát hiện systems — treating toàn bộ codebase/docs như 1 system"
+
 ---
 
 ## Phase 2 — Per-System Assessment
@@ -249,6 +269,22 @@ Phase 8 — Verify:
 → Kết luận: System {SYS} đang ở Phase {N} (currentPhase: phase{N}-{label})"
 ```
 
+**Quy tắc xác định currentPhase:**
+```
+currentPhase = phase CUỐI mà TẤT CẢ items đều ✅ done
+⚠️ partial KHÔNG count là done
+
+Ví dụ:
+  Phase 1 ✅ | Phase 2 ✅ | Phase 3 ⚠️ partial | Phase 4 ❌
+  → currentPhase = phase2-expert
+  → Phase 3 ghi "IN-PROGRESS", Phase 4+ ghi "NOT STARTED"
+
+Nếu Phase 7 (code) done nhưng Phase 3-4 missing:
+  → currentPhase = phase7-code (phản ánh thực tế code đã có)
+  → Phase 3-4 là GAPS cần bổ sung, KHÔNG phải "phase hiện tại thấp hơn"
+  → Ghi DECISION: "Code-first project: phase7 done, docs phases 3-4 missing"
+```
+
 Tham chiếu: `references/assessment-checklist.md`
 
 ### 2b. Tạo ASSESSMENT-MATRIX
@@ -278,6 +314,23 @@ Tham chiếu: `references/assessment-checklist.md`
 mc_save({
   filePath: "_mcv3-work/assessment/ASSESSMENT-MATRIX.md",
   documentType: "custom"
+})
+```
+
+Cross-system consistency check (sau khi assess TẤT CẢ systems):
+```
+✓ System A MODSPEC reference System B APIs → System B currentPhase ≥ phase5-design
+✓ Shared services (auth, notification, file) → currentPhase ≤ dependent systems
+✓ Nếu có inconsistency → ghi DECISION và flag trong ASSESSMENT-MATRIX row tương ứng
+```
+
+Checkpoint sau Phase 2 (cho dự án lớn — có thể resume tại đây nếu session bị interrupt):
+```
+mc_checkpoint({
+  projectSlug: {slug},
+  label: "post-assessment-matrix",
+  sessionSummary: "Phase 2 hoàn thành: {N} systems assessed, currentPhase per system recorded",
+  nextActions: ["Tiếp tục /mcv3:assess — Phase 3: Gap Analysis"]
 })
 ```
 
@@ -331,6 +384,23 @@ MISSING_TRACEABILITY: IDs không được link
   - BR-WH-001 không có US nào trỏ về
   - US-WH-003 không có FT nào derive từ nó
   - FT-WH-007 không có TC test
+```
+
+Gap Deduplication — khi cùng gap type xuất hiện ở nhiều systems:
+```
+Gom vào 1 entry với list systems bị ảnh hưởng:
+  VD: GAP-001: Thiếu URS — Systems bị ảnh hưởng: SYS-A, SYS-B, SYS-C
+  → 1 action item trong REMEDIATION-PLAN (chạy /mcv3:requirements cho cả 3 systems)
+  → Không tạo 3 action items riêng lẻ → tránh redundancy và user overwhelm
+```
+
+Gap Clustering — khi tổng số gaps > 10:
+```
+Nhóm theo cluster trong GAP-REPORT:
+  CLUSTER-DOCS:          gaps về missing/outdated documents
+  CLUSTER-SYNC:          gaps về drift giữa code và docs (chỉ Type C/D)
+  CLUSTER-TRACEABILITY:  gaps về missing IDs/links
+Show cluster summary trong Executive Summary, chi tiết ở phần "Chi tiết Gaps"
 ```
 
 ### 3c. Tạo GAP-REPORT
@@ -423,10 +493,31 @@ Từ BIZ-POLICY docs:
 
 ### 4d. Tạo SYNC-REPORT
 
+Tự verify SYNC-REPORT trước khi lưu:
+```
+✓ Mỗi drift item có severity rõ ràng (ERROR/WARNING/INFO)
+✓ Mỗi ERROR sẽ được reflect là CRITICAL gap trong GAP-REPORT
+✓ Confidence level đánh dấu cho từng drift:
+  HIGH:   exact string/path/value match
+  MEDIUM: normalized match (case, whitespace, path prefix differences)
+  LOW:    semantic inference → thêm ghi chú "(cần verify thủ công)"
+✓ Không có false positives rõ ràng (VD: test file paths lẫn với source file paths)
+```
+
 ```
 mc_save({
   filePath: "_mcv3-work/assessment/SYNC-REPORT.md",
   documentType: "custom"
+})
+```
+
+Checkpoint sau Phase 4 (cho dự án lớn — có thể resume tại đây nếu session bị interrupt):
+```
+mc_checkpoint({
+  projectSlug: {slug},
+  label: "post-sync-report",
+  sessionSummary: "Phase 4 hoàn thành: {N} ERRORs, {M} WARNINGs, {K} INFOs trong SYNC-REPORT",
+  nextActions: ["Tiếp tục /mcv3:assess — Phase 5: Remediation Roadmap"]
 })
 ```
 
@@ -486,6 +577,16 @@ Tôi đề xuất thực hiện theo thứ tự ưu tiên:
   [6] Tạo User/Admin Guide
       → Skill: /mcv3:qa-docs
       → Effort: Medium | Timeline: 1 session
+
+Dependencies:
+  [2] sau [1] (Formal IDs cần docs đã được import trước)
+  [3] sau [1] và [2] (URS creation cần context từ migrated docs)
+  [4] sau [3] nếu MODSPEC chưa có; hoặc song song với [3] nếu đã có Swagger/OpenAPI
+  [5] và [6] có thể bắt đầu sau [3] hoặc [4]
+
+Parallel opportunities:
+  [5] và [6] → Song song (TEST và USER-GUIDE độc lập nhau)
+  Nhiều systems → [3] cho SYS-A và [4] cho SYS-B có thể song song nếu khác nhau hoàn toàn
 
 Muốn bắt đầu từ action nào? [1/2/3/4/5/6]"
 ```
@@ -553,6 +654,22 @@ mc_save({
    Dùng /mcv3:status để xem tiến độ mới nhất."
 ```
 
+### 6b.5 — Pre-Import Safety Snapshot
+
+Tạo snapshot TRƯỚC khi import bất kỳ tài liệu nào vào `.mc-data/`:
+
+```
+mc_snapshot({
+  projectSlug: {slug},
+  label: "pre-import-docs",
+  description: "Safety snapshot trước khi import docs cũ — dùng mc_rollback nếu import sai format"
+})
+```
+
+→ Nếu phát hiện import bị lỗi (format sai, IDs duplicate, file rỗng, encoding lỗi) → `mc_rollback` về snapshot này trước khi thử lại.
+
+---
+
 ### 6c. Import existing docs vào đúng folders
 
 Với mỗi doc tìm thấy:
@@ -575,8 +692,8 @@ Nếu doc chưa ở format MCV3:
 ```
 mc_snapshot({
   projectSlug: {slug},
-  label: "pre-assessment-baseline",
-  description: "Trạng thái dự án trước khi bắt đầu remediation"
+  label: "post-assess-pre-remediation",
+  description: "Snapshot sau khi assessment hoàn thành — baseline trước khi bắt đầu remediation"
 })
 ```
 
@@ -616,8 +733,10 @@ REMEDIATION-PLAN.md:
 
 Cross-check:
   ✓ Gaps trong GAP-REPORT match với assessment findings trong ASSESSMENT-MATRIX
+  ✓ ERRORs trong SYNC-REPORT (nếu Type C/D) có entry CRITICAL tương ứng trong GAP-REPORT
   ✓ Skills routing đúng (không route "thiếu URS" đến /mcv3:tech-design)
-  ✓ Phase per system logic nhất quán (có code nhưng không có docs → tối đa phase3)
+  ✓ Phase per system: currentPhase = last fully DONE phase (⚠️ partial KHÔNG count là done)
+  ✓ Docs imported (Phase 6c, nếu có): không rỗng, có markdown heading, không duplicate IDs
 
 Quality Gate:
   ✅ REMEDIATION-PLAN có ≥ 1 actionable item
