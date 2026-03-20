@@ -536,3 +536,44 @@ SMALL-BATCHES: Nhiều small evolutions tốt hơn 1 big bang
 TRACE-FORWARD: IDs mới phải link về requirements origin
 ADR-ALWAYS: Mỗi architectural decision phải có ADR entry
 ```
+
+---
+
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+> **Phân biệt với Pre-Completion Verification (Tầng 1-3):** Section này là checklist nhanh GIỮA các phases. Pre-Completion Verification chạy SAU KHI hoàn thành toàn bộ, trước Completion Report.
+
+Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển phase:
+
+### Sau Phase 0 → trước Phase 1:
+- ✓ Dự án đã có ít nhất 1 MODSPEC (Phase 5+) — nếu chưa có → DỪNG, chuyển hướng `/mcv3:tech-design`
+- ✓ `mc_status` trả về project hợp lệ (không phantom project)
+- ✓ MASTER-INDEX đã đọc: danh sách systems/modules hiện có đã rõ ràng
+
+### Sau Phase 1 → trước Phase 2:
+- ✓ Evolution scope đã classify rõ (Scope 1/2/3/4) — ghi DECISION nếu tự infer
+- ✓ Features muốn thêm đã list cụ thể (không vague như "improve performance")
+- ✓ Target module/system đã identify — không còn ambiguous
+
+### Sau Phase 2 → trước Phase 3:
+- ✓ ID conflicts đã check qua `mc_traceability` — không có ID mới trùng với ID cũ
+- ✓ Backward compatibility đã đánh giá: biết rõ breaking items (hoặc xác nhận không có)
+- ✓ Downstream dependents đã check qua `mc_dependency`
+- ✓ Dự án lớn (5+ systems): cross-system impact từ evolution đã identify cho TẤT CẢ dependent systems
+
+### Sau Phase 3 → trước Phase 4:
+- ✓ `mc_snapshot` đã trả về success
+- ✓ Snapshot label chứa EVOL-ID
+- ✓ Nếu snapshot fail → DỪNG (theo Error Recovery protocol — không tiếp tục khi không có safety net)
+
+### Sau Phase 4 → trước Phase 5:
+- ✓ New docs có "v{N+1} ADDITIONS" section được mark rõ ràng
+- ✓ Không có placeholder `{...}` còn sót trong features mới
+- ✓ New API paths không conflict với existing paths
+- ✓ New TBL columns đều nullable (hoặc có migration backfill documented)
+- ✓ Dự án lớn: mỗi system có evolution document riêng — không gộp chung
+
+### Sau Phase 5 → trước Phase 6:
+- ✓ New IDs đã register trong traceability
+- ✓ Existing IDs không bị modify hay remove (backward compat)
+- ✓ Links từ new IDs về requirements origin đã tạo

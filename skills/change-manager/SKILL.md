@@ -467,3 +467,38 @@ CHANGELOG-ALWAYS: Mọi thay đổi phải có changelog entry
 TRACE-MAINTAIN: Sau thay đổi, traceability phải vẫn valid
 VERIFY-AFTER: Khuyến nghị chạy /mcv3:verify sau major/breaking changes
 ```
+
+---
+
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+> **Phân biệt với Pre-Completion Verification (Tầng 1-3):** Section này là checklist nhanh GIỮA các phases trong quá trình xử lý. Pre-Completion Verification chạy SAU KHI hoàn thành toàn bộ, trước Completion Report.
+
+Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển phase:
+
+### Sau Phase 1 → trước Phase 2:
+- ✓ Change element ID tồn tại trong project (không reference phantom ID)
+- ✓ Mô tả thay đổi đủ rõ để phân tích impact (không quá vague)
+- ✓ Change type (minor/major/breaking) đã xác định — ghi DECISION nếu tự infer
+
+### Sau Phase 2 → trước Phase 3:
+- ✓ Impact list đầy đủ: không bỏ sót document nào trong chain BR → US → FT → API → TC
+- ✓ Với breaking change: downstream systems đã identify qua `mc_dependency`
+- ✓ Dự án lớn (5+ systems): cascade qua TẤT CẢ systems đã check — không chỉ system nguồn
+- ✓ Nếu impact = HIGH (≥4 docs): note vào checkpoint trước khi snapshot
+
+### Sau Phase 3 → trước Phase 4:
+- ✓ `mc_snapshot` đã trả về success (không giả định thành công)
+- ✓ Snapshot label chứa CHG-ID để dễ rollback sau này
+- ✓ Nếu snapshot fail → DỪNG, báo user — không tiếp tục khi không có safety net
+
+### Sau Phase 4 → trước Phase 5:
+- ✓ Tất cả documents trong impact list đã update (hoặc skip với lý do ghi rõ)
+- ✓ Updated documents không bị broken format (headings, IDs còn nguyên)
+- ✓ Không còn stale references đến old content trong bất kỳ updated doc nào
+- ✓ Dự án lớn: mỗi system affected có entry update riêng — không gộp chung
+
+### Sau Phase 5 → trước Phase 6:
+- ✓ Traceability chain sau thay đổi intact: không có orphan IDs mới tạo ra
+- ✓ Deprecated IDs đã mark rõ ràng (không im lặng remove)
+- ✓ Cross-system traceability links (nếu có) vẫn valid sau thay đổi
