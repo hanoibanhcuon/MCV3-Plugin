@@ -223,27 +223,24 @@ test-codegen.md             ← TC specs → real tests
 - Flutter → `references/tech-stack-mobile.md` (Riverpod, go_router, Dio)
 - MongoDB / Firebase / Supabase / Redis → `references/database-nosql-guide.md`
 
-### 1d. Confirm với user
+### 1d. Auto-notify (không chờ xác nhận — bắt đầu generate ngay)
+
+Thông báo scope rồi tự động bắt đầu (không hỏi "Tiếp tục?"):
 
 ```
-"Tôi sẽ generate code với config:
-- Language: TypeScript / Python / Java
-- Framework: Express.js / FastAPI / Spring Boot
-- ORM: Prisma / SQLAlchemy / JPA
+"⚙️ Bắt đầu generate code module {MOD}:
+- Language: {TypeScript / Python / Java}
+- Framework: {Express.js / FastAPI / Spring Boot}
+- ORM: {Prisma / SQLAlchemy / JPA}
 - Output: src/{sys}/{mod}/
 
-Tôi sẽ tạo:
-✓ {N} API route handlers (từ {N} API specs)
-✓ {M} Service methods với business logic từ BR specs
-✓ {K} Database migrations (real schema từ TBL specs)
-✓ {L} Test files từ TC specs
-✓ CI pipeline (.github/workflows/ci.yml)
+Sẽ tạo: {N} handlers, {M} service methods, {K} migrations, {L} test files, CI pipeline.
+REVIEW markers: chỗ specs mơ hồ. PENDING markers: chỗ thiếu specs.
 
-Ghi chú: Phần có specs mơ hồ sẽ có // REVIEW: comment.
-         Phần thiếu specs sẽ có // PENDING: comment.
-
-Tiếp tục?"
+→ Generating..."
 ```
+
+→ Tự động chuyển sang Phase 2 ngay lập tức, không chờ user reply.
 
 ---
 

@@ -70,8 +70,8 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 
 **Validation gate trước khi tạo docs:**
 - Kiểm tra PROJECT-OVERVIEW.md có ít nhất: 1 PROB-ID, 1 SC-IN-ID, 1 ST-ID
-- Nếu thiếu → báo user: "PROJECT-OVERVIEW thiếu [X]. Có thể cập nhật trước khi làm Biz-Docs không?"
-- Nếu user confirm "tiếp tục" → tạo docs với thông tin có sẵn, đánh dấu gaps
+- Nếu thiếu → tự tiếp tục với thông tin có sẵn, đánh dấu gaps bằng DECISION với Confidence: LOW
+- Ghi rõ trong Completion Report: "⚠️ PROJECT-OVERVIEW thiếu [X] — tài liệu tạo với thông tin có sẵn, user nên bổ sung"
 
 ---
 
@@ -104,7 +104,7 @@ Từ EXPERT-LOG CONSENSUS: xem domain nào được mention
 
 ---
 
-## Phase 2 — Guided Generation (Per Domain)
+## Phase 2 — Auto-Generate (Per Domain)
 
 Với mỗi domain, áp dụng Guided Generation Protocol:
 
@@ -124,29 +124,29 @@ Load industry knowledge nếu có:
     common BRs, pain points, data dictionary suggestions
 ```
 
-### 2b. Generate skeleton document
+### 2b. Auto-generate document (internal — không show lên chat trước khi mc_save)
 
-Doc-writer tạo skeleton BIZ-POLICY với:
-- Tên và format đúng
-- Sections đầy đủ
-- BR-IDs placeholder (BR-{DOM}-XXX)
-- Gợi ý nội dung dựa trên PROJECT-OVERVIEW + EXPERT-LOG
+Doc-writer tạo BIZ-POLICY với:
+- Tên và format đúng theo template
+- Sections đầy đủ với BR-IDs (BR-{DOM}-XXX)
+- Nội dung tự điền từ PROJECT-OVERVIEW + EXPERT-LOG + industry knowledge (không để trống)
 
-**Ví dụ skeleton BIZ-POLICY-WH:**
+**Ví dụ auto-filled BIZ-POLICY-WH (tạo tự động, không chờ user):**
 
 ```markdown
 # BIZ-POLICY-WH — Chính sách Kho hàng
-<!-- Draft skeleton — cần user review và bổ sung -->
+<!-- Auto-generated từ industry logistics knowledge — Confidence: MEDIUM — user nên review -->
 
 ## BR-WH-001: Kiểm soát nhập kho
-**Quy tắc:** [Chờ xác nhận từ user — VD: Mọi hàng nhập kho phải có GRN trước]
+**Quy tắc:** Mọi hàng nhập kho phải có Phiếu nhập kho (GRN) được phê duyệt trước khi nhận hàng vào kho
+<!-- DECISION: Nội dung dựa trên logistics industry standard — Confidence: MEDIUM -->
 **Áp dụng cho:** Thủ kho, Kế toán
-**Ngoại lệ:** [?]
+**Ngoại lệ:** Hàng khẩn cấp — cần phê duyệt bổ sung trong vòng 24h
 
 ## BR-WH-002: FIFO xuất kho
-**Quy tắc:** Hàng nhập trước xuất trước
+**Quy tắc:** Hàng nhập trước xuất trước (First In First Out)
 **Áp dụng cho:** Thủ kho
-**Ngoại lệ:** [?]
+**Ngoại lệ:** Hàng có hạn sử dụng ngắn hơn — ưu tiên xuất trước
 
 ...
 ```
@@ -299,7 +299,7 @@ Cuối cùng:
 ## Quy tắc Guided Generation
 
 ```
-COLLABORATIVE: Luôn hỏi user trước khi điền nội dung quan trọng
+AUTO-COMPLETE: Tự điền nội dung theo industry knowledge — ghi DECISION khi không chắc chắn, không dừng hỏi user
 SPECIFIC: Không để placeholder — ghi "Chưa xác định" nếu chưa biết
 DOMAIN-AWARE: Load industry knowledge phù hợp
 ID-CONSISTENT: Các BRs trong BIZ-POLICY và PROCESS phải cùng namespace

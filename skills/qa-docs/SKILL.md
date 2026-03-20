@@ -65,7 +65,7 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
   - Tier 2 (Component/Widget): React Native Testing Library (RNTL) hoặc Widget Test — screens, forms
   - Tier 3 (E2E): Detox (RN) hoặc integration_test (Flutter) — full user flows trên simulator/emulator
   - Platform-specific: test permissions, offline behavior, push notification handling
-  - Test tools phải hỏi thêm: "Có cần test trên iOS và Android cả hai không? Có E2E Detox không?"
+  - Tự xác định: include cả iOS + Android (mặc định) + E2E Detox (mặc định cho RN) — ghi DECISION nếu PROJECT-OVERVIEW không chỉ định target platform
 - **Embedded/Firmware project**: Load `embedded-test-guide.md`, điều chỉnh test strategy:
   - Tier 1 (Host): Unity tests với mock HAL (PlatformIO native)
   - Tier 2 (On-target): Hardware integration tests trên device thật

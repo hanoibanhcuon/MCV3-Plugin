@@ -361,7 +361,7 @@ USER-CENTRIC: US theo format "As a {role}, I want {action}, so that {benefit}"
 TESTABLE: AC phải đủ cụ thể để tester viết test case từ đó
 TRACEABLE: Mọi US/FT đều có origin BR hoặc PROC
 CONSISTENT: IDs nhất quán trong namespace {MOD}
-COMPLETE: Không để placeholder — ghi "TBD" nếu chưa biết + note lý do
+COMPLETE: Không để placeholder trống — ghi DECISION với Confidence: LOW khi dùng default, không dùng "TBD" chung chung
 ATOMIC: Mỗi FT một trách nhiệm duy nhất
 MEASURABLE: NFR phải có số liệu cụ thể (không "nhanh" mà phải "<2s")
 ```
