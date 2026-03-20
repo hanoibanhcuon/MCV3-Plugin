@@ -22,8 +22,8 @@ Hướng dẫn cài đặt, cập nhật và gỡ lỗi MCV3-Plugin.
 
 ```bash
 # Option A — Clone repository
-git clone https://github.com/YOUR_ORG/mcv3-plugin.git
-cd mcv3-plugin
+git clone https://github.com/hanoibanhcuon/MCV3-Plugin.git
+cd MCV3-Plugin
 
 # Option B — Tải release zip (không cần git)
 # Tải file mcv3-devkit-X.Y.Z.plugin từ GitHub Releases

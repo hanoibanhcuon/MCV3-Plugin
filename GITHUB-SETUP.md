@@ -13,7 +13,7 @@ Hướng dẫn từng bước để publish MCV3-Plugin lên GitHub và tạo re
    - **Visibility**: Public *(hoặc Private nếu muốn)*
    - **KHÔNG** tick "Add a README file", "Add .gitignore", "Choose a license" — vì repo đã có sẵn
 3. Nhấn **Create repository**
-4. Copy URL của repo (dạng: `https://github.com/username/mcv3-devkit.git`)
+4. Copy URL của repo (dạng: `https://github.com/hanoibanhcuon/MCV3-Plugin.git`)
 
 ---
 
@@ -24,7 +24,7 @@ Hướng dẫn từng bước để publish MCV3-Plugin lên GitHub và tạo re
 cd /path/to/mcv3-devkit
 
 # Thêm remote (thay username bằng GitHub username của bạn)
-git remote add origin https://github.com/username/mcv3-devkit.git
+git remote add origin https://github.com/hanoibanhcuon/MCV3-Plugin.git
 
 # Verify
 git remote -v
@@ -85,7 +85,7 @@ Sau khi release, cập nhật README.md để user có thể download trực ti�
 
 ```bash
 # Download và giải nén
-curl -L https://github.com/username/mcv3-devkit/releases/latest/download/mcv3-devkit-3.12.0.zip \
+curl -L https://github.com/hanoibanhcuon/MCV3-Plugin/releases/latest/download/mcv3-devkit-3.12.0.zip \
   -o mcv3-devkit.zip
 unzip mcv3-devkit.zip
 
@@ -182,7 +182,7 @@ documentation  requirements-engineering  ai-tools  devkit  mcp
 Sau khi có repo public, bạn có thể thêm badges:
 
 ```markdown
-[![GitHub release](https://img.shields.io/github/v/release/username/mcv3-devkit)](https://github.com/username/mcv3-devkit/releases)
-[![GitHub stars](https://img.shields.io/github/stars/username/mcv3-devkit?style=social)](https://github.com/username/mcv3-devkit)
-[![GitHub license](https://img.shields.io/github/license/username/mcv3-devkit)](LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/hanoibanhcuon/MCV3-Plugin)](https://github.com/hanoibanhcuon/MCV3-Plugin/releases)
+[![GitHub stars](https://img.shields.io/github/stars/hanoibanhcuon/MCV3-Plugin?style=social)](https://github.com/hanoibanhcuon/MCV3-Plugin)
+[![GitHub license](https://img.shields.io/github/license/hanoibanhcuon/MCV3-Plugin)](LICENSE)
 ```

@@ -16,7 +16,7 @@ Cảm ơn bạn đã quan tâm đến việc đóng góp cho MCV3-Plugin!
 
 ## Báo cáo Bug
 
-Trước khi mở issue mới, hãy kiểm tra [Issues](https://github.com/username/mcv3-devkit/issues) để tránh trùng lặp.
+Trước khi mở issue mới, hãy kiểm tra [Issues](https://github.com/hanoibanhcuon/MCV3-Plugin/issues) để tránh trùng lặp.
 
 **Khi mở bug report, hãy bao gồm:**
 
@@ -58,7 +58,7 @@ Mô tả ngắn gọn vấn đề.
 
 ## Đề xuất tính năng
 
-Mở [Feature Request issue](https://github.com/username/mcv3-devkit/issues/new) với:
+Mở [Feature Request issue](https://github.com/hanoibanhcuon/MCV3-Plugin/issues/new) với:
 
 1. **Tóm tắt**: Mô tả ngắn về tính năng
 2. **Motivation**: Tại sao tính năng này cần thiết? Nó giải quyết vấn đề gì?
@@ -74,7 +74,7 @@ Mở [Feature Request issue](https://github.com/username/mcv3-devkit/issues/new)
 ```bash
 # 1. Fork repo trên GitHub
 # 2. Clone fork của bạn
-git clone https://github.com/your-username/mcv3-devkit.git
+git clone https://github.com/hanoibanhcuon/MCV3-Plugin.git
 cd mcv3-devkit
 
 # 3. Build MCP Server
@@ -207,4 +207,4 @@ mcv3-devkit/
 
 ## Questions?
 
-Mở [Discussion](https://github.com/username/mcv3-devkit/discussions) hoặc [Issue](https://github.com/username/mcv3-devkit/issues) để đặt câu hỏi.
+Mở [Discussion](https://github.com/hanoibanhcuon/MCV3-Plugin/discussions) hoặc [Issue](https://github.com/hanoibanhcuon/MCV3-Plugin/issues) để đặt câu hỏi.

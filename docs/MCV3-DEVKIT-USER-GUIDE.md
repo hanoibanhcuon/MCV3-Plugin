@@ -37,7 +37,7 @@ bash scripts/install.sh /đường/dẫn/dự-án-của-bạn
 ### Cách 2: Từ Git Clone
 
 ```bash
-git clone https://github.com/YOUR_ORG/mcv3-plugin.git
+git clone https://github.com/hanoibanhcuon/MCV3-Plugin.git
 cd mcv3-plugin
 bash scripts/install.sh /đường/dẫn/dự-án-của-bạn
 ```
@@ -295,6 +295,6 @@ Dữ liệu dự án trong `.mc-data/` giữ nguyên, không bị ảnh hưởng
 
 ## Hỗ trợ
 
-- **GitHub Issues:** [github.com/YOUR_ORG/mcv3-plugin/issues](https://github.com/YOUR_ORG/mcv3-plugin/issues)
+- **GitHub Issues:** [github.com/hanoibanhcuon/MCV3-Plugin/issues](https://github.com/hanoibanhcuon/MCV3-Plugin/issues)
 - **Báo lỗi:** Mô tả lệnh đã chạy, tên dự án (slug), và lỗi gặp phải
 - **Đóng góp ý kiến:** Tạo issue với label `feedback`
