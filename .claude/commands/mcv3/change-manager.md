@@ -1,4 +1,4 @@
-Quản lý thay đổi requirements — impact analysis, guided updates, propagation. Trigger khi requirements thay đổi, code thay đổi cần update docs, hoặc cần biết ảnh hưởng của 1 thay đổi.
+Quản lý requirements changes sau Phase 5 — impact analysis tự động, safety snapshot, cập nhật documents bị ảnh hưởng, ghi CHG-xxx record vào changelog. Trigger khi stakeholder yêu cầu thay đổi business rule, phát hiện inconsistency, hoặc có regulatory changes.
 
 Đọc file `skills/change-manager/SKILL.md` và thực thi các hướng dẫn trong đó.
 

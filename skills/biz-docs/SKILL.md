@@ -42,6 +42,28 @@ References:
 
 ---
 
+## Error Recovery
+
+**mc_save / mc_load thất bại:**
+- Retry 1 lần với cùng parameters
+- Nếu vẫn fail → báo user: "⚠️ Không thể lưu/đọc [file]. Kiểm tra MCP server còn chạy không."
+- Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
+
+**PROJECT-OVERVIEW.md chưa có:**
+- Báo user: "Thiếu PROJECT-OVERVIEW.md → Chạy /mcv3:discovery trước."
+
+**Industry references không có cho ngành này:**
+- Tiếp tục với `references/skeleton/` skeleton templates (general)
+- Hỏi user nhiều hơn về business rules của ngành đó
+- Không load references không tồn tại — chỉ load files đã có trong danh sách
+
+**Validation gate trước khi tạo docs:**
+- Kiểm tra PROJECT-OVERVIEW.md có ít nhất: 1 PROB-ID, 1 SC-IN-ID, 1 ST-ID
+- Nếu thiếu → báo user: "PROJECT-OVERVIEW thiếu [X]. Có thể cập nhật trước khi làm Biz-Docs không?"
+- Nếu user confirm "tiếp tục" → tạo docs với thông tin có sẵn, đánh dấu gaps
+
+---
+
 ## Phase 0 — Pre-Gate
 
 ```

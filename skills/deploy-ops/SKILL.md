@@ -59,6 +59,24 @@ References:
 
 ---
 
+## Error Recovery
+
+**mc_save / mc_load thất bại:**
+- Retry 1 lần với cùng parameters
+- Nếu vẫn fail → báo user: "⚠️ Không thể lưu/đọc [file]. Kiểm tra MCP server còn chạy không."
+- Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
+
+**verification-report.md chưa có hoặc status = NOT READY:**
+- Nếu chưa có: "Thiếu verification-report.md → Chạy /mcv3:verify trước."
+- Nếu status = NOT READY: "Verification report có critical gaps. Hãy fix và chạy /mcv3:verify lại."
+- Exception: Nếu user confirm "tạo deploy-ops dù chưa verify" → tiếp tục nhưng ghi rõ warning trong DEPLOY-OPS.md: "⚠️ CẢNH BÁO: Deploy-Ops tạo trước khi Verification hoàn thành."
+
+**Infrastructure info không đủ:**
+- Hỏi user trực tiếp: "Deploy environment là gì? (Cloud provider, region, container orchestration)"
+- Không giả định infrastructure — phải xác nhận trước khi tạo deploy commands
+
+---
+
 ## Phase 0 — Pre-Gate
 
 ```

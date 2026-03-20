@@ -73,6 +73,40 @@ References:
 
 ---
 
+## Error Recovery
+
+**mc_save / mc_load thất bại:**
+- Retry 1 lần với cùng parameters
+- Nếu vẫn fail → báo user: "⚠️ Không thể lưu/đọc [file]. Kiểm tra MCP server còn chạy không."
+- Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
+
+**MODSPEC chưa có:**
+- Báo user: "Chưa có MODSPEC cho module này → Chạy /mcv3:tech-design trước."
+
+**TEST file chưa có:**
+- Tiếp tục generate code nhưng không có real test assertions từ TC specs
+- Sinh test stubs với `// PENDING: Cần TEST-{MOD}.md để tạo real assertions`
+- Nhắc user: "Nên chạy /mcv3:qa-docs trước để có test specs tốt hơn."
+
+**Verification Loop step thất bại liên tục (>3 retries):**
+- Dừng auto-fix, báo user cụ thể lỗi gì
+- Đánh dấu `// REVIEW: [lỗi cụ thể]` tại vị trí có vấn đề
+- Tiếp tục generate các module khác, không block toàn bộ
+
+## Token Efficiency
+
+**Dự án nhỏ (1-3 modules):**
+- Chỉ load references phù hợp với tech stack đã chọn
+- Ví dụ: Node.js → chỉ load code-patterns.md + query-patterns.md, không load embedded-code-patterns.md
+- Chỉ load verification-loop.md khi cần chạy verification step
+
+**Dự án lớn (5+ modules):**
+- Xử lý từng module riêng biệt — không load toàn bộ context cùng lúc
+- Sau mỗi module: mc_checkpoint → giải phóng context → load module tiếp theo
+- Không load tất cả MODSPEC cùng lúc — chỉ load MODSPEC của module đang generate
+
+---
+
 ## Phase 0 — Pre-Gate
 
 ```

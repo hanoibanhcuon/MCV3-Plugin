@@ -66,6 +66,40 @@ References:
 
 ---
 
+## Error Recovery
+
+**mc_save / mc_load thất bại:**
+- Retry 1 lần với cùng parameters
+- Nếu vẫn fail → báo user: "⚠️ Không thể lưu/đọc [file]. Kiểm tra MCP server còn chạy không."
+- Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
+
+**URS chưa có:**
+- Báo user: "Chưa tìm thấy URS trong {SYSTEM}/P1-REQUIREMENTS/. Chạy /mcv3:requirements trước."
+
+**Tech stack chưa xác định:**
+- Hỏi user trực tiếp: "Tech stack là gì? (Backend / Database / Frontend)"
+- Không giả định tech stack — phải xác nhận trước khi design API/schema
+
+## Token Efficiency
+
+**Chọn đúng template, không load tất cả:**
+```
+Web/Backend project    → Chỉ load MODSPEC-TEMPLATE.md
+Mobile project         → Chỉ load MOBILE-MODSPEC-TEMPLATE.md
+Embedded/Firmware      → Chỉ load FIRMWARE-MODSPEC-TEMPLATE.md
+Multi-system với auth  → Load thêm AUTH-SPEC-TEMPLATE.md
+```
+- KHÔNG load tất cả templates cùng lúc
+- Chỉ load references phù hợp với tech stack đã xác nhận
+- Với module nhỏ (<5 endpoints): bỏ qua multi-system-design.md
+
+**Dự án lớn (5+ modules):**
+- Thiết kế từng module riêng biệt
+- Checkpoint sau mỗi MODSPEC hoàn thành
+- Không load toàn bộ URS cùng lúc — chỉ load URS của module đang làm (layer: 3)
+
+---
+
 ## Phase 0 — Pre-Gate
 
 ```
