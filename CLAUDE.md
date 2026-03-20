@@ -1,6 +1,6 @@
-# CLAUDE.md — MasterCraft DevKit v3.11.0 (MCV3)
+# CLAUDE.md — MasterCraft DevKit v3.12.0 (MCV3)
 
-Plugin này giúp Claude Code làm việc với **dự án phần mềm** theo quy trình 8 phases của MCV3. v3.11 hoàn chỉnh với: Pipeline 8 Phase + Lifecycle Management + Assess Skill + Embedded/IoT Module + Scale Flexibility & Industry Expansion (12 ngành) + **Smart Code-Gen** (sinh code thông minh theo mức độ chi tiết specs) + **Multi-System Orchestration** (build order, shared services, integration patterns) + **Code Quality Assurance** (verification loop tự động: compile → lint → test → security scan → coverage) + **Auto-Mode Framework** (tất cả skills chạy tự động hoàn toàn, không dừng hỏi user).
+Plugin này giúp Claude Code làm việc với **dự án phần mềm** theo quy trình 8 phases của MCV3. v3.12 hoàn chỉnh với: Pipeline 8 Phase + Lifecycle Management + Assess Skill + Embedded/IoT Module + Scale Flexibility & Industry Expansion (12 ngành) + **Smart Code-Gen** (sinh code thông minh theo mức độ chi tiết specs) + **Multi-System Orchestration** (build order, shared services, integration patterns) + **Code Quality Assurance** (verification loop tự động: compile → lint → test → security scan → coverage) + **Auto-Mode Framework** (tất cả skills chạy tự động hoàn toàn, không dừng hỏi user) + **8 Risk Patterns** (BLOCKING prerequisites, per-module checkpoint, pre-completion gate, batch processing) + **Speed Optimization** (parallel MCP calls, Parallel Module Mode, cache + dedup).
 
 ---
 
@@ -347,6 +347,52 @@ Tất cả skills chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-proto
 - Kết thúc bằng user options [1] Xem chi tiết / [2] Thay đổi / [3] Tiếp tục
 
 **Output Display:** Skills tự lưu file qua `mc_save`, chỉ show tóm tắt ngắn. User có thể request xem chi tiết bất kỳ file nào bằng cách nói tên file. Chi tiết tại `knowledge/auto-mode-protocol.md` — OUTPUT DISPLAY PROTOCOL.
+
+---
+
+## 8 Risk Patterns
+
+Mọi skill đều thực thi 8 Risk Patterns sau để đảm bảo an toàn và chất lượng:
+
+| Pattern | Tên | Quy tắc |
+|---------|-----|---------|
+| RISK-001 | Post-Gate Quality Check | Kiểm tra sections bắt buộc trước khi lưu — không lưu file thiếu |
+| RISK-002 | Session Bootstrap | `mc_status` bắt buộc trước bất kỳ hành động nào |
+| RISK-003 | Per-Module Checkpoint | Checkpoint sau mỗi module — không mất tiến độ nếu session bị ngắt |
+| RISK-004 | Pre-Completion Gate | Chạy verification 3 tầng TRƯỚC khi show Completion Report |
+| RISK-005 | Traceability Register | Đăng ký tất cả REQ-ID mappings sau mỗi `mc_save` |
+| RISK-006 | Large Project Batch | Xử lý theo batch khi ≥5 modules, tránh context overflow |
+| RISK-007 | Test Result Classification | Phân loại PASS / WARN / FAIL rõ ràng — không gộp chung |
+| RISK-008 | Prerequisites BLOCKING vs WARNING | Phân loại input thiếu: BLOCKING (không thể chạy) vs WARNING (có thể tiếp tục) |
+
+---
+
+## Speed Optimization
+
+Tất cả 15 skills áp dụng 4 kỹ thuật tối ưu tốc độ:
+
+```
+1. Parallel MCP Calls      — Gộp independent calls vào 1 round (tool call batching)
+                              VD: mc_load 3 files → 1 round thay vì 3 rounds tuần tự
+
+2. Cache                   — Load document 1 lần, reference trong memory
+                              VD: DATA-DICTIONARY load ở Phase 0, dùng lại cho mọi modules
+
+3. Dedup                   — Tránh load cùng document nhiều lần trong 1 session
+
+4. Sequential Save          — mc_save, mc_traceability, mc_checkpoint vẫn tuần tự
+                              Lý do: single-file write → race condition nếu parallel
+```
+
+**Parallel Module Mode** (chỉ `/mcv3:requirements`, 2-4 modules):
+
+```
+Phase 1: Pre-allocate ID ranges cho tất cả modules (tránh conflict khi parallel gen)
+Phase 2-4 (PARALLEL): Load + gen tất cả modules đồng thời
+Phase 5 (SEQUENTIAL): mc_save, mc_validate, mc_traceability, mc_checkpoint từng module
+```
+
+Tiết kiệm: ~35-55% thời gian cho dự án 3-6 modules.
 
 ---
 

@@ -6,6 +6,69 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [3.12.0] — Speed Optimization + 8 Risk Patterns Framework — 2026-03-20
+
+### Added
+
+- **8 Risk Patterns Framework** — Bộ 8 patterns bắt buộc áp dụng vào tất cả 15 skills:
+  - `RISK-001` Post-Gate Quality Check — Kiểm tra sections bắt buộc TRƯỚC khi `mc_save`
+  - `RISK-002` Session Bootstrap — `mc_status` bắt buộc trước bất kỳ hành động nào trong session
+  - `RISK-003` Per-Module Checkpoint — `mc_checkpoint` sau mỗi module, không mất tiến độ khi session ngắt
+  - `RISK-004` Pre-Completion Gate — Verification 3 tầng TRƯỚC khi show Completion Report
+  - `RISK-005` Traceability Register — Đăng ký tất cả REQ-ID mappings sau mỗi `mc_save`
+  - `RISK-006` Large Project Batch — Batch processing khi ≥5 modules, tránh context overflow
+  - `RISK-007` Test Result Classification — Phân loại PASS / WARN / FAIL rõ ràng
+  - `RISK-008` Prerequisites BLOCKING vs WARNING — Phân loại inputs thiếu: không thể chạy vs có thể tiếp tục
+
+- **Parallel Module Mode** (`/mcv3:requirements`) — Gen 2-4 modules đồng thời:
+  - Phase 1: Pre-allocate ID ranges cho mọi modules (tránh conflict khi parallel gen)
+  - Phase 2-4 (PARALLEL): Load BIZ-POLICY + PROCESS + gen URS song song
+  - Phase 5 (SEQUENTIAL): `mc_save` → `mc_validate` → `mc_traceability` → `mc_checkpoint` tuần tự
+  - Điều kiện: modules độc lập, ≤4 modules, không phải Enterprise/regulated project
+  - Tiết kiệm: ~35-55% thời gian cho dự án 3-6 modules
+
+### Changed
+
+- **Tất cả 15 SKILL.md files** — Thêm 8 Risk Patterns (RISK-001 → RISK-008):
+  - `skills/discovery/SKILL.md`, `skills/expert-panel/SKILL.md`, `skills/biz-docs/SKILL.md`
+  - `skills/requirements/SKILL.md`, `skills/tech-design/SKILL.md`, `skills/qa-docs/SKILL.md`
+  - `skills/code-gen/SKILL.md`, `skills/verify/SKILL.md`, `skills/deploy-ops/SKILL.md`
+  - `skills/navigator/SKILL.md`, `skills/change-manager/SKILL.md`, `skills/evolve/SKILL.md`
+  - `skills/migrate/SKILL.md`, `skills/onboard/SKILL.md`, `skills/assess/SKILL.md`
+
+- **Speed Optimization — Parallel MCP Calls** (tất cả 15 skills):
+  - Gộp independent MCP calls vào 1 round (tool call batching)
+  - `skills/discovery/SKILL.md`, `skills/expert-panel/SKILL.md`, `skills/biz-docs/SKILL.md`, `skills/tech-design/SKILL.md` — Phase 0 parallel load
+  - `skills/qa-docs/SKILL.md`, `skills/code-gen/SKILL.md`, `skills/verify/SKILL.md`, `skills/deploy-ops/SKILL.md` — Phase 0 parallel load
+  - `skills/change-manager/SKILL.md`, `skills/evolve/SKILL.md`, `skills/migrate/SKILL.md`, `skills/onboard/SKILL.md`, `skills/navigator/SKILL.md` — Parallel prerequisite checks
+
+- **`skills/requirements/SKILL.md`** — Speed Optimization section đầy đủ:
+  - Bảng so sánh Before/After MCP calls (N sequential → 1 round)
+  - Cache DATA-DICTIONARY: load 1 lần ở Phase 0, reference cho tất cả modules sau
+  - Post-save parallel: `mc_validate` + `mc_traceability` chạy song song sau `mc_save`
+  - Parallel Module Mode protocol hoàn chỉnh với điều kiện BẮT BUỘC
+
+- **`CLAUDE.md`** — Cập nhật version 3.11.0 → 3.12.0:
+  - Thêm `## 8 Risk Patterns` section với bảng 8 patterns
+  - Thêm `## Speed Optimization` section với 4 kỹ thuật + Parallel Module Mode
+  - Cập nhật description dòng đầu: thêm Risk Patterns + Speed Optimization
+
+- **`README.md`** — Cập nhật:
+  - Version badge 3.11.2 → 3.12.0, title heading 3.10 → 3.12.0
+  - Thêm Auto-Mode Framework, 8 Risk Patterns, Speed Optimization vào Features
+  - Template count 25 → 31, scripts count 7 → 19
+  - Plugin manifest version 3.10.0 → 3.12.0
+
+- **`settings.json` + `.claude-plugin/plugin.json`** — Version 3.11.2 → 3.12.0
+
+### Rationale
+
+**Risk Patterns:** Skills trước đây thiếu safety net nhất quán — một số skills bỏ qua prerequisite checks, không có per-module checkpoint, hoặc không phân biệt BLOCKING vs WARNING. 8 Risk Patterns chuẩn hóa behavior across tất cả 15 skills, ngăn mất tiến độ khi session bị ngắt và đảm bảo output quality trước khi report cho user.
+
+**Speed Optimization:** Skills trước đây load documents tuần tự dù nhiều documents có thể load song song. Parallel MCP calls giảm N sequential tool rounds xuống còn 1 round, tiết kiệm 40-60% thời gian chờ. Parallel Module Mode cho `/mcv3:requirements` đặc biệt hiệu quả: 3 modules từ ~15 phút xuống ~8 phút.
+
+---
+
 ## [3.11.2] — Install & Update System + Claude Config Auto-Generation — 2026-03-20
 
 ### Added

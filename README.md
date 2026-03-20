@@ -1,8 +1,8 @@
-# MasterCraft DevKit v3.10 (MCV3)
+# MasterCraft DevKit v3.12.0 (MCV3)
 
 > **Claude Code Plugin** — Biến ý tưởng phần mềm thành bộ tài liệu hoàn chỉnh
 
-[![Version](https://img.shields.io/badge/version-3.11.2-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.12.0-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![MCP Tools](https://img.shields.io/badge/MCP%20Tools-19-orange)](mcv3-devkit/mcp-servers/project-memory/)
 
@@ -19,6 +19,9 @@ MCV3 là một **Claude Code Plugin** giúp bạn hệ thống hóa toàn bộ q
 - **Smart Code-Gen**: Sinh code thông minh — đầy đủ specs → code hoàn chỉnh; mơ hồ → REVIEW markers
 - **Code Quality Assurance**: Verification & Auto-Fix Loop (compile → lint → test → security → coverage)
 - **Multi-System Orchestration**: Build order tự động theo layer model, shared services, integration patterns
+- **Auto-Mode Framework**: Tất cả 15 skills chạy tự động hoàn toàn — DECISION-LOG khi ambiguous, Completion Report khi xong
+- **8 Risk Patterns**: BLOCKING prerequisites, per-module checkpoint, pre-completion gate, traceability register, batch processing
+- **Speed Optimization**: Parallel MCP calls, Parallel Module Mode (2-4 modules đồng thời), cache + dedup
 - **Smart Context Layering**: Quản lý context window hiệu quả cho dự án lớn
 - **Scale Decision Matrix**: Pipeline linh hoạt — Micro (3 phases) đến Enterprise (full 8 phases)
 - **12 Industries**: F&B, Logistics, Retail, SaaS, Healthcare, Fintech, E-Commerce, Real Estate, Manufacturing, Education, HR/HRM, Embedded/IoT
@@ -238,7 +241,7 @@ mc_load({ filePath: "...", layer: 3 })  →  Full   All content (default)
 
 ```
 mcv3-devkit/
-├── .claude-plugin/plugin.json     # Plugin manifest (v3.10.0)
+├── .claude-plugin/plugin.json     # Plugin manifest (v3.12.0)
 ├── .mcp.json                      # MCP server config
 ├── settings.json                  # Permissions & env vars
 ├── CLAUDE.md                      # Hướng dẫn cho Claude
@@ -279,7 +282,7 @@ mcv3-devkit/
 │       │   └── utils/             # file-io, id-system, template-engine
 │       ├── package.json
 │       └── tsconfig.json
-├── templates/                     # 25 document templates (tổ chức theo phase)
+├── templates/                     # 31 document templates (tổ chức theo phase)
 │   ├── p0-init/                   # Phase 0: MASTER-INDEX, key-facts
 │   ├── p1-discovery/              # Phase 1: PROJECT-OVERVIEW
 │   ├── p2-expert/                 # Phase 2: EXPERT-LOG, PROJECT-ARCHITECTURE
@@ -289,7 +292,7 @@ mcv3-devkit/
 │   ├── p6-qa-docs/                # Phase 6: TEST, USER-GUIDE, ADMIN-GUIDE
 │   ├── p8a-verify/                # Phase 8a: VERIFY-P1/P2/P3, VERIFY-CROSS, VERIFY-INTEGRATION
 │   └── p8b-deploy-ops/            # Phase 8b: DEPLOY-OPS
-├── scripts/                       # 7 automation scripts
+├── scripts/                       # 19 scripts (install, update, hooks, validation)
 └── hooks/                         # hooks.json + script references
 ```
 
