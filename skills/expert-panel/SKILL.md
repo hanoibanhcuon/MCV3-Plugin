@@ -36,6 +36,43 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 
 ---
 
+## SPEED OPTIMIZATION GUIDELINES
+
+> Áp dụng các kỹ thuật dưới đây để giảm latency mà **không hy sinh quality**.
+
+### Parallel MCP Calls
+
+| Điểm tối ưu | Trước | Sau | Tiết kiệm |
+|-------------|-------|-----|-----------|
+| Phase 0 init | mc_status → mc_load(PROJECT-OVERVIEW layer:0) (2 sequential) | [mc_status ∥ mc_load layer:0] — 1 round | ~1 round-trip |
+| Phase 0 + Phase 1 | Phase 0 check (layer:0) → Phase 1 load full (layer:3) | [mc_status ∥ mc_load layer:0] → mc_checkpoint → mc_load layer:3 | —1 extra load |
+| Phase 0 + checkpoint | mc_status → mc_load → mc_checkpoint (3 sequential) | [mc_status ∥ mc_load layer:0] → [mc_checkpoint ∥ mc_load layer:3] | ~1 round-trip |
+| Phase 6 save | mc_save → mc_validate → mc_checkpoint (3 sequential) | mc_save → mc_validate → mc_checkpoint | Không đổi (1 file, validate cần kết quả trước checkpoint) |
+
+### Merge Phase 0 + Phase 1 Loading
+
+```
+// Thay vì: Phase 0 check (layer:0) riêng → Phase 1 load full (layer:3) riêng
+// → 2 mc_load calls sequential
+
+// SPEED: Sau khi Phase 0 xác nhận file tồn tại (từ layer:0),
+// chạy [mc_checkpoint ∥ mc_load(layer:3)] song song:
+// → Checkpoint safety đồng thời với load full context → tiết kiệm 1 round-trip
+```
+
+### Quy tắc áp dụng
+
+```
+✅ Phase 0 parallel: Gộp mc_status + mc_load(layer:0) vào 1 round
+✅ Sau Phase 0 xác nhận OK: [mc_checkpoint ∥ mc_load(PROJECT-OVERVIEW layer:3)] song song
+   → Checkpoint không cần layer:3 content — chạy được độc lập
+   → Phase 1 nhận kết quả mc_load layer:3 từ round này (không cần load lại)
+✅ 3 agents đã spawn song song (giữ nguyên — không thay đổi Phase 2)
+✅ Phase 6: mc_save → mc_validate → mc_checkpoint (tuần tự — checkpoint cần validate result)
+```
+
+---
+
 ## Khi nào dùng skill này
 
 - Sau khi `/mcv3:discovery` hoàn thành
@@ -82,13 +119,17 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 
 ```
 KIỂM TRA TRƯỚC KHI BẮT ĐẦU:
-1. mc_status() → xác nhận project slug
-2. mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 0 })
+// SPEED: Gộp mc_status + mc_load vào 1 round song song
+1. PARALLEL (2 calls đồng thời — 1 round duy nhất):
+   - mc_status()  → xác nhận project slug
+   - mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 0 })  → check tồn tại + PROB/GL IDs
+
    → Nếu KHÔNG CÓ → ❌ BLOCKING: "Thiếu PROJECT-OVERVIEW.md → Chạy /mcv3:discovery trước."
-   → Nếu có nhưng không có PROB-IDs hoặc GL-IDs → ❌ BLOCKING: "PROJECT-OVERVIEW thiếu nội dung cốt lõi → Bổ sung qua /mcv3:discovery"
-   → Nếu có và đầy đủ → tiếp tục
-3. Đọc panel-protocol.md để nắm workflow
-4. Thông báo cho user: "Sẽ gọi 3 expert agents phân tích song song..."
+   → Nếu thiếu PROB-IDs hoặc GL-IDs → ❌ BLOCKING: "PROJECT-OVERVIEW thiếu nội dung cốt lõi → Bổ sung qua /mcv3:discovery"
+   → Nếu OK → tiếp tục
+
+2. Đọc panel-protocol.md để nắm workflow
+3. Thông báo cho user: "Sẽ gọi 3 expert agents phân tích song song..."
 
 5. [MANDATORY] Scale Detection — Đếm số SC-IN systems từ PROJECT-OVERVIEW:
    - Nếu ≥ 3 systems trong SC-IN → CHẾ ĐỘ LARGE PROJECT
@@ -98,32 +139,35 @@ KIỂM TRA TRƯỚC KHI BẮT ĐẦU:
 
 ---
 
-## Phase 0 — Pre-Skill Safety Checkpoint
+## Phase 0 — Pre-Skill Safety Checkpoint + Load Context
 
-Trước khi bắt đầu, tự động lưu checkpoint để có thể resume nếu bị interrupt:
+Sau khi Phase 0 Pre-Gate PASS, chạy song song để tiết kiệm 1 round-trip:
 
 ```
-mc_checkpoint({
-  projectSlug: "<slug>",
-  label: "pre-expert-panel",
-  sessionSummary: "Chuẩn bị chạy /mcv3:expert-panel — triệu tập 3 expert agents phân tích",
-  nextActions: ["Tiếp tục /mcv3:expert-panel — Phase 1: Load Context"]
-})
+// SPEED: [mc_checkpoint ∥ mc_load(layer:3)] — 2 calls song song 1 round
+PARALLEL:
+  - mc_checkpoint({
+      projectSlug: "<slug>",
+      label: "pre-expert-panel",
+      sessionSummary: "Chuẩn bị chạy /mcv3:expert-panel — triệu tập 3 expert agents phân tích",
+      nextActions: ["Tiếp tục /mcv3:expert-panel — Phase 1: Load Context"]
+    })
+  - mc_load({
+      projectSlug: "...",
+      filePath: "_PROJECT/PROJECT-OVERVIEW.md",
+      layer: 3  // Load full content đồng thời với checkpoint
+    })
 ```
 
-→ "✅ Safety checkpoint đã lưu. Bắt đầu phân tích chuyên gia..."
+→ "✅ Safety checkpoint đã lưu + PROJECT-OVERVIEW loaded. Bắt đầu phân tích chuyên gia..."
 
 ---
 
 ## Phase 1 — Load Context
 
 ```
-Đọc full PROJECT-OVERVIEW.md để có context cho tất cả agents:
-mc_load({
-  projectSlug: "...",
-  filePath: "_PROJECT/PROJECT-OVERVIEW.md",
-  layer: 3
-})
+// SPEED: Đã load layer:3 trong Phase 0 Safety Checkpoint — KHÔNG load lại
+// Sử dụng trực tiếp content từ mc_load(layer:3) ở Phase 0
 ```
 
 Ghi nhớ:

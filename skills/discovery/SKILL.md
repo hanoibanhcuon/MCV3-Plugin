@@ -56,6 +56,34 @@ Phase 1 dùng **Block-based interview** — hỏi theo nhóm, không hỏi từn
 
 ---
 
+## SPEED OPTIMIZATION GUIDELINES
+
+> Áp dụng các kỹ thuật dưới đây để giảm latency mà **không hy sinh quality**.
+
+### Parallel MCP Calls
+
+| Điểm tối ưu | Trước | Sau | Tiết kiệm |
+|-------------|-------|-----|-----------|
+| Phase 0a init | mc_status → mc_load(PROJECT-OVERVIEW) (2 sequential) | [mc_status ∥ mc_load(PROJECT-OVERVIEW layer:0)] — 1 round | ~1 round-trip |
+| Phase 0b + 0a | mc_status → mc_load → mc_checkpoint (3 sequential) | [mc_status ∥ mc_load layer:0] → mc_checkpoint | ~1 round-trip |
+| Phase 3 → Phase 4 | Đọc template → generate → mc_save (sequential) | Không thay đổi — discovery là linear, 1 file output | — |
+
+### Quy tắc áp dụng
+
+```
+✅ Phase 0a parallel: Gộp mc_status + mc_load(PROJECT-OVERVIEW layer:0) vào 1 round
+   → Dùng layer:0 để check xem file tồn tại không (nhanh)
+   → Nếu tồn tại → load layer:3 riêng ở Phase 0a bước 2 (update mode)
+   → Nếu chưa có → bỏ qua load, tiến hành phỏng vấn ngay
+✅ Safety checkpoint (Phase 0b) chạy SAU Phase 0a (cần project slug từ mc_status)
+✅ Phase 4 save: mc_save → mc_validate → mc_checkpoint (tuần tự bắt buộc)
+   → mc_checkpoint cần kết quả validate để ghi sessionSummary chính xác
+   → KHÔNG chạy parallel validate + checkpoint
+✅ Discovery là skill 1-file-output → ít MCP calls → focus vào Phase 0a parallel
+```
+
+---
+
 ## Khi nào dùng skill này
 
 - User vừa tạo dự án mới (`mc_init_project`)
@@ -97,12 +125,14 @@ Phase 1 dùng **Block-based interview** — hỏi theo nhóm, không hỏi từn
 
 ```
 TRƯỚC KHI BẮT ĐẦU:
-1. Gọi mc_status() để xác nhận project slug
-   → Nếu project không tồn tại / mc_status lỗi → ❌ BLOCKING: gọi mc_init_project trước
-2. Kiểm tra _PROJECT/PROJECT-OVERVIEW.md đã có chưa
-   → Nếu có: tự chọn chế độ update (bổ sung thông tin vào docs hiện tại)
-   → Nếu chưa: tiến hành phỏng vấn
-3. Đọc references/project-overview-schema.md để nắm output format
+// SPEED: Gộp mc_status + mc_load vào 1 round song song
+1. PARALLEL (2 calls đồng thời — 1 round duy nhất):
+   - mc_status()  → xác nhận project slug; nếu lỗi → ❌ BLOCKING: gọi mc_init_project trước
+   - mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 0 })  → check file tồn tại không
+
+   → Nếu PROJECT-OVERVIEW.md NOT FOUND → chế độ tạo mới (tiến hành phỏng vấn)
+   → Nếu tồn tại → chế độ update: load layer:3 để đọc nội dung hiện tại
+2. Đọc references/project-overview-schema.md để nắm output format
 4. Sau bước phỏng vấn Block 1, đọc references/scale-decision-matrix.md
    → Tự recommend pipeline variant phù hợp (Micro/Small/Medium/Large/Enterprise)
    → Ghi vào PROJECT-OVERVIEW: "Pipeline variant: [X], skip phases: [Y, Z]"
