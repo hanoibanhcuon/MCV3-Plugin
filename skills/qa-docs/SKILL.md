@@ -518,7 +518,7 @@ A: {Câu trả lời ngắn gọn}
 
 ---
 
-## Pre-Completion Verification
+## Pre-Completion Verification (BẮT BUỘC — RISK-004)
 
 Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5).
 Lưu ý: Phase 3e "Auto-Coverage Report" đã cover phần coverage. Section này bổ sung cross-document và format checks.
