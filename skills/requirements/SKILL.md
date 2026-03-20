@@ -11,7 +11,7 @@ Với mỗi module/system, tạo file `URS-{MOD}.md` gồm:
 - **Non-Functional Requirements** với ID `NFR-NNN`
 - **Use Cases** với ID `UC-{MOD}-NNN-XX`
 
-Sử dụng **Guided Generation Protocol**: agent tạo draft → user review → hoàn chỉnh.
+Sử dụng **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`): agent tạo URS hoàn chỉnh tự động — mc_save → show tóm tắt, không show toàn bộ nội dung.
 
 ---
 
@@ -275,6 +275,7 @@ NFR MEASURABILITY:
      filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md",
      documentType: "urs"
    })
+   → KHÔNG hiển thị nội dung document lên chat
 
 2. mc_validate({
      filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md"
@@ -293,6 +294,14 @@ NFR MEASURABILITY:
      sessionSummary: "Tạo URS-{MOD} với {N} US, {M} FT",
      nextActions: ["Chạy /mcv3:requirements cho module tiếp theo hoặc /mcv3:tech-design"]
    })
+
+5. Show tóm tắt theo OUTPUT DISPLAY PROTOCOL:
+   📄 Đã lưu: {SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md
+      → {N} User Stories (US-{MOD}-001 → US-{MOD}-{NNN})
+      → {M} Functional Requirements (FT-{MOD}-001 → FT-{MOD}-{MMM})
+      → {K} Acceptance Criteria
+      → {J} Non-Functional Requirements
+      ⚠️ {X} quyết định cần review (xem DECISION-LOG)
 ```
 
 ---
@@ -320,9 +329,27 @@ mc_checkpoint({ label: "sau-urs-{mod}", ... })
 ✅ Traceability matrix có BR → US → FT mapping
 ✅ Mỗi US có Acceptance Criteria
 
-→ "✅ Phase 4 Requirements hoàn thành!
-   Đã tạo {N} URS files với tổng {X} User Stories và {Y} Functional Requirements.
-   Tiếp theo: /mcv3:tech-design để thiết kế kỹ thuật."
+→ Dùng Completion Report format (xem auto-mode-protocol.md Phase 3):
+
+═══════════════════════════════════════════════
+📋 HOÀN THÀNH: /mcv3:requirements
+═══════════════════════════════════════════════
+
+✅ Đã tạo {N} URS files:
+   1. URS-{MOD1}.md — {X} US, {M} FT, {K} AC
+   2. URS-{MOD2}.md — ...
+
+⚠️ {D} quyết định đã tự xử lý (xem DECISION-LOG)
+📋 Tất cả files trong .mc-data/{SYS}/P1-REQUIREMENTS/
+
+🔜 Bước tiếp theo: /mcv3:tech-design — Thiết kế kỹ thuật MODSPEC
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem chi tiết file nào? (cho biết tên file)
+   [2] Có thay đổi gì không? (mô tả thay đổi)
+   [3] OK, tiếp tục → /mcv3:tech-design
+═══════════════════════════════════════════════
 ```
 
 ---

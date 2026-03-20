@@ -111,7 +111,81 @@ Format báo cáo chuẩn sau khi hoàn thành toàn bộ công việc:
 🔜 BƯỚC TIẾP THEO:
 → /mcv3:{next-skill} — [mô tả ngắn gọn lý do]
 [Nếu multi-system]: → {system tiếp theo}
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem chi tiết file nào? (cho biết tên file)
+   [2] Có thay đổi gì không? (mô tả thay đổi)
+   [3] OK, tiếp tục → /mcv3:{next-skill}
+═══════════════════════════════════════════════
 ```
+
+---
+
+## OUTPUT DISPLAY PROTOCOL
+
+**Quy tắc hiển thị output bắt buộc cho tất cả MCV3 Skills (trừ navigator):**
+
+### Rule 1 — Save trước, tóm tắt sau
+
+```
+KHÔNG BAO GIỜ: Paste / hiển thị nội dung đầy đủ document lên chat
+LUÔN LUÔN:    mc_save trước → chỉ show tóm tắt ngắn gọn sau
+```
+
+Ngay cả khi vừa tạo xong nội dung → `mc_save` ngay → **KHÔNG** dán toàn bộ markdown vào chat.
+
+### Rule 2 — Format tóm tắt per document
+
+Sau mỗi document được save thành công, show 1 block tóm tắt ngắn:
+
+```
+📄 Đã lưu: {SYS}/P1-REQUIREMENTS/URS-{MOD}.md
+   → {N} User Stories (US-{MOD}-001 → US-{MOD}-{NNN})
+   → {M} Functional Requirements (FT-{MOD}-001 → FT-{MOD}-{MMM})
+   → {K} Acceptance Criteria
+   → {J} Non-Functional Requirements
+   ⚠️ {X} quyết định cần review (xem DECISION-LOG)
+```
+
+Điều chỉnh metrics theo loại document (API count, TC count, table count, ...).
+
+### Rule 3 — Completion Report + User Options
+
+Completion Report (Phase 3 format) LUÔN kết thúc bằng user options:
+
+```
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem chi tiết file nào? (cho biết tên file)
+   [2] Có thay đổi gì không? (mô tả thay đổi)
+   [3] OK, tiếp tục → /mcv3:{next-skill}
+═══════════════════════════════════════════════
+```
+
+### Rule 4 — Khi user request xem chi tiết
+
+```
+User: "Xem URS-WH.md" / "Cho tôi xem phần API"
+→ mc_load({ filePath: "...", layer: 2 })  ← Chỉ load sections chính, không full
+→ Show phần user quan tâm: danh sách IDs, quyết định, metrics
+→ KHÔNG dump toàn bộ file ra chat
+→ Hỏi thêm nếu cần: "Bạn muốn xem section nào cụ thể?"
+```
+
+### Rule 5 — Khi user muốn thay đổi
+
+```
+User: "Thêm NFR về performance" / "Sửa BR-WH-003"
+→ mc_impact_analysis nếu thay đổi ảnh hưởng nhiều docs
+→ Cập nhật document, mc_save
+→ Show diff tóm tắt: "Đã cập nhật: [list thay đổi ngắn gọn]"
+→ KHÔNG show toàn bộ document sau khi sửa
+```
+
+### Rule 6 — Navigator exception
+
+`/mcv3:status` (navigator skill) được phép hiển thị dashboard đầy đủ — đây là mục đích chính của skill này. Tất cả skills khác áp dụng Rules 1-5 đầy đủ.
 
 ---
 
@@ -190,6 +264,9 @@ LUÔN LUÔN:
   ✅ Tự quyết khi ambiguous → ghi DECISION-LOG
   ✅ mc_checkpoint sau mỗi unit lớn
   ✅ Báo cáo đầy đủ sau khi xong toàn bộ
+  ✅ mc_save TRƯỚC khi show bất cứ thứ gì
+  ✅ Chỉ show tóm tắt — tên file, metrics, decisions
+  ✅ Kết thúc bằng user options [1]/[2]/[3]
 
 KHÔNG BAO GIỜ:
   ❌ Hỏi "Bạn muốn làm module nào trước?"
@@ -198,4 +275,6 @@ KHÔNG BAO GIỜ:
   ❌ Hỏi "Module tiếp theo?"
   ❌ Hỏi "Bắt đầu?"
   ❌ Hỏi "Tech stack đúng không?"
+  ❌ Paste / dump toàn bộ nội dung document vào chat
+  ❌ Show full markdown của document vừa tạo
 ```

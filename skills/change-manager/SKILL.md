@@ -370,9 +370,33 @@ mc_checkpoint({
 ✅ Code impact notice đã thông báo cho developer
 ✅ Checkpoint đã lưu
 
-→ "✅ Change CHG-{ID} đã apply!
-   {N} documents cập nhật, {M} items deprecated.
-   Tiếp theo: sửa code theo hướng dẫn trên, rồi chạy /mcv3:verify."
+→ Dùng Completion Report format (xem auto-mode-protocol.md Phase 3):
+
+═══════════════════════════════════════════════
+📋 HOÀN THÀNH: /mcv3:change-manager — CHG-{ID}
+═══════════════════════════════════════════════
+
+✅ Đã cập nhật {N} documents:
+   BIZ-POLICY-{DOM}.md — sửa BR-{DOM}-{NNN}
+   URS-{MOD}.md        — cập nhật AC liên quan
+   MODSPEC-{MOD}.md    — cập nhật validation
+   TEST-{MOD}.md       — thêm/sửa TCs
+
+⚠️ Code impact (cần developer thực hiện thủ công):
+   src/{sys}/{mod}/... — xem hướng dẫn trong Phase 7
+
+📋 Changelog: CHG-{ID} đã ghi trong _changelog.md
+
+🔜 Bước tiếp theo:
+   → Sửa code theo hướng dẫn trên
+   → /mcv3:verify — Xác nhận traceability sau thay đổi
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem diff của document nào? (cho biết tên file)
+   [2] Có thêm thay đổi nào không?
+   [3] OK, tiến hành sửa code rồi → /mcv3:verify
+═══════════════════════════════════════════════
 ```
 
 ---

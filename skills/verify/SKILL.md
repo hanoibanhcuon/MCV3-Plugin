@@ -470,20 +470,36 @@ grep -rn "VERIFICATION REPORT\|COMPILE-ERROR\|TEST-FAIL\|SECURITY-WARNING" src/{
 ✅ Critical gaps = 0 (hoặc acknowledged + accepted)
 ✅ Sign-off checklist được ghi nhận
 
-→ Nếu ✅ READY:
-   "✅ Verification hoàn thành!
-   Tất cả {N} FTs traced. Không có critical gaps.
-   Tiếp theo: /mcv3:deploy-ops để tạo deployment docs."
+→ Dùng Completion Report format (xem auto-mode-protocol.md Phase 3):
 
-→ Nếu ⚠️ NEEDS ATTENTION:
-   "⚠️ Verification có {M} warnings.
-   Cần fix: [danh sách issues]
-   Sau khi fix, chạy lại /mcv3:verify."
+═══════════════════════════════════════════════
+📋 HOÀN THÀNH: /mcv3:verify
+═══════════════════════════════════════════════
 
-→ Nếu ❌ NOT READY:
-   "❌ Verification failed với {G} critical gaps.
-   Bắt buộc fix trước khi deploy:
-   [danh sách critical issues]"
+✅ Đã tạo verification docs:
+   traceability-matrix.md     — {N} chains traced
+   verification-report.md     — tổng hợp toàn dự án
+   VERIFY-{SYS}-P1-{MOD}.md  — per module
+
+📊 Traceability Coverage:
+   PROB → BR: {A}% | BR → US: {B}% | US → FT: {C}%
+   FT → API: {D}% | API → Code: {E}% | Code → TC: {F}%
+
+Kết quả: {STATUS}
+   ✅ READY        — Tất cả {N} FTs traced, không có critical gaps
+   ⚠️ NEEDS ATTENTION — {M} warnings (danh sách trong verification-report.md)
+   ❌ NOT READY    — {G} critical gaps (bắt buộc fix trước khi deploy)
+
+🔜 Bước tiếp theo:
+   → READY: /mcv3:deploy-ops — Tạo deployment docs
+   → NOT READY: Fix gaps, chạy lại /mcv3:verify
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem chi tiết gaps? (cho biết module)
+   [2] Hướng dẫn fix issue nào?
+   [3] OK, tiếp tục → /mcv3:deploy-ops
+═══════════════════════════════════════════════
 ```
 
 ---

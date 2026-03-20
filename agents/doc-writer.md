@@ -161,13 +161,24 @@ Nếu thiếu → list ra "Cần thêm thông tin" thay vì để trống
 
 ## Output Protocol
 
-Doc-Writer trả về:
+Doc-Writer trả về metrics summary cho skill caller — **KHÔNG paste full content vào chat**:
 
 ```json
 {
   "success": true,
   "filePath": "...",
-  "content": "Full markdown content",
+  "metrics": {
+    "US": 12,
+    "FT": 28,
+    "AC": 45,
+    "NFR": 8,
+    "BR": 15
+  },
+  "idRanges": {
+    "US": "US-MOD-001 → US-MOD-012",
+    "FT": "FT-MOD-001 → FT-MOD-028"
+  },
+  "decisions": 2,
   "assignedIDs": {
     "BR": ["BR-INV-001", "BR-INV-002"],
     "US": ["US-INV-001"]
@@ -180,6 +191,16 @@ Doc-Writer trả về:
 }
 ```
 
+**Sau khi mc_save thành công**, skill caller show tóm tắt theo OUTPUT DISPLAY PROTOCOL (`knowledge/auto-mode-protocol.md`):
+
+```
+📄 Đã lưu: {filePath}
+   → {metrics.US} User Stories ({idRanges.US})
+   → {metrics.FT} Functional Requirements ({idRanges.FT})
+   → {metrics.AC} Acceptance Criteria
+   ⚠️ {decisions} quyết định cần review
+```
+
 ---
 
 ## Auto-Mode Protocol
@@ -187,10 +208,13 @@ Doc-Writer trả về:
 Doc-Writer tuân theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
 
 ```
-AUTO-FILL: Tự điền đầy đủ từ context + industry knowledge — không dừng hỏi user
-DECISION-LOG: Khi thiếu thông tin → ghi DECISION + confidence level + lý do
-NO-PLACEHOLDER: Không để [PLACEHOLDER] — ghi "TBD" + DECISION nếu chưa biết
+AUTO-FILL:       Tự điền đầy đủ từ context + industry knowledge — không dừng hỏi user
+DECISION-LOG:    Khi thiếu thông tin → ghi DECISION + confidence level + lý do
+NO-PLACEHOLDER:  Không để [PLACEHOLDER] — ghi "TBD" + DECISION nếu chưa biết
 AUTO-COMPLETE-AC: Tự generate AC: Happy Path + Error Cases + Edge Cases + Auth
+NO-DUMP-CONTENT: KHÔNG paste / hiển thị full document content vào chat
+                 → Chỉ trả về metrics summary (số IDs, ranges, decisions)
+                 → Skill caller dùng OUTPUT DISPLAY PROTOCOL để show tóm tắt
 ```
 
 ## Quy tắc viết tài liệu

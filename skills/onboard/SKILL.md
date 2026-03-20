@@ -385,7 +385,16 @@ Nếu MCP server kết nối OK:
 ```
 "🎉 Tutorial hoàn thành!
 
-→ Tiếp theo: /mcv3:discovery để bắt đầu dự án đầu tiên của bạn."
+📌 Cheat sheet đã hiển thị ở trên — bookmark lại để tham khảo.
+
+🔜 Bước tiếp theo:
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Bắt đầu dự án mới → /mcv3:discovery
+   [2] Xem thêm về feature nào?
+   [3] Import dự án cũ → /mcv3:migrate
+═══════════════════════════════════════════════"
 
 Nếu user đã cung cấp tên dự án và domain trong message:
   → mc_init_project({ projectName, domain }) ngay
