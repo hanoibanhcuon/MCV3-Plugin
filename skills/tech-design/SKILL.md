@@ -88,8 +88,10 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 - Báo user: "Chưa tìm thấy URS trong {SYSTEM}/P1-REQUIREMENTS/. Chạy /mcv3:requirements trước."
 
 **Tech stack chưa xác định:**
-- Hỏi user trực tiếp: "Tech stack là gì? (Backend / Database / Frontend)"
-- Không giả định tech stack — phải xác nhận trước khi design API/schema
+- Tự chọn default dựa trên domain và project scale — ghi DECISION (Confidence: MEDIUM)
+  Ví dụ: Web/Backend → Node.js + Express + PostgreSQL, Mobile → React Native + Expo
+- Tiếp tục thiết kế với default đó — không dừng hỏi user
+- User review và điều chỉnh sau khi nhận Completion Report
 
 ## Token Efficiency
 

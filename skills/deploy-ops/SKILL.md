@@ -61,7 +61,7 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
   - "Go-Live Checklist" → Code signing, Privacy Labels, Store submission, TestFlight/Internal Testing
   - "Rollback Plan" → OTA rollback (nhanh, EAS Update) hoặc phased rollout halt (Google Play)
   - "Monitoring" → Crashlytics crash-free rate, ANR rate, App Store rating thay server metrics
-  - Hỏi thêm: "EAS Build hay Fastlane? TestFlight hay Firebase App Distribution cho staging?"
+  - Tự xác định: EAS Build (mặc định cho React Native), Fastlane (Flutter) — ghi DECISION nếu PROJECT-ARCHITECTURE không chỉ định
 - **Embedded/Firmware project**: Load `firmware-deploy-guide.md`, thay thế nội dung:
   - "Deployment Commands" → Flash programming (esptool.py, STM32CubeProgrammer)
   - "OTA Strategy" → A/B partition, rollback, boot count health check
@@ -83,8 +83,9 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 - Exception: Nếu user confirm "tạo deploy-ops dù chưa verify" → tiếp tục nhưng ghi rõ warning trong DEPLOY-OPS.md: "⚠️ CẢNH BÁO: Deploy-Ops tạo trước khi Verification hoàn thành."
 
 **Infrastructure info không đủ:**
-- Hỏi user trực tiếp: "Deploy environment là gì? (Cloud provider, region, container orchestration)"
-- Không giả định infrastructure — phải xác nhận trước khi tạo deploy commands
+- Tự điền defaults rõ ràng dựa trên project scale + PROJECT-ARCHITECTURE — ghi DECISION (Confidence: MEDIUM)
+  Ví dụ: không có info → "AWS EC2 + RDS + Docker Compose" hoặc "VPS + Docker Compose" cho dự án nhỏ
+- Không dừng để hỏi user — tiếp tục với defaults + user điều chỉnh sau khi nhận báo cáo
 
 ---
 

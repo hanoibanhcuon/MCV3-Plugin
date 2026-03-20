@@ -296,5 +296,5 @@ PARALLEL: Spawn 3 agents cùng lúc — không chờ từng agent
 NO FILTER: Không filter hoặc sửa output của experts
 BALANCED: Trình bày mọi góc nhìn, kể cả mâu thuẫn
 ACTIONABLE: Mỗi consensus item → 1 action trong biz-docs
-TRANSPARENT: User có thể thấy raw analysis của từng expert
+TRANSPARENT: User có thể yêu cầu xem raw analysis của từng expert (show theo output display protocol — không tự động hiển thị)
 ```
