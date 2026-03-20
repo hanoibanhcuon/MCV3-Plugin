@@ -33,6 +33,33 @@ References:
 
 ---
 
+## SPEED OPTIMIZATION GUIDELINES
+
+> Áp dụng các kỹ thuật dưới đây để giảm latency mà **không hy sinh quality**.
+
+### Parallel MCP Calls
+
+| Điểm tối ưu | Trước | Sau | Tiết kiệm |
+|-------------|-------|-----|-----------|
+| Phase 0 Pre-Gate | mc_status → mc_list (sequential) | mc_status ∥ mc_list song song | ~1 round-trip |
+| Phase 2 + 3 | mc_impact_analysis → mc_snapshot (sequential) | mc_impact_analysis ∥ mc_snapshot song song | ~1 round-trip |
+| Phase 4 doc loading | mc_load(doc1) → mc_load(doc2) → ... | Parallel load tất cả affected docs | ~N−1 round-trips |
+| Phase 4d per-doc save | mc_merge → mc_validate → mc_checkpoint | mc_merge → [mc_validate ∥ mc_checkpoint] | ~1 round-trip / doc |
+| Phase 5+6 sau updates | mc_traceability(validate) → mc_changelog | [mc_traceability(validate) ∥ mc_changelog] | ~1 round-trip |
+
+### Quy tắc áp dụng
+
+```
+✅ Phase 0: mc_status ∥ mc_list = 1 round duy nhất để lấy project state + document list
+✅ Phase 2+3: Snapshot không phụ thuộc vào kết quả impact analysis → chạy song song an toàn
+✅ Phase 4 load: Load tất cả affected docs cùng lúc trước khi bắt đầu generate updates
+✅ Post-merge parallel: mc_validate và mc_checkpoint độc lập nhau → chạy song song sau mc_merge
+✅ Post-update parallel: mc_traceability(validate) và mc_changelog độc lập → chạy song song cuối
+✅ No re-validation: Pre-Completion Tầng 3 chỉ confirm PASS đã done, không re-run mc_validate
+```
+
+---
+
 ## CHẾ ĐỘ VẬN HÀNH — Type C (Hybrid)
 
 Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`) — **Type C: Hybrid**:
@@ -60,9 +87,12 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 ## Phase 0 — Pre-Gate
 
 ```
-1. mc_status() → xác nhận project tồn tại
-2. mc_list({ projectSlug }) → liệt kê documents hiện có
-3. Parse change description từ user message:
+1. PARALLEL (2 calls đồng thời):
+   - mc_status()              → xác nhận project tồn tại, lấy slug
+   - mc_list({ projectSlug }) → liệt kê documents hiện có
+   [Kết quả mc_list tái dùng để identify affected docs ở Phase 2 — KHÔNG gọi lại]
+
+2. Parse change description từ user message:
    - Element ID + mô tả thay đổi đã có trong message
    - Nếu user chưa cung cấp ID cụ thể → hỏi: "Element nào cần thay đổi? (VD: BR-WH-001)"
    - Sau khi có đủ thông tin → tự động chuyển Phase 1
@@ -124,15 +154,23 @@ Hỏi user (hoặc parse từ input):
 
 ## Phase 2 — Impact Analysis
 
-### 2a. Gọi mc_impact_analysis
+### 2a. Gọi mc_impact_analysis ∥ mc_snapshot (PARALLEL)
 
 ```
-mc_impact_analysis({
-  projectSlug: "<slug>",
-  elementId: "<ID>",                     // VD: BR-WH-001 — ID của element đang thay đổi
-  changeDescription: "<mô tả thay đổi>",
-  changeType: "minor" | "major" | "breaking"
-})
+PARALLEL (2 calls đồng thời — snapshot không phụ thuộc kết quả impact analysis):
+  mc_impact_analysis({
+    projectSlug: "<slug>",
+    elementId: "<ID>",                     // VD: BR-WH-001 — ID của element đang thay đổi
+    changeDescription: "<mô tả thay đổi>",
+    changeType: "minor" | "major" | "breaking"
+  })
+  mc_snapshot({
+    projectSlug: "<slug>",
+    label: "before-change-{CHG-ID}",
+    notes: "Snapshot trước khi apply CHG-{ID}: {mô tả}"
+  })
+→ Chờ CẢ HAI hoàn thành trước khi phân tích kết quả impact
+→ Nếu snapshot fail → DỪNG (không tiến hành thay đổi khi không có safety net)
 ```
 
 ### 2b. Phân tích kết quả impact
@@ -226,36 +264,29 @@ Thêm vào CHANGE-{ID} record phần downstream notice:
 
 ## Phase 3 — Snapshot (Safety)
 
-Trước khi thay đổi bất kỳ document nào:
-
-```
-mc_snapshot({
-  projectSlug: "<slug>",
-  label: "before-change-{CHG-ID}",
-  notes: "Snapshot trước khi apply CHG-{ID}: {mô tả}"
-})
-```
-
-```
-✅ Đã tạo safety snapshot. Có thể rollback nếu cần.
-```
+> ✅ **Đã được gộp vào Phase 2a PARALLEL** — mc_snapshot chạy song song với mc_impact_analysis, tiết kiệm 1 round-trip. Không cần snapshot riêng ở đây nữa. Nếu Phase 2a snapshot đã thành công → tiếp tục Phase 4. Nếu fail → DỪNG, báo user.
 
 ---
 
 ## Phase 4 — Document Updates
 
-### 4a. Với mỗi document bị ảnh hưởng
+### 4a. Load tất cả affected docs — PARALLEL
 
-Theo thứ tự: BIZ-POLICY → PROCESS → URS → MODSPEC → TEST → (Code: chỉ gợi ý, không tự sửa)
+Từ impact list của Phase 2, load tất cả documents cùng lúc:
 
 ```
-mc_load({
-  filePath: "<path>",
-  layer: 3
-})
-```
+PARALLEL (load tất cả affected docs trong 1 round):
+  mc_load({ filePath: "BIZ-POLICY-{DOM}.md", layer: 3 })
+  mc_load({ filePath: "URS-{MOD}.md", layer: 3 })
+  mc_load({ filePath: "MODSPEC-{MOD}.md", layer: 3 })
+  mc_load({ filePath: "TEST-{MOD}.md", layer: 3 })
+  ... (tất cả docs trong impact list)
 
-Đọc document → xác định section cần cập nhật → tạo updated content.
+→ Sau khi tất cả loads hoàn thành:
+   Đọc nội dung → xác định sections cần cập nhật → generate updated content
+   Apply theo thứ tự: BIZ-POLICY → PROCESS → URS → MODSPEC → TEST
+   (Code: chỉ gợi ý, không tự sửa)
+```
 
 ### 4b. Auto-Apply Update Protocol
 
@@ -282,26 +313,27 @@ mc_merge({
 })
 ```
 
-### 4d. Validate + Per-Document Checkpoint
+### 4d. Validate + Per-Document Checkpoint — PARALLEL
 
 Sau mỗi document được update (lặp lại cho từng doc trong impact list):
 
 ```
-// RISK-002: BẮT BUỘC validate sau khi update mỗi document
-mc_validate({
-  projectSlug: "<slug>",
-  filePath: "<path-of-updated-doc>",
-  validationType: "format"
-})
-→ Nếu validate FAIL → tự sửa format issues trước khi sang document tiếp theo
+mc_merge({ ... })  // Apply update cho document này
 
-// RISK-003: Per-document checkpoint — để resume nếu bị interrupt giữa chừng
-mc_checkpoint({
-  projectSlug: "<slug>",
-  label: "change-doc-{N}-of-{TOTAL}",
-  sessionSummary: "CHG-{ID}: Đã update {N}/{TOTAL} documents — vừa xong {doc-name}",
-  nextActions: ["Tiếp tục /mcv3:change-manager — update document {N+1}: {next-doc-name}"]
-})
+// RISK-002 + RISK-003: Sau mc_merge → PARALLEL [mc_validate ∥ mc_checkpoint]
+PARALLEL (2 calls đồng thời):
+  mc_validate({
+    projectSlug: "<slug>",
+    filePath: "<path-of-updated-doc>",
+    validationType: "format"
+  })
+  mc_checkpoint({
+    projectSlug: "<slug>",
+    label: "change-doc-{N}-of-{TOTAL}",
+    sessionSummary: "CHG-{ID}: Đã update {N}/{TOTAL} documents — vừa xong {doc-name}",
+    nextActions: ["Tiếp tục /mcv3:change-manager — update document {N+1}: {next-doc-name}"]
+  })
+→ Nếu mc_validate FAIL → tự sửa format issues trước khi sang document tiếp theo
 ```
 
 > **Lưu ý:** Checkpoint per-document giúp resume an toàn nếu session bị ngắt giữa lúc update nhiều documents. Không bỏ qua kể cả khi chỉ có 2 documents.
@@ -313,6 +345,7 @@ mc_checkpoint({
 Cập nhật traceability matrix:
 
 ```
+// Step 1: Link IDs (phải hoàn thành trước validate)
 mc_traceability({
   action: "link",
   items: [
@@ -320,13 +353,22 @@ mc_traceability({
   ]
 })
 
-// RISK-005: Verify traceability chain vẫn intact sau thay đổi
-mc_traceability({
-  action: "validate",
-  projectSlug: "<slug>",
-  scope: "changed-ids"   // Chỉ validate các IDs liên quan đến change này
-})
-→ Nếu chain bị đứt (orphan IDs, missing links) → tự fix link trước khi sang Phase 6
+// Step 2: Sau khi link xong → PARALLEL [mc_traceability(validate) ∥ mc_changelog]
+PARALLEL (2 calls đồng thời):
+  mc_traceability({
+    action: "validate",
+    projectSlug: "<slug>",
+    scope: "changed-ids"   // Chỉ validate các IDs liên quan đến change này
+  })
+  mc_changelog({
+    action: "add",
+    projectSlug: "<slug>",
+    entry: "CHG-{ID}: {Mô tả thay đổi}. Documents cập nhật: {list}. Lý do: {reason}",
+    changeType: "changed" | "added" | "fixed",
+    phase: "<phase bị ảnh hưởng>"
+  })
+
+→ Nếu traceability validate FAIL → tự fix link; changelog đã ghi không cần rollback
 → Nếu không tự fix được → ghi WARNING rõ trong completion report + báo user
 ```
 
@@ -340,15 +382,7 @@ Với breaking changes, mark old IDs là deprecated:
 
 ## Phase 6 — Changelog Entry
 
-```
-mc_changelog({
-  action: "add",
-  projectSlug: "<slug>",
-  entry: "CHG-{ID}: {Mô tả thay đổi}. Documents cập nhật: {list}. Lý do: {reason}",
-  changeType: "changed" | "added" | "fixed",
-  phase: "<phase bị ảnh hưởng>"
-})
-```
+> ✅ **Đã được gộp vào Phase 5 PARALLEL** — mc_changelog chạy song song với mc_traceability(validate), tiết kiệm 1 round-trip.
 
 ---
 

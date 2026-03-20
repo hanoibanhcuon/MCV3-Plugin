@@ -34,6 +34,31 @@ References:
 
 ---
 
+## SPEED OPTIMIZATION GUIDELINES
+
+> Áp dụng các kỹ thuật dưới đây để giảm latency mà **không hy sinh quality**.
+
+### Parallel MCP Calls
+
+| Điểm tối ưu | Trước | Sau | Tiết kiệm |
+|-------------|-------|-----|-----------|
+| Phase 0 init | mc_status → mc_load(OVERVIEW) → mc_load(INDEX) → mc_list (4 sequential) | 4 calls song song trong 1 round | ~3 round-trips |
+| Phase 2c + Phase 3 | mc_dependency → mc_snapshot (sequential) | mc_dependency ∥ mc_snapshot song song | ~1 round-trip |
+| Phase 4c-d per-module | mc_save → mc_checkpoint (sequential) | mc_save → [mc_validate ∥ mc_checkpoint] | ~1 round-trip / module |
+| Phase 8 post-gate | mc_changelog → mc_checkpoint (sequential) | mc_changelog ∥ mc_checkpoint song song | ~1 round-trip |
+
+### Quy tắc áp dụng
+
+```
+✅ Phase 0: Tất cả 4 init calls độc lập nhau → 1 round duy nhất
+✅ Phase 2c+3: mc_dependency check và mc_snapshot đều chỉ cần project slug → parallel an toàn
+✅ Post-save: mc_validate và mc_checkpoint sau mc_save → chạy song song
+✅ Phase 8: mc_changelog và mc_checkpoint độc lập → chạy song song
+✅ No re-validation: Pre-Completion Tầng 3 chỉ confirm PASS đã done, không re-run mc_validate
+```
+
+---
+
 ## CHẾ ĐỘ VẬN HÀNH — Type C (Hybrid)
 
 Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`) — **Type C: Hybrid**:
@@ -88,12 +113,14 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 ## Phase 0 — Pre-Gate & Context Loading
 
 ```
-1. mc_status() → xác nhận project và phase hiện tại
-2. mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 2 }) → bối cảnh
-3. mc_load({ filePath: "MASTER-INDEX.md", layer: 2 }) → danh sách systems/modules hiện có
-4. mc_list({ documentType: "modspec" }) → liệt kê MODSPEC hiện có
+1. PARALLEL (4 calls đồng thời — tất cả độc lập nhau):
+   - mc_status()                                               → project slug + phase hiện tại
+   - mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 2 }) → bối cảnh
+   - mc_load({ filePath: "MASTER-INDEX.md", layer: 2 })        → systems/modules hiện có
+   - mc_list({ documentType: "modspec" })                      → liệt kê MODSPEC hiện có
+   [Kết quả mc_list tái dùng để detect scope — KHÔNG gọi lại]
 
-5. Auto-detect evolution scope từ user message:
+2. Auto-detect evolution scope từ user message:
    - "thêm feature/tính năng vào {module}" → Scope 1
    - "thêm module {name}" → Scope 2
    - "thêm system {name}" → Scope 3
@@ -200,17 +227,27 @@ mc_compare({
 | Minor (0.x.0) | Thêm optional feature, không break existing | New section trong file |
 | Major (x.0.0) | Thêm required feature, thay đổi contract | New file v{N+1} |
 
-### 2c. Dependency Check trước khi evolve
+### 2c. Dependency Check + Snapshot — PARALLEL
 
-Trước khi confirm evolution plan, kiểm tra các modules/systems phụ thuộc vào module đang evolve:
+Chạy đồng thời dependency check và safety snapshot (cả hai chỉ cần project slug, độc lập nhau):
 
 ```
-// Tìm ai đang depend vào module này
-mc_dependency({
-  action: "dependents",
-  projectSlug: "<slug>",
-  source: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md"
-})
+PARALLEL (2 calls đồng thời):
+  // Tìm ai đang depend vào module này
+  mc_dependency({
+    action: "dependents",
+    projectSlug: "<slug>",
+    source: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md"
+  })
+  // Safety snapshot trước khi evolve
+  mc_snapshot({
+    projectSlug: "<slug>",
+    label: "before-evolve-{MOD}-v{N+1}",
+    notes: "Snapshot before evolution: {description}"
+  })
+→ Chờ CẢ HAI hoàn thành
+→ Nếu snapshot fail → DỪNG (không evolve khi không có safety net)
+→ Phân tích dependency result → nếu có dependents bị ảnh hưởng → hiển thị warning
 ```
 
 Nếu có dependents:
@@ -286,13 +323,7 @@ Với tùy chọn 1 hoặc 2, thêm vào MODSPEC:
 
 ## Phase 3 — Snapshot Before Evolution
 
-```
-mc_snapshot({
-  projectSlug: "<slug>",
-  label: "before-evolve-{MOD}-v{N+1}",
-  notes: "Snapshot before evolution: {description}"
-})
-```
+> ✅ **Đã được gộp vào Phase 2c PARALLEL** — mc_snapshot chạy song song với mc_dependency, tiết kiệm 1 round-trip. Nếu Phase 2c snapshot đã thành công → tiếp tục Phase 4. Nếu fail → DỪNG.
 
 ---
 
@@ -346,33 +377,28 @@ Với features mới, tạo/extend URS:
 ## ── END v{N+1} ADDITIONS ────────────────────────
 ```
 
-### 4c. Save updates
+### 4c-d. Save + Validate + Checkpoint — PARALLEL
 
 ```
 mc_save({
-  filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md",
+  filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md",   // hoặc MODSPEC-{MOD}-v{N+1}.md cho major
   documentType: "modspec"
 })
-
-// Hoặc nếu major change, tạo file mới:
 mc_save({
-  filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}-v{N+1}.md",
-  documentType: "modspec"
+  filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md",  // nếu URS cũng được update
+  documentType: "urs"
 })
-```
 
-### 4d. Per-Module Checkpoint
-
-Sau khi save mỗi module document (lặp lại nếu evolve nhiều modules):
-
-```
-// RISK-003: Per-module checkpoint — để resume nếu bị interrupt giữa chừng
-mc_checkpoint({
-  projectSlug: "<slug>",
-  label: "evolve-module-{MOD}-done",
-  sessionSummary: "EVOL-{ID}: Đã evolve module {MOD} (v{N} → v{N+1}). URS + MODSPEC updated.",
-  nextActions: ["Tiếp tục /mcv3:evolve — evolve module tiếp theo: {next-module} hoặc sang Phase 5 (Traceability)"]
-})
+// RISK-002 + RISK-003: Sau khi save → PARALLEL [mc_validate ∥ mc_checkpoint]
+PARALLEL (2 calls đồng thời — lặp lại per module):
+  mc_validate({ projectSlug: "<slug>", filePath: "<path-of-saved-doc>" })
+  mc_checkpoint({
+    projectSlug: "<slug>",
+    label: "evolve-module-{MOD}-done",
+    sessionSummary: "EVOL-{ID}: Đã evolve module {MOD} (v{N} → v{N+1}). URS + MODSPEC updated.",
+    nextActions: ["Tiếp tục /mcv3:evolve — evolve module tiếp theo: {next-module} hoặc sang Phase 5"]
+  })
+→ Nếu mc_validate FAIL → tự fix format trước khi sang module tiếp theo
 ```
 
 > **Lưu ý:** Checkpoint per-module quan trọng khi evolve nhiều modules cùng lúc. Cho phép resume đúng module tiếp theo nếu session bị gián đoạn.
@@ -478,22 +504,23 @@ SAU KHI EVOLUTION DOCUMENTS ĐÃ TẠO/UPDATE:
 ## Phase 8 — Post-Gate
 
 ```
-[MANDATORY] mc_changelog({
-  action: "add",
-  entry: "EVOL-{ID}: {Module} v{N+1} — {description}",
-  changeType: "added",
-  phase: "evolution"
-})
-
-[MANDATORY] mc_checkpoint({
-  label: "evolution-{MOD}-v{N+1}",
-  sessionSummary: "Evolution: {N} new features added to {MOD}",
-  nextActions: [
-    "Chạy /mcv3:qa-docs cho features mới",
-    "Chạy /mcv3:code-gen",
-    "Update database migration scripts"
-  ]
-})
+// PARALLEL (2 calls đồng thời — changelog và checkpoint độc lập nhau):
+PARALLEL:
+  mc_changelog({
+    action: "add",
+    entry: "EVOL-{ID}: {Module} v{N+1} — {description}",
+    changeType: "added",
+    phase: "evolution"
+  })
+  mc_checkpoint({
+    label: "evolution-{MOD}-v{N+1}",
+    sessionSummary: "Evolution: {N} new features added to {MOD}",
+    nextActions: [
+      "Chạy /mcv3:qa-docs cho features mới",
+      "Chạy /mcv3:code-gen",
+      "Update database migration scripts"
+    ]
+  })
 ```
 
 **Pre-Completion Verification (BẮT BUỘC — RISK-004):**
