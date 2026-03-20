@@ -8,12 +8,13 @@ Hiển thị dashboard tiến độ dự án MCV3 — user nhìn vào và biết
 
 ---
 
-## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+## CHẾ ĐỘ VẬN HÀNH — Type A (Full Auto / Read-Only)
 
-Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`) — **Type A: Full Auto**:
 1. **Tự động hoàn toàn** — tự đọc trạng thái, tự format dashboard, tự gợi ý next step
-2. **Không có interactive prompts** — navigator là read-only, không cần user input
-3. **Báo cáo ngay** — hiển thị dashboard đầy đủ trong 1 response
+2. **Không có interactive prompts** — navigator là read-only, không cần user input; không tạo hoặc sửa docs
+3. **Báo cáo ngay** — hiển thị dashboard đầy đủ trong 1 response (xem Rule 6 trong OUTPUT DISPLAY PROTOCOL)
+4. **Exception duy nhất:** Nếu có nhiều projects → hỏi user muốn xem project nào (không thể auto-chọn)
 
 ---
 

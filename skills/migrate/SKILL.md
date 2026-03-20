@@ -34,14 +34,15 @@ References:
 
 ---
 
-## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+## CHẾ ĐỘ VẬN HÀNH — Type C (Hybrid)
 
-Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
-1. **Tự động hoàn toàn** — auto-detect migration source từ context, tự convert và save
-2. **Tự giải quyết vấn đề** — tự classify content vào đúng MCV3 phases, ghi DECISION khi ambiguous
-3. **Báo cáo sau khi xong** — MIGRATION-REPORT với count docs converted + gaps detected
-4. **User review** — user review MIGRATION-REPORT, confirm generated ACs
-5. **Gợi ý bước tiếp** — `/mcv3:requirements` hoặc `/mcv3:tech-design`
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`) — **Type C: Hybrid**:
+1. **Nhận input ban đầu** — cần nội dung tài liệu cần migrate (paste hoặc mô tả codebase) từ user; nếu đã paste trong message → bắt đầu ngay
+2. **Tự động sau khi có input** — auto-detect migration source từ content, tự convert và save; không hỏi format hay scope
+3. **Tự giải quyết vấn đề** — tự classify content vào đúng MCV3 phases, ghi DECISION khi ambiguous
+4. **Báo cáo sau khi xong** — MIGRATION-REPORT với count docs converted + gaps detected
+5. **User review** — user review MIGRATION-REPORT, confirm generated ACs
+6. **Gợi ý bước tiếp** — `/mcv3:requirements` hoặc `/mcv3:tech-design`
 
 **Input bắt buộc từ user:** Nội dung tài liệu cần migrate (paste hoặc mô tả codebase)
 
@@ -102,8 +103,10 @@ mc_checkpoint({
 ### 1a. Nếu chưa có project MCV3
 
 ```
-"Tên dự án? (VD: 'Hệ thống ERP Công ty ABC')
-Domain? (VD: Logistics, Retail, SaaS...)"
+Lấy tên + domain từ context — không hỏi nếu đã có:
+  - Tên dự án: extract từ message của user (VD: "ERP Công ty ABC")
+  - Domain: detect từ context (VD: "kho hàng, nhập kho" → Logistics)
+  - Nếu không có trong message → hỏi 1 câu duy nhất: "Tên dự án và ngành gì?"
 
 mc_init_project({ projectName, domain })
 ```
@@ -138,22 +141,20 @@ mc_snapshot({
 
 ## Phase 2 — Source Analysis
 
-### 2a. Nhận input documents
+### 2a. Nhận và analyze input documents
 
 ```
-"Paste nội dung tài liệu cần migrate.
-Hoặc mô tả cấu trúc tài liệu hiện có.
+Auto-detect format từ content — không hỏi:
+  - Có "Business Rule" / "BR-" patterns → BRD / BIZ-POLICY
+  - Có "As a ... I want ... So that" → User Stories
+  - Có "Use Case" / actor / flow → Use Case Specification
+  - Có HTTP method (GET/POST) / endpoint / swagger → Technical Spec / API Docs
+  - Có table với columns → SRS / Excel/Table format
+  - Có "Process" / flow description → Process Flow
+  - Không rõ → classify là "General Requirements", ghi DECISION
 
-Format nào?
-[ ] BRD (Business Requirements Document)
-[ ] FRD (Functional Requirements Document)
-[ ] SRS (Software Requirements Specification)
-[ ] Use Case Specification
-[ ] User Stories (informal)
-[ ] Excel/Table format
-[ ] Process Flow description
-[ ] Technical Spec / API Docs
-[ ] Other: ___"
+Nếu user đã paste nội dung vào message → phân tích ngay, không hỏi thêm.
+Nếu chưa có content → hỏi 1 câu duy nhất: "Paste nội dung tài liệu hoặc mô tả codebase cần migrate."
 ```
 
 ### 2b. Analyze existing content
