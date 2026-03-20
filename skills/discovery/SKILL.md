@@ -23,16 +23,36 @@ References:
 
 ---
 
-## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+## CHẾ ĐỘ VẬN HÀNH — Smart Interview Mode
 
-Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
-1. **Tự động hoàn toàn** — không dừng hỏi user giữa chừng
-2. **Tự giải quyết vấn đề** — tham vấn docs + expert agents khi gặp thông tin mơ hồ
-3. **Báo cáo sau khi xong** — tổng hợp outputs + decisions + metrics
-4. **User review** — cập nhật nếu user có thay đổi, auto-apply với impact analysis
-5. **Gợi ý bước tiếp** — `/mcv3:expert-panel`
+Discovery là skill đặc biệt — phải thu thập ý tưởng từ user vì không có sẵn trong `.mc-data`.
+Khác với Auto-Mode thuần túy, Discovery dùng **Smart Interview** kết hợp tương tác và tự động:
 
-**Lưu ý:** Discovery là skill có phỏng vấn adaptive — user cung cấp ý tưởng/vấn đề ban đầu, skill tự xử lý phân tích và tạo tài liệu mà không cần user confirm từng bước.
+### Phases TỰ ĐỘNG (không hỏi user):
+- Phase 0a: Pre-Gate Check — kiểm tra status, load refs, detect ngành
+- Phase 0b: Safety Checkpoint — lưu checkpoint trước phỏng vấn
+- Phase 2: Phân tích & Assign IDs — tự tổng hợp từ câu trả lời
+- Phase 3: Generate PROJECT-OVERVIEW — tự tạo tài liệu đầy đủ
+- Phase 4: Save & Validate — save + validate + checkpoint
+
+### Phase PHỎNG VẤN (tương tác theo blocks):
+Phase 1 dùng **Block-based interview** — hỏi theo nhóm, không hỏi từng câu riêng lẻ:
+
+- **Block 1** (Bắt buộc): Ý tưởng cơ bản
+  → 3-5 câu cùng lúc: vấn đề cần giải quyết, giải pháp hình dung, người dùng chính, ngành nghề
+
+- **Block 2** (Hỏi nếu Block 1 chưa đủ): Scope & Scale
+  → Số hệ thống, quy mô team, timeline, budget, ràng buộc chính
+
+- **Block 3** (Optional — chỉ hỏi khi cần thiết): Chi tiết kỹ thuật
+  → Tech stack mong muốn, platforms (web/mobile/embedded), integrations
+
+### Quy tắc Smart Interview:
+- Tối đa 3 blocks — KHÔNG loop thêm sau đó
+- Nếu user đã cung cấp đủ thông tin ngay từ đầu → bỏ qua blocks không cần thiết
+- KHÔNG hỏi confirm chung chung ("Đúng không?", "Có gì thêm không?")
+- Chỉ hỏi clarify khi phát hiện mâu thuẫn cụ thể trong câu trả lời
+- Sau phỏng vấn → chạy tự động hoàn toàn → Completion Report
 
 ---
 
@@ -52,16 +72,16 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 - Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
 
 **User input không rõ trong phỏng vấn:**
-- Hỏi thêm bằng câu hỏi cụ thể hơn: "Bạn có thể cho ví dụ cụ thể không?"
-- Nếu user liên tục trả lời ngắn/mơ hồ → tóm tắt những gì đã hiểu và xác nhận: "Tôi hiểu như thế này, có đúng không?"
-- Đánh dấu phần chưa rõ là `[CẦN XÁC NHẬN]` và tiếp tục
+- Hỏi thêm bằng câu hỏi cụ thể hơn trong cùng block: "Bạn có thể cho ví dụ cụ thể không?"
+- Nếu user liên tục trả lời ngắn/mơ hồ → đánh dấu `[CẦN XÁC NHẬN]`, tiếp tục với thông tin đã có
+- KHÔNG tóm tắt và hỏi confirm chung: "Tôi hiểu như thế này, đúng không?" — vi phạm NO-CONFIRM rule
 
 **mc_init_project chưa chạy:**
 - Báo user: "Cần khởi tạo project trước. Hãy cho tôi biết tên và slug của dự án để tôi gọi mc_init_project."
 
 ---
 
-## Phase 0 — Pre-Gate
+## Phase 0a — Pre-Gate Check
 
 ```
 TRƯỚC KHI BẮT ĐẦU:
@@ -77,7 +97,7 @@ TRƯỚC KHI BẮT ĐẦU:
 
 ---
 
-## Phase 0 — Pre-Skill Safety Checkpoint
+## Phase 0b — Safety Checkpoint
 
 Trước khi bắt đầu phỏng vấn, tự động lưu checkpoint để có thể resume nếu bị interrupt:
 
@@ -116,27 +136,39 @@ Dựa vào câu trả lời của user, detect ngành để load interview frame
 | fintech, ví điện tử, thanh toán, KYC, AML | Fintech | `interview-frameworks/fintech.md` |
 | bán hàng online, TMĐT, marketplace, giỏ hàng | E-Commerce | `interview-frameworks/ecommerce.md` |
 | bất động sản, BĐS, môi giới, căn hộ, sổ đỏ | Real Estate | `interview-frameworks/realestate.md` |
-| app mobile, ứng dụng điện thoại, React Native, Flutter, iOS, Android | Mobile App | `interview-frameworks/mobile.md` |
+| IoT, embedded, ESP32, STM32, firmware, MCU, sensor, vi điều khiển, thiết bị nhúng | Embedded/IoT | `interview-frameworks/embedded.md` |
+| app mobile, ứng dụng điện thoại, React Native, Flutter, iOS, Android, ứng dụng di động | Mobile App | `interview-frameworks/mobile.md` |
 | _(không rõ)_ | General | `interview-frameworks/general.md` |
 
 **Đọc framework tương ứng** từ `references/interview-frameworks/` trước khi đặt câu hỏi.
 
-### Bước 3: Phỏng vấn theo framework
+### Bước 3: Phỏng vấn theo blocks
 
-Đặt câu hỏi theo thứ tự trong framework đã load. Quy tắc:
+Đặt câu hỏi theo BLOCK dựa vào framework đã load. Quy tắc:
 
 ```
-KHÔNG đặt nhiều câu hỏi cùng lúc — 1 câu/lần
-KHÔNG dừng nếu user trả lời ngắn — hỏi sâu thêm
-GHI CHÚ nội tâm: "Đây là PROB-001 hay BG-001?"
-KHI USER NÓI "đủ rồi" hoặc im lặng → chuyển sang Phase 2
+HỎI THEO BLOCK — 3-5 câu hỏi liên quan gộp thành 1 lượt hỏi
+SKIP BLOCK — nếu user đã cung cấp đủ thông tin cho block đó
+TỐI ĐA 3 BLOCKS — không hỏi thêm sau block 3
+GHI CHÚ nội tâm: "Đây là PROB-001 hay BG-001?" → assign ID ngay khi tổng hợp
 ```
 
-### Bước 4: Clarification
+Mẫu câu hỏi Block 1:
+> "Để tôi có thể hiểu đúng dự án của bạn, xin hãy chia sẻ:
+> - Vấn đề / pain point cụ thể bạn muốn giải quyết là gì?
+> - Giải pháp bạn đang hình dung?
+> - Ai sẽ là người dùng chính của hệ thống?
+> - Ngành nghề / lĩnh vực hoạt động của công ty?"
 
-Sau khi phỏng vấn xong, tóm tắt lại và xác nhận:
+### Bước 4: Tổng hợp & Clarify khi cần
 
-> "Tôi đã hiểu được những điểm sau về dự án của bạn: [tóm tắt]. Có điểm nào tôi hiểu sai hoặc còn thiếu không?"
+Sau phỏng vấn, **tự tổng hợp** thông tin — KHÔNG hỏi confirm chung chung.
+
+Chỉ hỏi clarify nếu phát hiện mâu thuẫn cụ thể trong câu trả lời:
+
+> "Bạn đề cập đến [X] ở câu trả lời đầu nhưng sau đó nói [Y]. Bạn muốn ưu tiên hướng nào?"
+
+Những điểm chưa rõ nhưng không mâu thuẫn → đánh dấu `[CẦN XÁC NHẬN]` và tiếp tục.
 
 ---
 
@@ -242,19 +274,29 @@ Kiểm tra trước khi thông báo hoàn thành:
 → Nếu tất cả pass — Dùng Completion Report format (auto-mode-protocol.md Phase 3):
 
 ═══════════════════════════════════════════════
-📋 HOÀN THÀNH: /mcv3:discovery
+📋 BÁO CÁO HOÀN THÀNH: /mcv3:discovery
 ═══════════════════════════════════════════════
 
-✅ Đã tạo: _PROJECT/PROJECT-OVERVIEW.md
+✅ ĐÃ HOÀN THÀNH:
+- _PROJECT/PROJECT-OVERVIEW.md:
    → {N} PROB-IDs (vấn đề cốt lõi)
    → {M} GL-IDs (mục tiêu)
    → {K} SC-IN-IDs (phạm vi dự án)
    → {J} ST-IDs (stakeholders)
    → Pipeline variant: {Micro/Small/Medium/Large/Enterprise}
 
-⚠️ {D} quyết định đã tự xử lý (xem DECISION-LOG)
+⚠️ VẤN ĐỀ ĐÃ XỬ LÝ ({D} quyết định tự động):
+(Nếu không có: "Không có quyết định tự động cần review")
 
-🔜 Bước tiếp theo: /mcv3:expert-panel — Phân tích chuyên gia
+📋 CẦN USER REVIEW:
+(Nếu không có: "Không có mục cần review thêm")
+
+📊 METRICS:
+- IDs tạo mới: PROB: {N}, GL: {M}, SC-IN: {K}, ST: {J}
+- Pipeline variant được chọn: {X}
+
+🔜 BƯỚC TIẾP THEO:
+→ /mcv3:expert-panel — Phân tích chuyên gia sâu về dự án
 
 ═══════════════════════════════════════════════
 💬 BẠN MUỐN:
@@ -272,12 +314,14 @@ Kiểm tra trước khi thông báo hoàn thành:
 ## Quy tắc phỏng vấn
 
 ```
-ADAPTIVE: Điều chỉnh câu hỏi theo câu trả lời trước
-SIMPLE: Dùng ngôn ngữ đơn giản, tránh jargon kỹ thuật
-FOCUSED: 1 câu hỏi/lần, không hỏi list dài
-PATIENT: Cho user thời gian suy nghĩ
-STRUCTURED: Ghi chú nội tâm → assign IDs
-BILINGUAL: User có thể trả lời tiếng Việt hoặc tiếng Anh
+ADAPTIVE:    Điều chỉnh block câu hỏi theo câu trả lời trước
+SIMPLE:      Dùng ngôn ngữ đơn giản, tránh jargon kỹ thuật
+BLOCK-BASED: Hỏi 3-5 câu liên quan cùng lúc thành 1 block
+EFFICIENT:   Skip block nếu user đã cung cấp đủ thông tin
+NO-CONFIRM:  KHÔNG hỏi "Đúng không?", "Có gì thêm không?" sau mỗi block
+STRUCTURED:  Ghi chú nội tâm → assign IDs khi tổng hợp Phase 2
+BILINGUAL:   User có thể trả lời tiếng Việt hoặc tiếng Anh
+MAX-3-ROUNDS: Tối đa 3 blocks — không thêm vòng hỏi nào sau đó
 ```
 
 ---
