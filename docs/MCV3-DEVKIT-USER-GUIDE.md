@@ -113,41 +113,39 @@ MCV3 sẽ: scan code + docs hiện có → phân tích gap → đề xuất bổ
 ## Workflow tổng quan
 
 ```mermaid
-flowchart TD
-    START{"Ban co du an nao?"} -->|"Du an MOI"| NEW_START
-    START -->|"Du an CU"| OLD_START
+graph TD
+    START{Ban co du an nao} -->|Du an MOI| NEW_START
+    START -->|Du an CU| OLD_START
 
-    subgraph NEW ["WORKFLOW 1: Du an MOI"]
-        direction TD
-        NEW_START["Mo ta y tuong"] --> N1["/mcv3:discovery"]
-        N1 --> N2["/mcv3:expert-panel"]
-        N2 --> N3["/mcv3:biz-docs"]
-        N3 --> N4["/mcv3:requirements"]
-        N4 --> N5["/mcv3:tech-design"]
-        N5 --> N6["/mcv3:qa-docs"]
-        N6 --> N7["/mcv3:code-gen"]
-        N7 --> N8["/mcv3:verify"]
-        N8 --> N9["/mcv3:deploy-ops"]
-        N9 --> DONE1["San sang trien khai"]
+    subgraph WF1[WORKFLOW 1 - DU AN MOI]
+    NEW_START[Mo ta y tuong] --> N1[mcv3 discovery]
+    N1 --> N2[mcv3 expert-panel]
+    N2 --> N3[mcv3 biz-docs]
+    N3 --> N4[mcv3 requirements]
+    N4 --> N5[mcv3 tech-design]
+    N5 --> N6[mcv3 qa-docs]
+    N6 --> N7[mcv3 code-gen]
+    N7 --> N8[mcv3 verify]
+    N8 --> N9[mcv3 deploy-ops]
+    N9 --> DONE1[San sang trien khai]
     end
 
-    subgraph OLD ["WORKFLOW 2: Du an CU"]
-        direction TD
-        OLD_START["Mo ta du an hien tai"] --> O1["/mcv3:assess"]
-        O1 --> O2{"Can import docs cu?"}
-        O2 -->|"Co"| O3["/mcv3:migrate"]
-        O2 -->|"Khong"| O4["Remediation Plan"]
-        O3 --> O4
-        O4 --> O5{"Thieu gi?"}
-        O5 -->|"Thieu docs"| O6["Chay skill tuong ung"]
-        O5 -->|"Code lech docs"| O7["/mcv3:change-manager"]
-        O5 -->|"Thieu code"| O8["/mcv3:code-gen"]
-        O6 --> O9["/mcv3:verify"]
-        O7 --> O9
-        O8 --> O9
-        O9 --> O10{"Dat muc tieu?"}
-        O10 -->|"Chua"| O4
-        O10 -->|"Roi"| DONE2["Tiep tuc phat trien"]
+    subgraph WF2[WORKFLOW 2 - DU AN CU]
+    OLD_START[Mo ta du an hien tai] --> O1[mcv3 assess]
+    O1 --> O2{Can import docs cu}
+    O2 -->|Co| O3[mcv3 migrate]
+    O2 -->|Khong| O4[Remediation Plan]
+    O3 --> O4
+    O4 --> O5{Thieu gi}
+    O5 -->|Thieu docs| O6[Chay skill tuong ung]
+    O5 -->|Code lech docs| O7[mcv3 change-manager]
+    O5 -->|Thieu code| O8[mcv3 code-gen]
+    O6 --> O9[mcv3 verify]
+    O7 --> O9
+    O8 --> O9
+    O9 --> O10{Dat muc tieu}
+    O10 -->|Chua| O4
+    O10 -->|Roi| DONE2[Tiep tuc phat trien]
     end
 
     style DONE1 fill:#4CAF50,color:#fff
