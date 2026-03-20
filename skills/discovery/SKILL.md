@@ -31,6 +31,23 @@ References:
 
 ---
 
+## Error Recovery
+
+**mc_save / mc_load thất bại:**
+- Retry 1 lần với cùng parameters
+- Nếu vẫn fail → báo user: "⚠️ Không thể lưu/đọc [file]. Kiểm tra MCP server còn chạy không."
+- Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
+
+**User input không rõ trong phỏng vấn:**
+- Hỏi thêm bằng câu hỏi cụ thể hơn: "Bạn có thể cho ví dụ cụ thể không?"
+- Nếu user liên tục trả lời ngắn/mơ hồ → tóm tắt những gì đã hiểu và xác nhận: "Tôi hiểu như thế này, có đúng không?"
+- Đánh dấu phần chưa rõ là `[CẦN XÁC NHẬN]` và tiếp tục
+
+**mc_init_project chưa chạy:**
+- Báo user: "Cần khởi tạo project trước. Hãy cho tôi biết tên và slug của dự án để tôi gọi mc_init_project."
+
+---
+
 ## Phase 0 — Pre-Gate
 
 ```

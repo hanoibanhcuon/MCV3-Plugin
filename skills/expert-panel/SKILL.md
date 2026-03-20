@@ -33,6 +33,28 @@ References:
 
 ---
 
+## Error Recovery
+
+**mc_save / mc_load thất bại:**
+- Retry 1 lần với cùng parameters
+- Nếu vẫn fail → báo user: "⚠️ Không thể lưu/đọc [file]. Kiểm tra MCP server còn chạy không."
+- Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
+
+**PROJECT-OVERVIEW.md chưa có:**
+- Báo user: "Thiếu PROJECT-OVERVIEW.md → Chạy /mcv3:discovery trước để tạo."
+
+**Agent không spawn được (subagent bị lỗi hoặc timeout):**
+- Đóng vai expert đó trực tiếp thay vì spawn agent riêng
+- Báo user: "Agent [strategy-expert / finance-expert / domain-expert] không spawn được — tôi sẽ đóng vai expert đó."
+- Tiếp tục với available experts, không bỏ qua phân tích
+- Sau khi hoàn thành, ghi rõ trong EXPERT-LOG: "Note: [Expert X] analysis được thực hiện trực tiếp do agent spawn failed."
+
+**Timeout chờ agent:**
+- Nếu agent chạy quá lâu (>2 phút không có kết quả) → tiếp tục với các agents khác, đặt placeholder cho agent đó
+- Sau khi agents khác xong → retry agent bị timeout 1 lần
+
+---
+
 ## Phase 0 — Pre-Gate
 
 ```

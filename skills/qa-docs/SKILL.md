@@ -63,6 +63,48 @@ References:
 
 ---
 
+## Error Recovery
+
+**mc_save / mc_load thất bại:**
+- Retry 1 lần với cùng parameters
+- Nếu vẫn fail → báo user: "⚠️ Không thể lưu/đọc [file]. Kiểm tra MCP server còn chạy không."
+- Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
+
+**MODSPEC chưa có:**
+- Báo user: "Chưa tìm thấy MODSPEC trong {SYSTEM}/P2-DESIGN/. Chạy /mcv3:tech-design trước."
+
+**URS có nhưng không có AC:**
+- Tạo TC từ FT specs trực tiếp (không qua AC)
+- Note rõ trong coverage matrix: "AC thiếu — TC tạo từ FT specs"
+- Nhắc user bổ sung AC trong URS sau để có traceability đầy đủ
+
+## Coverage Tracking Guidelines
+
+Sau khi tạo Test Cases, tính và báo cáo coverage:
+
+```
+Coverage Targets:
+  AC Coverage:   Tất cả AC-IDs phải có ≥ 1 TC  (target: 100%)
+  FT Coverage:   Tất cả FT-IDs phải có ≥ 1 TC  (target: 100%)
+  TC/AC Ratio:   Khuyến nghị ≥ 1.5 TC per AC
+  P0 Tests:      Tất cả Must-priority FT → TC Priority P0
+```
+
+Báo cáo sau khi tạo xong:
+```
+"📊 Test Coverage Report — {MOD}:
+  AC Coverage: {X}/{Y} ACs có TC ({Z}%)
+  FT Coverage: {A}/{B} FTs có TC ({C}%)
+  Breakdown:
+    - Happy Path:  {N} TCs
+    - Error Cases: {M} TCs
+    - Edge Cases:  {K} TCs
+    - UAT:         {J} scenarios
+  ⚠️ Thiếu coverage: [list AC/FT IDs chưa có TC]"
+```
+
+---
+
 ## Phase 0 — Pre-Gate
 
 ```

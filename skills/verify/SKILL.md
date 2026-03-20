@@ -58,6 +58,39 @@ References:
 
 ---
 
+## Error Recovery
+
+**mc_save / mc_load thất bại:**
+- Retry 1 lần với cùng parameters
+- Nếu vẫn fail → báo user: "⚠️ Không thể lưu/đọc [file]. Kiểm tra MCP server còn chạy không."
+- Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
+
+**Documents từ phases trước thiếu:**
+- Liệt kê cụ thể: "Thiếu [file] → Chạy [/mcv3:skill] để tạo"
+- Có thể verify partial nếu user confirm (xem Partial Verify Mode bên dưới)
+
+## Partial Verify Mode
+
+Khi user muốn chỉ verify 1 system hoặc 1 module cụ thể:
+
+```
+Cú pháp gợi ý cho user:
+  "Verify chỉ system ERP"   → scope = ERP only
+  "Verify module INV"       → scope = INV module across all systems
+  "Verify Phase 1 vs 2"     → chỉ check URS ↔ MODSPEC consistency
+
+Partial verify steps:
+1. Hỏi user: "Verify toàn bộ hay chỉ 1 system/module?"
+2. Nếu partial:
+   - Chỉ load documents của scope đó
+   - Tạo VERIFY-{SYS}-{MOD}.md thay vì full verification-report.md
+   - Ghi rõ: "Partial verification — scope: {system}/{module}"
+3. Vẫn check traceability đầy đủ trong scope đó
+4. Output: VERIFY-CROSS/{SYS}-PARTIAL-{MOD}.md + summary
+```
+
+---
+
 ## Phase 0 — Pre-Gate
 
 ```

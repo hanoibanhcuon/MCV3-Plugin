@@ -48,6 +48,23 @@ References:
 
 ---
 
+## Error Recovery
+
+**mc_save / mc_load thất bại:**
+- Retry 1 lần với cùng parameters
+- Nếu vẫn fail → báo user: "⚠️ Không thể lưu/đọc [file]. Kiểm tra MCP server còn chạy không."
+- Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
+
+**BIZ-POLICY chưa có:**
+- Báo user: "Chưa tìm thấy BIZ-POLICY trong _PROJECT/BIZ-POLICY/. Chạy /mcv3:biz-docs trước để tạo Business Rules."
+- Exception: Nếu user confirm "bỏ qua biz-docs" → tiếp tục nhưng US/FT sẽ không có BR origin
+
+**BIZ-POLICY có nhưng PROCESS thiếu:**
+- Tiếp tục với BIZ-POLICY, note rằng Use Cases sẽ ít chi tiết hơn
+- Sau khi xong URS, nhắc user: "Nên tạo PROCESS-{MOD}.md để enrichment Use Cases."
+
+---
+
 ## Phase 0 — Pre-Gate
 
 ```
@@ -228,13 +245,33 @@ WHILE user muốn bổ sung:
 UNTIL user confirm "OK, tiếp tục"
 ```
 
-**Kiểm tra completeness trước khi finalize:**
+**AC Quality Validation Checklist — kiểm tra trước khi finalize:**
+
 ```
-✓ Mỗi US có ít nhất 2 AC
-✓ Mỗi BR có ít nhất 1 US tương ứng
-✓ Priority đã assign cho tất cả
-✓ NFR có ít nhất 3 requirements (Performance, Security, Usability)
-✓ Traceability matrix đầy đủ
+COMPLETENESS:
+✓ Mỗi US có ít nhất 2 AC (Happy Path + Error Case)
+✓ Mỗi BR-ID có ít nhất 1 US tương ứng (traceability BR → US)
+✓ Priority (Must/Should/Could) đã assign cho tất cả US và FT
+✓ NFR có ít nhất 3 yêu cầu (Performance, Security, Usability)
+✓ Traceability matrix: BR → US → FT → AC đầy đủ
+
+AC QUALITY (kiểm tra từng AC):
+✓ Có đủ 3 phần: Given / When / Then
+✓ "Then" mô tả kết quả CỤ THỂ, có thể đo lường (không phải "hệ thống hoạt động đúng")
+✓ Không có AC nào mơ hồ — ví dụ xấu: "hệ thống phản hồi nhanh" → phải thành "response < 2s"
+✓ Error AC: mô tả đúng HTTP status code hoặc error message cụ thể
+
+COVERAGE:
+✓ Có AC cho Happy Path (input hợp lệ)
+✓ Có AC cho Error/Validation (input không hợp lệ)
+✓ Có AC cho Permission/Auth (unauthorized access)
+✓ Có AC cho Edge Cases quan trọng (empty state, duplicate, concurrent)
+
+NFR MEASURABILITY:
+✓ Performance: "< Xs response time" (không phải "nhanh")
+✓ Availability: "99.X% uptime" với maintenance window cụ thể
+✓ Security: "JWT Bearer auth bắt buộc" / "rate limit X req/min"
+✓ Data: "Backup mỗi X giờ" / "Retention X ngày"
 ```
 
 ---
