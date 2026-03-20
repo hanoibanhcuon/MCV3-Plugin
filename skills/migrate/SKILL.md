@@ -661,3 +661,44 @@ ASSIGN-IDS-SEQUENTIALLY: ID phải sequential, không gap
 NO-INFORMATION-LOSS: Mọi content gốc phải được capture, kể cả không fit template
 REPORT-EVERYTHING: MIGRATION-REPORT phải đầy đủ để người khác review
 ```
+
+---
+
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+> Section này là checklist nhanh GIỮA các phases. Pre-Completion Verification chạy SAU KHI hoàn thành toàn bộ, trước Completion Report.
+
+Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển phase:
+
+### Sau Phase 0 → trước Phase 1:
+- ✓ Migration source đã detect (Scope 1-6) — ghi DECISION nếu tự infer
+- ✓ Nếu Scope không rõ → dùng Scope phù hợp nhất từ context (không dừng hỏi)
+- ✓ Project slug đã xác định (không nhầm project khi import)
+
+### Sau Phase 1 → trước Phase 2:
+- ✓ Safety snapshot đã tạo thành công — nếu fail → DỪNG (SAFETY-FIRST không bỏ qua)
+- ✓ Nếu project đã có documents: list existing IDs để tránh conflict về sau
+- ✓ Project khởi tạo thành công: `.mc-data/` structure đã có
+
+### Sau Phase 2 → trước Phase 3:
+- ✓ Tất cả source content đã scan (không skip phần nào của input)
+- ✓ Content categories đã identify: BRD, US, API specs, DB schema, code, etc.
+- ✓ Gaps và ambiguous items đã note (không bỏ qua im lặng)
+- ✓ Batch import lớn (>10 documents): chia batch và ghi batch order vào plan
+
+### Sau Phase 3 → trước Phase 4:
+- ✓ ID assignment ranges không conflict với existing IDs trong project
+- ✓ Module namespaces rõ ràng (VD: WH, SALES, FIN — không overlap)
+- ✓ Mapping plan có đầy đủ Source → Target cho mỗi content piece
+
+### Sau Phase 4 → trước Phase 6:
+- ✓ Converted docs có đúng MCV3 template structure (headings, sections, IDs)
+- ✓ Mọi AI-generated content đều có "Generated" tag
+- ✓ Mọi uncertain items đều có "[AMBIGUOUS]" tag
+- ✓ Batch import lớn: verify mỗi batch không introduce duplicate IDs trước khi sang batch sau
+- ✓ Cross-check: số lượng items trong source ≈ số lượng items đã convert (không bỏ sót)
+
+### Sau Phase 6 → trước Phase 7:
+- ✓ GAP-REPORT có đầy đủ categories: missing ACs, missing NFRs, ambiguous items, unmapped content
+- ✓ Mỗi gap có severity (critical/warning/info) và actionable next step
+- ✓ MIGRATION-REPORT đủ để người khác review (không chỉ tự dùng)

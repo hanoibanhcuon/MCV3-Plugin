@@ -445,3 +445,34 @@ PRACTICAL: Ví dụ cụ thể hơn lý thuyết abstract
 NO-OVERWHELM: Tối đa 3 concepts per section
 ACTIONABLE: Kết thúc tutorial = user biết phải làm gì tiếp
 ```
+
+---
+
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+> Onboard là tutorial skill — Inter-Phase Verification đảm bảo nội dung tutorial chính xác, dẫn đúng hướng, và phù hợp với user type.
+
+### Sau Phase 0 → trước Phase 1:
+- ✓ User type đã detect rõ (Developer / PM / Business Owner / Experienced / Ongoing) — ghi DECISION nếu tự infer
+- ✓ Nếu detect từ keyword: kiểm tra context đủ mạnh (1 keyword không đủ — xem full message)
+- ✓ Confidence thấp → hỏi clarification [1/2/3/4/5] (exception hợp lệ — tutorial phải tailored)
+
+### Trong Phase 1 — Content Accuracy Check:
+- ✓ Tất cả skill commands được mention dùng đúng tên (`/mcv3:discovery` không phải `/discovery`)
+- ✓ Phase numbers và descriptions match CLAUDE.md (Phase 1-8 + Lifecycle skills)
+- ✓ MCP tool names đúng (mc_init_project, mc_status, mc_load, etc.) — không typo
+- ✓ Formal ID examples đúng format (BR-WH-001, US-WH-001, API-ERP-001, TC-WH-001, etc.)
+- ✓ Developer/PM tutorial đề cập Scale Decision Matrix — dự án lớn cần biết không phải lúc nào cũng chạy full 8 phases
+
+### Sau Phase 1 → trước Phase 2:
+- ✓ Tutorial section đã cover đủ concepts cốt lõi cho user type:
+  - Developer: MCP tools (19 tools), pipeline overview, formal IDs, code-gen output
+  - PM/BA: workflow, acceptance criteria format, traceability value
+  - Business Owner: value proposition, quick start (không cần technical knowledge)
+  - Ongoing: bắt đầu với `/mcv3:assess` — không nhảy thẳng vào pipeline
+- ✓ Không có "coming soon" features hay deprecated commands trong tutorial
+
+### Sau Phase 2 → trước Phase 3:
+- ✓ Setup verification result rõ ràng: MCP server connected hay failed
+- ✓ Nếu MCP server fail: hướng dẫn fix đầy đủ (npm build + .mcp.json config) — không chỉ báo fail
+- ✓ User có đủ thông tin để tự thực hiện next action mà không cần hỏi thêm
