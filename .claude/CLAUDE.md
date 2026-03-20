@@ -10,7 +10,7 @@
 | **Slug** | `eureka-xnk` |
 | **Ngành** | Logistics / Xuất nhập khẩu |
 | **Phase hiện tại** | phase0-init |
-| **MCV3 Version** | 3.10.0 |
+| **MCV3 Version** | 3.12.0 |
 
 ---
 

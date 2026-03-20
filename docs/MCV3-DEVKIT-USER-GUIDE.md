@@ -29,8 +29,8 @@ Thay vì tự mình soạn tài liệu rời rạc, MCV3 dẫn bạn qua **8 bư
 
 ```bash
 # Tải file .plugin từ GitHub Releases, đổi đuôi thành .zip, giải nén:
-unzip mcv3-devkit-3.11.2.zip
-cd mcv3-devkit-3.11.2
+unzip mcv3-devkit-3.12.0.zip
+cd mcv3-devkit-3.12.0
 bash scripts/install.sh /đường/dẫn/dự-án-của-bạn
 ```
 
@@ -45,7 +45,7 @@ bash scripts/install.sh /đường/dẫn/dự-án-của-bạn
 ### Cách 3: Windows (PowerShell)
 
 ```powershell
-Expand-Archive .\mcv3-devkit-3.11.2.zip -DestinationPath .
+Expand-Archive .\mcv3-devkit-3.12.0.zip -DestinationPath .
 .\scripts\install.ps1 -ProjectPath "C:\đường\dẫn\dự-án"
 ```
 

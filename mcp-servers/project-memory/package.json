@@ -1,6 +1,6 @@
 {
   "name": "@mcv3/project-memory-server",
-  "version": "3.10.0",
+  "version": "3.12.0",
   "description": "MCV3 Project Memory MCP Server — Quản lý tài liệu dự án trong .mc-data/",
   "main": "dist/index.js",
   "scripts": {

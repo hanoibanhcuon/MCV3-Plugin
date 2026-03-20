@@ -39,7 +39,7 @@ git remote -v
 git push -u origin main
 
 # Push tag version
-git push origin v3.11.2
+git push origin v3.12.0
 
 # Hoặc push tất cả tags cùng lúc
 git push origin --tags
@@ -52,12 +52,12 @@ git push origin --tags
 ### Cách 1: Qua GitHub Web UI
 
 1. Vào repo trên GitHub → **Releases** (bên phải) → **Create a new release**
-2. **Tag**: Chọn `v3.11.2` (tag đã push)
-3. **Release title**: `MCV3-Plugin v3.11.2`
-4. **Description**: Copy từ CHANGELOG.md phần `[3.11.2]`
+2. **Tag**: Chọn `v3.12.0` (tag đã push)
+3. **Release title**: `MCV3-Plugin v3.12.0`
+4. **Description**: Copy từ CHANGELOG.md phần `[3.12.0]`
 5. **Upload assets**:
-   - Kéo thả file `dist/mcv3-devkit-3.11.2.plugin` vào ô upload
-   - Kéo thả file `dist/mcv3-devkit-3.11.2.zip` vào ô upload
+   - Kéo thả file `dist/mcv3-devkit-3.12.0.plugin` vào ô upload
+   - Kéo thả file `dist/mcv3-devkit-3.12.0.zip` vào ô upload
 6. Nhấn **Publish release**
 
 ### Cách 2: Qua GitHub CLI (gh)
@@ -67,11 +67,11 @@ git push origin --tags
 gh auth login
 
 # Tạo release
-gh release create v3.11.2 \
-  dist/mcv3-devkit-3.11.2.plugin \
-  dist/mcv3-devkit-3.11.2.zip \
-  --title "MCV3-Plugin v3.11.2" \
-  --notes-file <(sed -n '/## \[3.11.2\]/,/## \[3.11/{ /## \[3.11.1\]/q; p }' CHANGELOG.md)
+gh release create v3.12.0 \
+  dist/mcv3-devkit-3.12.0.plugin \
+  dist/mcv3-devkit-3.12.0.zip \
+  --title "MCV3-Plugin v3.12.0" \
+  --notes-file <(sed -n '/## \[3.12.0\]/,/## \[3.11/{ /## \[3.11.1\]/q; p }' CHANGELOG.md)
 ```
 
 ---
@@ -85,12 +85,12 @@ Sau khi release, cập nhật README.md để user có thể download trực ti�
 
 ```bash
 # Download và giải nén
-curl -L https://github.com/username/mcv3-devkit/releases/latest/download/mcv3-devkit-3.11.2.zip \
+curl -L https://github.com/username/mcv3-devkit/releases/latest/download/mcv3-devkit-3.12.0.zip \
   -o mcv3-devkit.zip
 unzip mcv3-devkit.zip
 
 # Cài vào dự án của bạn
-bash mcv3-devkit-3.11.2/scripts/install.sh /path/to/your-project
+bash mcv3-devkit-3.12.0/scripts/install.sh /path/to/your-project
 ```
 
 ---

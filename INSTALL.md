@@ -28,8 +28,8 @@ cd mcv3-plugin
 # Option B — Tải release zip (không cần git)
 # Tải file mcv3-devkit-X.Y.Z.plugin từ GitHub Releases
 # Đổi đuôi .plugin → .zip rồi giải nén, hoặc:
-unzip mcv3-devkit-3.11.2.zip
-cd mcv3-devkit-3.11.2
+unzip mcv3-devkit-3.12.0.zip
+cd mcv3-devkit-3.12.0
 ```
 
 **Bước 2:** Chạy installer
@@ -59,8 +59,8 @@ Trong Claude Code: `/mcv3:onboard` để bắt đầu.
 
 ```powershell
 # Giải nén file .plugin (đổi tên thành .zip rồi giải nén)
-Expand-Archive .\mcv3-devkit-3.11.2.zip -DestinationPath .
-cd mcv3-devkit-3.11.2
+Expand-Archive .\mcv3-devkit-3.12.0.zip -DestinationPath .
+cd mcv3-devkit-3.12.0
 ```
 
 **Bước 2:** Chạy installer
@@ -144,7 +144,7 @@ Output mẫu (thành công):
 
 ── 2. Plugin Directory (mcv3-devkit/) ──
   ✅ Thư mục mcv3-devkit/ tồn tại
-  ✅ Plugin version: v3.11.2
+  ✅ Plugin version: v3.12.0
 
 ── 3. Plugin Structure ──
   ✅ skills/

@@ -1,7 +1,7 @@
 {
-  "_comment": "MCV3 Hooks Configuration — v3.10 (Batch F)",
+  "_comment": "MCV3 Hooks Configuration — v3.12 (Speed Optimization + Risk Patterns)",
   "_doc": "Hooks tự động hóa các tác vụ MCV3. Đọc scripts/ để biết cách cấu hình.",
-  "_version": "3.10.0",
+  "_version": "3.12.0",
 
   "SessionStart": [
     {
@@ -318,8 +318,8 @@
     "snapshotOnMilestone": true,
     "validateOnSave": false,
     "traceabilityAutoUpdate": false,
-    "_sprint": "Batch F (v3.10)",
-    "_version": "3.10.0",
+    "_sprint": "Batch F (v3.12)",
+    "_version": "3.12.0",
     "_lifecycle_skills": ["change-manager", "evolve", "migrate", "onboard"],
     "_assess_skill": ["assess"],
     "_note": "v3.10: Batch F — Skills Full Audit + Code Quality Assurance"
