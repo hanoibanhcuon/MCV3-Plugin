@@ -76,9 +76,21 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 - Nếu vẫn fail → báo user: "⚠️ Không thể lưu/đọc [file]. Kiểm tra MCP server còn chạy không."
 - Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
 
-**Documents từ phases trước thiếu:**
-- Liệt kê cụ thể: "Thiếu [file] → Chạy [/mcv3:skill] để tạo"
-- Có thể verify partial nếu user confirm (xem Partial Verify Mode bên dưới)
+**Documents từ phases trước thiếu (RISK-008 — BLOCKING vs WARNING):**
+
+| Loại file thiếu | Phân loại | Hành động bắt buộc |
+|-----------------|-----------|---------------------|
+| URS-{MOD}.md | ❌ BLOCKING | DỪNG — không thể verify. Chạy `/mcv3:requirements` |
+| MODSPEC-{MOD}.md | ❌ BLOCKING | DỪNG — không thể verify Phase 2. Chạy `/mcv3:tech-design` |
+| TEST-{MOD}.md | ❌ BLOCKING | DỪNG — không thể verify Phase 3. Chạy `/mcv3:qa-docs` |
+| src/{mod}/ (code) | ⚠️ WARNING | Verify partial, ghi rõ "Code chưa có" trong report |
+| USER-GUIDE / ADMIN-GUIDE | ⚠️ WARNING | Bỏ qua, ghi chú trong verification-report |
+| BIZ-POLICY (optional ref) | ⚠️ WARNING | Bỏ qua BR cross-check, ghi chú vào gaps |
+
+**Nguyên tắc phân loại:**
+- **BLOCKING** = file core specs/requirements → DỪNG ngay, báo user file nào thiếu + skill nào để tạo
+- **WARNING** = file supplementary → tiếp tục nhưng ghi rõ trong report
+- Partial verify chỉ được phép khi user TƯỜNG MINH chỉ định scope (ví dụ: "Verify chỉ system X")
 
 ## Partial Verify Mode
 
@@ -115,6 +127,13 @@ Partial verify steps:
 6. Tự động bắt đầu verification — không chờ confirm:
    Ghi nhận scope: {N} URS modules → cần {N} MODSPEC + {N} TEST + code
    → Chuyển ngay sang Phase 1
+
+7. **RISK-006 — Large Project Detection (≥ 5 systems):**
+   Nếu mc_status trả về ≥ 5 systems:
+   → BẮT BUỘC: `mc_checkpoint({ label: "pre-verify-large-project" })` trước khi bắt đầu
+   → Xử lý **từng system riêng biệt** (per-system): verify system A xong → checkpoint → verify system B
+   → KHÔNG xử lý song song nhiều systems cùng lúc (tránh context overflow)
+   → Checkpoint sau mỗi system: `mc_checkpoint({ label: "verify-{SYS}-complete" })`
 ```
 
 ---
@@ -157,7 +176,22 @@ mc_load({ filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md", layer: 3 })
 - [ ] BR-IDs tham chiếu trong URS có trong BIZ-POLICY không?
 - [ ] ENT-IDs tham chiếu có trong DATA-DICTIONARY không?
 
-### 1b. Tạo VERIFY-P1 document
+### 1b. Per-System Checkpoint (RISK-003)
+
+Sau khi verify xong **tất cả modules của 1 system**, BẮT BUỘC lưu checkpoint:
+
+```
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "verify-{SYS}-p1-complete",
+  sessionSummary: "Phase 1 URS verify xong cho system {SYS}: {N} modules, {M} issues",
+  nextActions: ["Tiếp tục Phase 1 system tiếp theo hoặc chuyển Phase 2"]
+})
+```
+
+→ Đảm bảo có thể resume nếu bị interrupt giữa các systems.
+
+### 1c. Tạo VERIFY-P1 document
 
 ```markdown
 # VERIFY-P1: {System} — {Module}
@@ -417,6 +451,31 @@ grep -rn "VERIFICATION REPORT\|COMPILE-ERROR\|TEST-FAIL\|SECURITY-WARNING" src/{
 
 ---
 
+## Phase 6.5 — Pre-Completion Verification (BẮT BUỘC — RISK-004)
+
+**BẮT BUỘC** thực hiện TRƯỚC Phase 7. Chạy đầy đủ **3 tầng kiểm tra** trong mục "Pre-Completion Verification" bên dưới:
+
+```
+Tầng 1 — Self-Verification:
+  ✓ verification-report.md có Executive Summary với đủ metrics
+  ✓ traceability-matrix.md không có row thiếu status
+
+Tầng 2 — Cross-Document:
+  ✓ Critical gaps trong report khớp với actual gaps trong matrix
+  ✓ Coverage % trong Executive Summary khớp số đếm thực tế
+
+Tầng 3 — Quality Gate (5 items):
+  ✓ Overall status rõ ràng (READY / NEEDS ATTENTION / NOT READY)
+  ✓ Coverage % chính xác (không estimate)
+  ✓ Critical gaps count chính xác
+  ✓ mc_traceability validate đã chạy
+  ✓ mc_validate PASS cho tất cả verify docs
+```
+
+❌ **BLOCKING (RISK-004):** Tầng 3 Quality Gate chưa đạt → KHÔNG sang Phase 7. Fix verification docs → chạy lại tầng kiểm tra.
+
+---
+
 ## Phase 7 — Save & Update Traceability
 
 ```
@@ -445,11 +504,22 @@ grep -rn "VERIFICATION REPORT\|COMPILE-ERROR\|TEST-FAIL\|SECURITY-WARNING" src/{
      documentType: "verify"
    })
 
-6. mc_traceability({
-     action: "validate"  // Kiểm tra toàn bộ traceability links
+// BẮT BUỘC (RISK-002): Validate tất cả verify docs trước khi kết thúc
+6. mc_validate({ filePath: "_VERIFY-CROSS/verification-report.md" })
+   mc_validate({ filePath: "_VERIFY-CROSS/traceability-matrix.md" })
+   // Phân loại kết quả mc_validate (RISK-007):
+   // → ERROR   = ❌ BLOCKING — DỪNG, sửa document trước khi tiếp tục
+   // → WARNING = ⚠️ WARNING — Ghi nhận trong report, không blocking
+   // → INFO    = ✅ Thông tin thêm, không cần action
+
+// BẮT BUỘC (RISK-002, RISK-005): Validate TẤT CẢ ID types trong traceability
+7. mc_traceability({
+     action: "validate",
+     idTypes: ["BR", "US", "UC", "AC", "FT", "API", "TBL", "TC"]  // TẤT CẢ ID types
    })
 
-7. mc_checkpoint({
+// BẮT BUỘC (RISK-002): Checkpoint sau verification hoàn thành
+8. mc_checkpoint({
      label: "verify-complete",
      sessionSummary: "Verification: {N} FTs traced, {M} gaps, {G} critical",
      nextActions: [
@@ -511,20 +581,30 @@ Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển sang ph
 - ✓ Scope xác định rõ (full verify hay partial) — ghi DECISION nếu partial
 - ✓ Safety checkpoint đã lưu
 
+❌ **BLOCKING GATE (RISK-001):** Nếu safety checkpoint CHƯA lưu hoặc có file BLOCKING bị thiếu → DỪNG, không bắt đầu Phase 1. Fix trước khi tiếp tục.
+
 ### Sau Phase 1 → trước Phase 2:
 - ✓ VERIFY-P1 document đã tạo cho tất cả URS modules (không bỏ sót module nào)
 - ✓ BR-IDs tham chiếu trong URS đều có trong BIZ-POLICY (không orphan refs)
 - ✓ Issues từ Phase 1 được ghi nhận cụ thể (không ghi "có issues" chung chung)
+- ✓ Per-system checkpoint đã lưu (mc_checkpoint label: "verify-{SYS}-p1-complete")
+
+❌ **BLOCKING GATE (RISK-001):** Nếu bất kỳ module URS nào fail completeness check (thiếu FT/AC) → DỪNG Phase 2. Fix issues trong Phase 1 → tạo lại VERIFY-P1 → kiểm tra lại trước khi sang Phase 2.
 
 ### Sau Phase 2 → trước Phase 3:
 - ✓ Mỗi FT-ID trong URS có ≥ 1 API hoặc COMP trong MODSPEC (không orphan FTs)
 - ✓ Không có API-ID trong MODSPEC thiếu FT-ID origin (không orphan APIs)
 - ✓ Data type inconsistency giữa TBL specs và DATA-DICTIONARY đã được flag
 
+❌ **BLOCKING GATE (RISK-001):** Nếu có orphan FTs (FT không có API/COMP) hoặc orphan APIs (API không có FT origin) → DỪNG Phase 3. Fix MODSPEC gaps → chạy lại Phase 2 → kiểm tra lại trước khi sang Phase 3.
+
 ### Sau Phase 3 → trước Phase 4:
 - ✓ **AC Coverage**: tất cả AC-IDs có ≥ 1 TC tương ứng — 100% hoặc gaps liệt kê cụ thể
 - ✓ **API Test Coverage**: tất cả API-IDs có ≥ 1 API test case trong TEST files
 - ✓ Không có TC không link về AC hoặc BR (orphan TCs được flag)
+
+❌ **BLOCKING GATE (RISK-001):** Nếu AC Coverage < 100% (có ACs không có TC nào) → DỪNG Phase 4. Fix TEST gaps → chạy lại Phase 3 → kiểm tra lại trước khi sang Phase 4.
+⚠️ Exception: orphan TCs = WARNING (không blocking), missing TCs cho ACs = BLOCKING.
 
 ### Sau Phase 4 → trước Phase 5 (Traceability Matrix):
 - ✓ Tất cả code files đã được scan REQ-ID (grep đã chạy)
@@ -533,15 +613,23 @@ Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển sang ph
 - ✓ Verification Loop check (Phase 4b.7) đã hoàn thành hoặc warning được ghi rõ nếu thiếu
 - ✓ Nếu dự án lớn: per-system verification status tóm tắt trước khi build matrix
 
+❌ **BLOCKING GATE (RISK-001):** Nếu có `// PENDING:` markers (thiếu specs) → DỪNG Phase 5. Fix specs → re-gen code → kiểm tra lại trước khi sang Phase 5.
+⚠️ Exception: `// REVIEW:` markers = WARNING (không blocking) — ghi rõ trong report để BA xem xét.
+
 ### Sau Phase 5 → trước Phase 6 (Verification Report):
 - ✓ **Traceability matrix complete**: mọi FT-ID từ URS xuất hiện trong matrix (không bỏ sót)
 - ✓ **Coverage % accurate**: số đếm thực tế trong matrix khớp với % sẽ báo cáo (không estimate)
 - ✓ Không có row thiếu status (✅/⚠️/❌) trong matrix
 
+❌ **BLOCKING GATE (RISK-001):** Nếu có FT-ID từ URS không xuất hiện trong matrix → DỪNG Phase 6. Bổ sung matrix → kiểm tra lại trước khi tạo Verification Report.
+
 ### Sau Phase 6 → trước Phase 7 (Save):
 - ✓ Overall status rõ ràng: READY / NEEDS ATTENTION / NOT READY
 - ✓ Số Critical gaps trong report = số gaps thực tế đếm được trong matrix (không under-report)
 - ✓ VERIFY-{SYS}-P{N}-{MOD}.md đã tạo cho tất cả modules đã verify
+- ✓ **Phase 6.5 Pre-Completion Verification đã chạy đủ 3 tầng** (BẮT BUỘC — RISK-004)
+
+❌ **BLOCKING GATE (RISK-001):** Nếu Phase 6.5 Quality Gate chưa pass → DỪNG Phase 7. Fix verification docs → chạy lại tầng kiểm tra.
 
 ---
 
