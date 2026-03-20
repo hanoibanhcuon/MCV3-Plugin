@@ -1,12 +1,36 @@
 {
   "name": "mcv3-devkit",
   "version": "3.12.0",
-  "description": "MasterCraft DevKit — Biến ý tưởng phần mềm thành bộ tài liệu hoàn chỉnh",
+  "description": "MasterCraft DevKit — Biến ý tưởng phần mềm thành bộ tài liệu hoàn chỉnh qua 8 phases",
   "author": {
-    "name": "MCV3 Team"
+    "name": "hanoibanhcuon"
   },
   "skills": "./skills/",
   "agents": "./agents/",
+  "commands": "./.claude/commands/mcv3",
   "hooks": "./hooks/hooks.json",
-  "mcpServers": "./.mcp.json"
+  "mcpServers": "./.mcp.json",
+  "permissions": {
+    "allow": [
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(./scripts/*.sh:*)",
+      "Bash(bash:*)",
+      "Read(*)",
+      "Write(.mc-data/**)",
+      "Edit(.mc-data/**)",
+      "Write(src/**)",
+      "Edit(src/**)",
+      "Write(db/**)",
+      "Edit(db/**)"
+    ]
+  },
+  "env": {
+    "MCV3_DATA_DIR": ".mc-data",
+    "MCV3_TEMPLATES_DIR": "./templates",
+    "MCV3_LOG_LEVEL": "info",
+    "MCV3_SPRINT": "8",
+    "MCV3_VERSION": "3.12.0"
+  }
 }
