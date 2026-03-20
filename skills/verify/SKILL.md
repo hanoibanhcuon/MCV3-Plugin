@@ -50,6 +50,17 @@ References:
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — tự verify tất cả modules, tự build traceability matrix
+2. **Tự giải quyết vấn đề** — phát hiện gaps và liệt kê rõ ràng trong report
+3. **Báo cáo sau khi xong** — verification-report với READY/ATTENTION/NOT READY status
+4. **User review** — nếu có gaps → hướng dẫn fix cụ thể
+5. **Gợi ý bước tiếp** — `/mcv3:deploy-ops` (nếu READY) hoặc fix gaps trước
+
+---
+
 ## Khi nào dùng skill này
 
 - Sau khi `/mcv3:code-gen` hoàn thành
@@ -71,16 +82,17 @@ References:
 
 ## Partial Verify Mode
 
-Khi user muốn chỉ verify 1 system hoặc 1 module cụ thể:
+Tự động detect scope từ message của user — không hỏi:
 
 ```
-Cú pháp gợi ý cho user:
+Auto-detect scope từ user message:
   "Verify chỉ system ERP"   → scope = ERP only
   "Verify module INV"       → scope = INV module across all systems
   "Verify Phase 1 vs 2"     → chỉ check URS ↔ MODSPEC consistency
+  (không có chỉ định)       → mặc định verify toàn bộ project
 
 Partial verify steps:
-1. Hỏi user: "Verify toàn bộ hay chỉ 1 system/module?"
+1. Parse scope từ user message → nếu không có → full verify
 2. Nếu partial:
    - Chỉ load documents của scope đó
    - Tạo VERIFY-{SYS}-{MOD}.md thay vì full verification-report.md
@@ -100,12 +112,9 @@ Partial verify steps:
 4. mc_list({ subPath: "{SYSTEM}/P3-QA-DOCS" }) → liệt kê TEST files
 5. Kiểm tra code: ls src/{sys}/ → liệt kê modules đã code
 
-6. Báo cáo với user:
-   "📊 Tôi sẽ verify dự án {project}:
-   - {N} URS modules → cần {N} MODSPEC + {N} TEST + code
-   - Sẽ check completeness, consistency, conflicts
-
-   Bắt đầu verification?"
+6. Tự động bắt đầu verification — không chờ confirm:
+   Ghi nhận scope: {N} URS modules → cần {N} MODSPEC + {N} TEST + code
+   → Chuyển ngay sang Phase 1
 ```
 
 ---

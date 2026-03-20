@@ -29,6 +29,19 @@ References:
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Detect user type** — từ context trong message (từ khóa: dev/PM/owner/codebase/dự án cũ...)
+2. **Tự chọn tutorial** — theo user type detect được, chạy ngay
+3. **Tự điều chỉnh** — demo, examples, next steps phù hợp với type
+4. **Báo cáo sau khi xong** — cheat sheet + next step cụ thể
+5. **Gợi ý bước tiếp** — `/mcv3:discovery` hoặc action phù hợp với user type
+
+**Lưu ý:** Nếu user type không detect được từ context → hỏi [1/2/3/4/5] (đây là exception duy nhất)
+
+---
+
 ## Khi nào dùng skill này
 
 - Lần đầu tiên dùng MCV3 plugin
@@ -138,16 +151,14 @@ export class WarehouseService {...}"
 
 ### 1A.4 — Demo Project
 
-```
-"💡 Demo: Tạo project ERP Quản lý Kho
+Tự động chạy demo mini — không hỏi Y/N:
 
-Muốn xem demo thực tế?
-[Y] Tạo demo project → tôi sẽ walk through từng bước
-[N] Tôi tự thử — hướng dẫn lệnh đầu tiên"
 ```
-
-Nếu Y: Chạy demo với `mc_init_project({ projectName: "Demo ERP", domain: "Logistics" })`
-và walk through Phase 1 Discovery với ví dụ.
+"💡 Demo: Tạo project ERP Quản lý Kho"
+mc_init_project({ projectName: "Demo ERP", domain: "Logistics" })
+→ Walk through Phase 1 Discovery với ví dụ ngắn
+→ Sau demo: "✅ Demo xong. Để bắt đầu dự án thật: /mcv3:discovery"
+```
 
 ---
 
@@ -266,26 +277,15 @@ Không cần technical knowledge. Chỉ cần biết:
 
 Đọc `references/quick-start-developer.md` (phần ongoing) và hướng dẫn:
 
-### 1D.1 — Dự án của bạn đang ở đâu?
+### 1D.1 — Auto-detect trạng thái dự án
 
 ```
-"🔄 Ongoing Project Onboarding
-
-Dự án của bạn đang ở trạng thái nào?
-
-[A] Có codebase nhưng ít/không có tài liệu
-    → Tôi hướng dẫn tạo docs từ code
-
-[B] Có tài liệu cũ (Word, PDF, Confluence) nhưng chưa dùng MCV3
-    → Tôi hướng dẫn migrate sang MCV3 format
-
-[C] Có cả code lẫn docs nhưng chưa đồng bộ
-    → Tôi hướng dẫn assess + sync
-
-[D] Đang dùng MCV3, muốn thêm features mới
-    → Tôi hướng dẫn evolve workflow
-
-Chọn [A/B/C/D]:"
+Auto-detect từ context trong message của user:
+  - "có code, không có docs" → Type A → hướng dẫn /mcv3:assess + /mcv3:migrate (Scope 3)
+  - "có docs Word/PDF/Confluence" → Type B → hướng dẫn /mcv3:migrate
+  - "có cả hai nhưng chưa đồng bộ" → Type C → hướng dẫn /mcv3:assess + /mcv3:change-manager
+  - "đang dùng MCV3, thêm feature" → Type D → hướng dẫn /mcv3:evolve
+  - Không rõ → mặc định Type A (phổ biến nhất) + gợi ý /mcv3:assess
 ```
 
 ### 1D.2 — Recommended Workflow cho Ongoing Projects
@@ -380,24 +380,17 @@ Nếu MCP server kết nối OK:
 
 ---
 
-## Phase 3 — First Project (Optional)
+## Phase 3 — First Project (Auto-Proceed)
 
 ```
 "🎉 Tutorial hoàn thành!
 
-Bạn đã sẵn sàng bắt đầu dự án đầu tiên chưa?
+→ Tiếp theo: /mcv3:discovery để bắt đầu dự án đầu tiên của bạn."
 
-[Y] Tạo dự án ngay — hỏi tên và domain, rồi chuyển đến /mcv3:discovery
-[N] Tôi cần nghiên cứu thêm — gợi ý tài liệu đọc thêm"
+Nếu user đã cung cấp tên dự án và domain trong message:
+  → mc_init_project({ projectName, domain }) ngay
+  → "✅ Project đã tạo! Chạy /mcv3:discovery để bắt đầu."
 ```
-
-Nếu Y:
-```
-"Tên dự án là gì? (VD: 'Hệ thống ERP Công ty ABC')
-Lĩnh vực kinh doanh? (VD: Logistics, Retail, SaaS, Healthcare)"
-```
-
-→ `mc_init_project({ projectName, domain })` → "✅ Project đã tạo! Chạy /mcv3:discovery để bắt đầu."
 
 ---
 

@@ -6,6 +6,52 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [3.11.0] — Auto-Mode Framework — Tất cả skills chạy tự động hoàn toàn — 2026-03-20
+
+### Added
+
+- **`knowledge/auto-mode-protocol.md`** (NEW) — Shared Auto-Mode Protocol cho tất cả 15 skills:
+  - 5-bước framework: Auto Execute → Self-Consult → Completion Report → User Review → Next Step
+  - DECISION-LOG format: problem, context, experts consulted, choice, reason, alternatives, confidence
+  - "KHÔNG BAO GIỜ" list: hỏi module nào, confirm, thêm gì không, module tiếp, bắt đầu, tech stack
+  - "LUÔN LUÔN" list: tự chọn order, tự detect tech stack, tự quyết + ghi DECISION, checkpoint, báo cáo
+
+### Changed
+
+- **`CLAUDE.md`** (root) — Cập nhật version lên v3.11.0:
+  - Thêm section `## Auto-Mode Framework` với 5-bước flow và KHÔNG BAO GIỜ / LUÔN LUÔN rules
+  - Plugin description cập nhật với Auto-Mode Framework feature
+
+- **15 SKILL.md files** — Thêm `## CHẾ ĐỘ VẬN HÀNH — Auto-Mode` section + xóa interactive prompts:
+  - `skills/discovery/SKILL.md` — Phase 0/4/5: tự chọn chế độ, tự quyết tiếp tục, báo cáo chuẩn
+  - `skills/expert-panel/SKILL.md` — Phase 5: xóa "Hỏi về Open Issues" → tự ghi vào EXPERT-LOG
+  - `skills/biz-docs/SKILL.md` — Phase 0/1/2c/2d/4: tự xác định domains, auto-fill từ industry knowledge
+  - `skills/requirements/SKILL.md` — Phase 0/1/3b/4/6: module auto-detection, auto-complete generation
+  - `skills/tech-design/SKILL.md` — Phase 0/1b/2c: auto module order, auto tech stack extraction
+  - `skills/qa-docs/SKILL.md` — Phase 0/1c/3e: auto module order, auto test strategy, auto coverage report
+  - `skills/code-gen/SKILL.md` — Phase 0: auto module order, auto-start
+  - `skills/verify/SKILL.md` — Phase 0 / Partial Mode: xóa "Bắt đầu verification?", auto-detect scope
+  - `skills/deploy-ops/SKILL.md` — Phase 1b: auto-detect deployment info từ PROJECT-ARCHITECTURE
+  - `skills/assess/SKILL.md` — Phase 0 / Phase 1a: auto-detect project type, auto-scan codebase
+  - `skills/change-manager/SKILL.md` — Phase 0/2c/4b/Multi-Change: auto-apply updates, auto dependency order
+  - `skills/evolve/SKILL.md` — Phase 0/2d/2e: auto-detect scope, auto versioning strategy
+  - `skills/migrate/SKILL.md` — Phase 0/3b/Scope 6: auto-detect source, auto-start, auto assess check
+  - `skills/onboard/SKILL.md` — Phase 1A.4/1D.1/3: auto demo, auto-detect ongoing type, auto-proceed
+  - `skills/navigator/SKILL.md` — Thêm CHẾ ĐỘ section (navigator đã auto, confirm consistency)
+
+- **`agents/orchestrator.md`** — Thêm Auto-Mode Protocol reference + cập nhật quy tắc điều phối:
+  - Thay "USER-DRIVEN" → "AUTO-PROCEED" (tự chuyển phase khi prerequisites đủ)
+  - Thêm section `## Auto-Mode Protocol` với 3 rules: AUTO-EXECUTE, SELF-CONSULT, REPORT-AFTER
+
+- **`agents/doc-writer.md`** — Thêm Auto-Mode Protocol reference:
+  - Thêm section `## Auto-Mode Protocol` với 4 rules: AUTO-FILL, DECISION-LOG, NO-PLACEHOLDER, AUTO-COMPLETE-AC
+
+### Rationale
+
+Trước v3.11.0, skills dừng hỏi user tại nhiều điểm: "module nào trước?", "bắt đầu chưa?", "confirm không?". Điều này làm gián đoạn workflow và yêu cầu user phải manually drive từng bước. Auto-Mode Framework giải quyết bằng cách: (1) skills tự động hoàn toàn từ đầu đến cuối, (2) khi ambiguous → tự quyết và ghi DECISION-LOG để user review sau, (3) báo cáo structured sau khi xong để user có full picture. User chỉ cần trigger skill và review report — không cần supervise từng step.
+
+---
+
 ## [3.10.1] — Skill Quality Improvements — Semantic Descriptions + Error Handling — 2026-03-20
 
 ### Changed

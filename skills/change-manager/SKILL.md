@@ -33,6 +33,19 @@ References:
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — parse change description từ user message, tự phân tích impact, tự apply updates
+2. **Tự giải quyết vấn đề** — tự quyết định thứ tự update documents, ghi DECISION khi ambiguous
+3. **Báo cáo sau khi xong** — CHG-xxx record + danh sách documents đã update + code notice
+4. **User review** — user review diffs; nếu muốn rollback → dùng mc_rollback
+5. **Gợi ý bước tiếp** — `/mcv3:verify` để re-verify sau thay đổi
+
+**Input bắt buộc từ user:** Mô tả thay đổi (element ID + nội dung thay đổi)
+
+---
+
 ## Khi nào dùng skill này
 
 - Khi requirements thay đổi sau khi đã có URS/MODSPEC/TEST
@@ -47,14 +60,10 @@ References:
 ```
 1. mc_status() → xác nhận project tồn tại
 2. mc_list({ projectSlug }) → liệt kê documents hiện có
-3. Hỏi user:
-   "📋 Change Manager sẵn sàng.
-
-   Bạn muốn thay đổi gì?
-   Mô tả thay đổi: VD:
-   - BR-WH-001: Thêm điều kiện kiểm tra số lượng tối thiểu khi nhập kho
-   - US-SALES-003: Thêm flow approval cho đơn hàng > 50 triệu
-   - FT-INV-002: Thay đổi logic tính giá trị tồn kho từ FIFO → Weighted Average"
+3. Parse change description từ user message:
+   - Element ID + mô tả thay đổi đã có trong message
+   - Nếu user chưa cung cấp ID cụ thể → hỏi: "Element nào cần thay đổi? (VD: BR-WH-001)"
+   - Sau khi có đủ thông tin → tự động chuyển Phase 1
 ```
 
 ---
@@ -138,10 +147,7 @@ Tài liệu bị ảnh hưởng:
 
 Tổng: 4 documents + 1 code area
 
-Bạn muốn:
-1. Xem chi tiết từng document cần cập nhật
-2. Bắt đầu cập nhật tự động
-3. Chỉ ghi changelog (update thủ công sau)
+→ Tự động chuyển sang Phase 3 (Snapshot) rồi Phase 4 (Document Updates)
 ```
 
 ### 2d. Breaking Change — Downstream System Warning
@@ -230,25 +236,15 @@ mc_load({
 
 Đọc document → xác định section cần cập nhật → tạo updated content.
 
-### 4b. Guided Update Protocol
+### 4b. Auto-Apply Update Protocol
 
 ```
-"📝 Cập nhật {Document}:
+Tự động apply thay đổi theo thứ tự: BIZ-POLICY → PROCESS → URS → MODSPEC → TEST
 
-Nội dung HIỆN TẠI:
----
-{Phần cần thay đổi - current}
----
-
-Nội dung MỚI ĐỀ XUẤT:
----
-{Phần đề xuất updated}
----
-
-Lý do: {Giải thích tại sao cần thay đổi}
-
-Bạn có muốn áp dụng thay đổi này không?
-[Y] Áp dụng  [E] Chỉnh sửa thêm  [S] Bỏ qua document này"
+Với mỗi document:
+  Hiển thị diff (before/after) trong completion report
+  → Apply ngay mà không hỏi confirm
+  → Nếu user muốn rollback → dùng mc_rollback (snapshot đã tạo ở Phase 3)
 ```
 
 ### 4c. Apply thay đổi
@@ -367,18 +363,11 @@ mc_checkpoint({
 Khi có nhiều thay đổi cùng lúc:
 
 ```
-"Bạn có {N} thay đổi:
-1. BR-WH-001: {mô tả}
-2. US-SALES-003: {mô tả}
-3. FT-INV-002: {mô tả}
-
-Xử lý theo thứ tự nào?
-[A] Tự động — theo thứ tự dependency (an toàn nhất)
-[S] Theo sequence user chỉ định
-[P] Preview tất cả impacts trước"
+Tự động xử lý theo thứ tự dependency (an toàn nhất):
+1. Sort changes theo dependency order: BR → US → FT → API
+2. Xử lý từng change tuần tự, mỗi change tạo 1 snapshot riêng
+3. Báo cáo tổng hợp sau khi xong tất cả
 ```
-
-Khi xử lý nhiều changes: mỗi change tạo một snapshot riêng.
 
 ---
 

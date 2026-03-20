@@ -34,6 +34,19 @@ References:
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — parse evolution scope từ user message, tự xác định versioning strategy
+2. **Tự giải quyết vấn đề** — tự quyết định Minor/Major, backward-compat approach, ghi DECISION
+3. **Báo cáo sau khi xong** — EVOL-xxx record + updated documents + sprint plan
+4. **User review** — user review plan, điều chỉnh nếu cần
+5. **Gợi ý bước tiếp** — `/mcv3:qa-docs` → `/mcv3:code-gen`
+
+**Input bắt buộc từ user:** Mô tả features/modules/systems muốn thêm
+
+---
+
 ## Error Recovery
 
 **mc_save / mc_load thất bại:**
@@ -78,19 +91,13 @@ References:
 3. mc_load({ filePath: "MASTER-INDEX.md", layer: 2 }) → danh sách systems/modules hiện có
 4. mc_list({ documentType: "modspec" }) → liệt kê MODSPEC hiện có
 
-5. Hỏi user:
-   "🚀 Evolution Mode — {project}
-
-   Dự án hiện có:
-   - Systems: {list}
-   - Modules: {list}
-   - Phase hiện tại: {phase}
-
-   Bạn muốn:
-   [1] Thêm features mới vào module đã có (VD: thêm tính năng cho WH module)
-   [2] Thêm module mới vào system đã có (VD: thêm module HR vào ERP)
-   [3] Thêm system hoàn toàn mới (VD: thêm Mobile App)
-   [4] Nâng cấp MVP → Full product (mở rộng toàn diện)"
+5. Auto-detect evolution scope từ user message:
+   - "thêm feature/tính năng vào {module}" → Scope 1
+   - "thêm module {name}" → Scope 2
+   - "thêm system {name}" → Scope 3
+   - "nâng cấp MVP / mở rộng" → Scope 4
+   - Không rõ → ghi DECISION + chọn Scope phù hợp nhất từ context
+   → Tự chuyển sang Phase 1 ngay
 ```
 
 ---
@@ -219,7 +226,7 @@ Downstream impact: {N} systems cần notify (nếu có breaking)
 
 Effort estimate: {S/M/L}
 
-Bắt đầu evolution?"
+→ Tự động chuyển sang Phase 3 (Snapshot) rồi Phase 4 (Document Evolution)"
 ```
 
 ### 2e. Breaking Change Protocol
@@ -237,12 +244,10 @@ Downstream systems bị ảnh hưởng:
   - {SYS2}: consumer của API-{SYS}-{NNN}
   - {SYS3}: shared table TBL-{SYS}-{NNN}
 
-Xử lý breaking changes:
-  [1] Versioned API: Giữ v1, thêm v2 endpoint mới (khuyến nghị)
-  [2] Deprecation period: v1 deprecated, v2 mới — set sunset date
-  [3] Force breaking: Chấp nhận breaking, notify downstream teams ngay
-
-Chọn [1/2/3]:"
+Tự động áp dụng chiến lược an toàn nhất:
+  → Versioned API: Giữ v1, thêm v2 endpoint mới (default — safest)
+  → Ghi DECISION: "Breaking change → Versioned API strategy. Sunset date: {date+90d}"
+  → Nếu user đã chỉ định strategy trong message → dùng theo đó
 ```
 
 Với tùy chọn 1 hoặc 2, thêm vào MODSPEC:

@@ -25,6 +25,17 @@ References:
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — spawn 3 expert agents song song, synthesize, tạo EXPERT-LOG
+2. **Tự giải quyết vấn đề** — ghi Open Issues vào EXPERT-LOG để Phase 3 giải quyết
+3. **Báo cáo sau khi xong** — tổng hợp consensus + risks + open issues
+4. **User review** — nếu user cung cấp thêm thông tin → tự update SESSION
+5. **Gợi ý bước tiếp** — `/mcv3:biz-docs`
+
+---
+
 ## Khi nào dùng skill này
 
 - Sau khi `/mcv3:discovery` hoàn thành
@@ -174,45 +185,31 @@ Output:
 
 ---
 
-## Phase 5 — User Review & Questions
+## Phase 5 — Summary & Save Checkpoint
 
-Sau khi tạo EXPERT-LOG.md:
+Sau khi tạo EXPERT-LOG.md, báo cáo theo Auto-Mode format:
 
-### 5a. Present summary
-
-Trình bày tóm tắt cho user:
+### 5a. Báo cáo hoàn thành
 
 ```
-"📊 Expert Panel đã phân tích xong. Tóm tắt:
+✅ ĐÃ HOÀN THÀNH: _PROJECT/EXPERT-LOG.md
+   SESSION-001 với 3 expert analyses (Strategy + Finance + Domain)
 
-CONSENSUS:
-  ✅ [điểm đồng ý 1]
-  ✅ [điểm đồng ý 2]
-
-RISKS:
-  ⚠️ [rủi ro 1]
-  ⚠️ [rủi ro 2]
-
-CẦN LÀM RÕ:
-  ❓ [câu hỏi 1]
-  ❓ [câu hỏi 2]"
+CONSENSUS: [danh sách điểm đồng thuận]
+RISKS: [danh sách rủi ro chính]
+OPEN ISSUES: [ghi vào EXPERT-LOG để Phase 3 giải quyết — KHÔNG hỏi user ngay]
 ```
 
-### 5b. Ask open questions
+### 5b. Open Issues → ghi vào EXPERT-LOG
 
-Hỏi user về các "Open Issues":
+Thay vì hỏi user về Open Issues, ghi rõ vào EXPERT-LOG section "OPEN ISSUES":
+- Câu hỏi nào cần clarify
+- Thông tin nào chưa đủ để phân tích chính xác
+- Phase nào sẽ giải quyết issue đó (VD: "Sẽ làm rõ tại Phase 3 — biz-docs")
 
-```
-"Để phân tích chính xác hơn, tôi cần biết thêm:
-1. [câu hỏi từ open issues]
-2. [câu hỏi khác]
+### 5c. Update EXPERT-LOG nếu user cung cấp thêm thông tin
 
-Bạn có thể cung cấp thêm thông tin về những điểm này không?"
-```
-
-### 5c. Update EXPERT-LOG nếu cần
-
-Nếu user cung cấp thêm thông tin → update SESSION-001 trong EXPERT-LOG.md.
+Nếu sau khi nhận báo cáo, user cung cấp thêm thông tin → tự update SESSION-001 trong EXPERT-LOG.md.
 
 ---
 

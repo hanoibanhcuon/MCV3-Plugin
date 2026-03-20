@@ -8,6 +8,15 @@ Hiển thị dashboard tiến độ dự án MCV3 — user nhìn vào và biết
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — tự đọc trạng thái, tự format dashboard, tự gợi ý next step
+2. **Không có interactive prompts** — navigator là read-only, không cần user input
+3. **Báo cáo ngay** — hiển thị dashboard đầy đủ trong 1 response
+
+---
+
 ## Khi nào dùng skill này
 
 - Bắt đầu session mới, muốn xem tổng quan dự án

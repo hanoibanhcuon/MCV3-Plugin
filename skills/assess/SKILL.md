@@ -42,6 +42,17 @@ References:
 
 ---
 
+## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+1. **Tự động hoàn toàn** — tự detect project type (A/B/C/D), tự scan, tự tạo reports
+2. **Tự giải quyết vấn đề** — tự classify docs/code vào đúng phases, ghi DECISION khi ambiguous
+3. **Báo cáo sau khi xong** — PROJECT-MANIFEST + ASSESSMENT-MATRIX + GAP-REPORT + REMEDIATION-PLAN
+4. **User review** — user xem REMEDIATION-PLAN và chọn action
+5. **Gợi ý bước tiếp** — Skill phù hợp theo gap type
+
+---
+
 ## Khi nào dùng skill này
 
 - Nhận bàn giao dự án đang chạy từ team khác
@@ -52,35 +63,24 @@ References:
 
 ---
 
-## Phase 0 — Project Type Detection
+## Phase 0 — Auto Project Type Detection
+
+Tự detect project type từ context — không hỏi user:
 
 ```
-"🔍 Assessment Mode — MCV3
+Auto-detect logic:
+  1. mc_status() → nếu chưa có project MCV3 → tự init với tên/domain từ message của user
+  2. Scan thư mục hiện tại:
+     - Có src/ → code exists
+     - Có .mc-data/ hoặc docs/ → docs exists
+  3. Auto-classify:
+     - Chỉ có src/ → Type A (code only)
+     - Chỉ có docs → Type B (docs only)
+     - Có cả hai → Type C (both, check for drift)
+     - Nếu không rõ → Type D (full assessment), ghi DECISION
 
-Dự án bạn đang ở trạng thái nào?
-
-[A] Có codebase, ít/không có docs
-    → Tôi scan code, reverse-engineer documentation
-
-[B] Có docs cũ, ít/không có code
-    → Tôi phân tích docs, classify vào MCV3 phases
-
-[C] Có cả code lẫn docs nhưng chưa đồng bộ
-    → Tôi compare code vs docs, tìm drift
-
-[D] Dự án production, muốn formalize documentation
-    → Tôi assess toàn diện, đề xuất remediation plan
-
-Chọn [A/B/C/D]:"
-```
-
-Sau khi user chọn:
-```
-"Dự án của bạn:
-- Tên dự án? (VD: 'Hệ thống ERP Công ty ABC')
-- Domain/Ngành? (VD: Logistics, Retail, SaaS...)
-- Codebase ở đâu? (đường dẫn, hoặc mô tả structure)
-- Docs hiện có? (để tôi classify)"
+Tên dự án + domain: lấy từ message của user hoặc từ project name trong mc_status()
+→ Không hỏi lại nếu đã có trong context
 ```
 
 ---
@@ -90,15 +90,12 @@ Sau khi user chọn:
 ### 1a. Scan codebase (nếu có code)
 
 ```
-"Để phân tích codebase, tôi cần:
-1. Mô tả cấu trúc thư mục chính
-2. Hoặc chạy script scan: ./scripts/scan-codebase.sh
-   → Output: manifest.json với tech stack, routes, models, tests
-
-Bạn muốn:
-[1] Tôi hướng dẫn scan từng bước
-[2] Paste tree output của dự án để tôi phân tích
-[3] Mô tả cấu trúc bằng lời"
+Tự động scan — không hỏi phương pháp:
+1. Chạy ./scripts/scan-codebase.sh (nếu có) → manifest.json
+2. Nếu không có script → dùng Glob/Read để detect cấu trúc
+3. Detect tech stack từ package.json / requirements.txt / go.mod / Gemfile
+4. Detect modules từ controller/service file names
+→ Ghi nhận kết quả vào PROJECT-MANIFEST draft
 ```
 
 Từ output scan, tôi detect:
@@ -547,8 +544,8 @@ Phân loại → đặt đúng path trong .mc-data/:
 
 Nếu doc chưa ở format MCV3:
 ```
-→ Hỏi user: "Muốn migrate sang MCV3 format ngay? → /mcv3:migrate"
-→ Hoặc import dạng thô để có placeholder trước
+→ Import dạng thô với placeholder trước (tự động)
+→ Ghi vào REMEDIATION-PLAN: "Chạy /mcv3:migrate để convert sang format chuẩn"
 ```
 
 ### 6d. Tạo snapshot assessment
@@ -598,7 +595,7 @@ mc_checkpoint({
   → {Skill 1}: {description}
   → {Skill 2}: {description}
 
-Muốn bắt đầu ngay với action nào?"
+Bước tiếp theo theo REMEDIATION-PLAN: {Skill 1} — {description}"
 ```
 
 ---
