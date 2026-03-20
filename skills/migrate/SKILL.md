@@ -921,8 +921,10 @@ PARALLEL:
 
 // Step 2: Build review queue
 Từ MIGRATION-REPORT:
-  → Extract modules có GENERATED items (với GENERATED count per module)
-  → Sort: nhiều GENERATED ACs nhất trước (priority order)
+  → Extract TẤT CẢ modules đã migrate (không chỉ modules có GENERATED)
+  → Sort priority:
+      1. Modules có GENERATED ACs (nhiều nhất lên đầu) — cần confirm khẩn
+      2. Modules không có GENERATED (cuối queue) — review accuracy
 
 Từ REVIEW-PROGRESS.md (nếu có — resume):
   → modules đã REVIEWED → bỏ khỏi queue
@@ -930,26 +932,41 @@ Từ REVIEW-PROGRESS.md (nếu có — resume):
   → current_module → resume từ đây
 
 // Step 3: Show intro summary
-"📋 BA REVIEW MODE
+"📋 BA REVIEW MODE — Full URS Review
 ══════════════════════════════════════════════
-Tổng GENERATED items: {G} ACs | {M} modules cần review
+Phạm vi: {TOTAL} modules | {US_TOTAL} User Stories | {G} GENERATED ACs cần confirm
 {nếu resume: "Tiếp tục từ: {current_module} ({X}/{TOTAL} modules đã xử lý)"}
 
-Commands (gõ bất kỳ lúc nào):
-  OK                      → Confirm toàn bộ module hiện tại
-  OK [US-xxx]             → Confirm tất cả ACs của US đó
-  OK [AC-xxx]             → Confirm 1 AC cụ thể
-  SỬA [AC-xxx]: [text]    → Sửa nội dung AC (format: Given/When/Then)
-  BỎ [AC-xxx]             → Xóa AC (US vẫn giữ ≥ 2 ACs tự động)
-  THÊM [US-xxx]: [text]   → Thêm AC mới cho US
-  NEXT                    → Bỏ qua module (deferred — review sau)
-  BACK                    → Quay lại module trước để sửa
-  REVIEW [MOD]            → Nhảy đến module cụ thể (VD: REVIEW WMS)
-  SUMMARY                 → Xem thống kê hiện tại
-  PAUSE / DỪNG            → Lưu tiến độ và dừng
-  HELP                    → Xem lại commands này
+REVIEW bao gồm:
+  ① Confirm/sửa GENERATED ACs (AI-invented — cần BA xác nhận)
+  ② Kiểm tra accuracy toàn bộ US (AI có hiểu đúng intent không?)
+  ③ Enrich inline: priority, NFR, US bị thiếu
 
-Bắt đầu với module: {module-name} ({N} GENERATED ACs)
+Commands (gõ bất kỳ lúc nào):
+─── AC Commands (Acceptance Criteria) ───────────────
+  OK                        → Confirm toàn bộ module (GENERATED + accuracy)
+  OK [US-xxx]               → Confirm tất cả ACs của US đó
+  OK [AC-xxx]               → Confirm 1 AC cụ thể
+  SỬA AC [AC-xxx]: [text]   → Sửa nội dung AC (format: Given/When/Then)
+  BỎ AC [AC-xxx]            → Xóa AC (US vẫn giữ ≥ 2 ACs tự động)
+  THÊM AC [US-xxx]: [text]  → Thêm AC mới cho US
+─── US Commands (User Stories) ──────────────────────
+  SỬA US [US-xxx] TITLE: [text]      → Đổi tên US
+  SỬA US [US-xxx] PRIORITY: [level]  → Đổi priority (Must/Should/Could/Won't)
+  SỬA US [US-xxx] WANT: [text]       → Sửa "I want" intent
+  BỎ US [US-xxx]                     → Xóa toàn bộ US (sai hoàn toàn)
+  THÊM US: As a [role] / I want [x] / So that [y]  → Thêm US bị thiếu
+  FLAG US [US-xxx]: [lý do]          → Đánh dấu conversion error (cần rewrite)
+  NFR: [text]                        → Thêm NFR cho module
+─── Navigation ───────────────────────────────────────
+  NEXT                      → Bỏ qua module (deferred — review sau)
+  BACK                      → Quay lại module trước để sửa
+  REVIEW [MOD]              → Nhảy đến module cụ thể (VD: REVIEW WMS)
+  SUMMARY                   → Xem thống kê hiện tại
+  PAUSE / DỪNG              → Lưu tiến độ và dừng
+  HELP                      → Xem lại commands này
+
+Bắt đầu với module: {module-name} ({N_GEN} GENERATED ACs | {N_US} US)
 ══════════════════════════════════════════════"
 ```
 
@@ -964,26 +981,48 @@ Bắt đầu với module: {module-name} ({N} GENERATED ACs)
 ```
 mc_load({ filePath: "{SYS}/P1-REQUIREMENTS/URS-{MOD}.md", layer: 3 })
 
-→ Extract chỉ các US có GENERATED ACs (skip US đã confirmed)
-→ Format TÓM TẮT — KHÔNG paste full markdown:
+→ Format TÓM TẮT 2 sections — KHÔNG paste full markdown:
 
 "──────────────────────────────────────────────
-📦 Module {MOD} — {N} GENERATED ACs ({K} US)
-   Tiến độ tổng: {X}/{TOTAL} modules | {C} ACs confirmed hôm nay
+📦 Module {MOD} — {N_GEN} GENERATED ACs | {K} US tổng | {K_GEN} US có GENERATED
+   Tiến độ: {X}/{TOTAL} modules | {C} ACs confirmed hôm nay
 ──────────────────────────────────────────────
 
-[US-{MOD}-001] {Tên US}  [Priority: Must]
+⚠️  SECTION 1 — GENERATED ACs (AI-invented, cần confirm):
+────────────────────────────────────────────
+{Chỉ show US có GENERATED ACs — skip nếu không có}
+
+[US-{MOD}-001] {Tên US}  [Priority: Must]  ⚠️ GENERATED
   AC-01 ({AC-ID}): Given {context} / When {action} / Then {result}
   AC-02 ({AC-ID}): Given {context} / When {action} / Then {result}
 
-[US-{MOD}-002] {Tên US}  [Priority: Should]
+[US-{MOD}-003] {Tên US}  [Priority: Should]  ⚠️ GENERATED
   AC-01 ({AC-ID}): Given {context} / When {action} / Then {result}
-  AC-02 ({AC-ID}): Given {context} / When {action} / Then {result}
 
-... (hiển thị tối đa 10 US mỗi lần; nếu module > 10 US → chia batch,
-     sau mỗi batch hỏi: 'Tiếp tục 10 US tiếp theo? [OK] hoặc [commands]')
+{Nếu không có GENERATED: "✅ Không có GENERATED ACs trong module này"}
 
-Trả lời: OK để confirm tất cả, hoặc dùng commands ở trên."
+📋  SECTION 2 — Tất cả US (kiểm tra accuracy conversion):
+────────────────────────────────────────────
+{Show TẤT CẢ US — kể cả US không có GENERATED — để BA verify AI hiểu đúng không}
+{Format ngắn: chỉ title + priority + AC count; không show full AC text}
+
+[US-{MOD}-001] {Tên US}  [Priority: Must]  — {N} ACs  ⚠️ has GENERATED
+[US-{MOD}-002] {Tên US}  [Priority: Should] — {N} ACs  ✅ converted
+[US-{MOD}-003] {Tên US}  [Priority: Must]  — {N} ACs  ⚠️ has GENERATED
+[US-{MOD}-004] {Tên US}  [Priority: Could]  — {N} ACs  ✅ converted
+...
+
+{Nếu muốn xem full ACs của 1 US cụ thể: gõ "XEM US-{MOD}-002"}
+
+──────────────────────────────────────────────
+Trả lời: OK để accept tất cả, hoặc dùng commands.
+Gõ HELP để xem danh sách commands đầy đủ.
+──────────────────────────────────────────────"
+
+→ Batch size: tối đa 10 US mỗi lần hiển thị (cả 2 sections gộp lại)
+   Nếu module > 10 US → chia batch, sau mỗi batch hỏi:
+   "Tiếp tục {N} US tiếp theo? [OK] hoặc [commands]"
+→ US đã REVIEWED trong session trước → show "(✅ reviewed)" sau title, skip Section 1
 ```
 
 #### Bước B — Parse user input
@@ -991,11 +1030,14 @@ Trả lời: OK để confirm tất cả, hoặc dùng commands ở trên."
 ```
 Nhận reply từ user → parse thành danh sách actions:
 
+─── AC-level commands (Acceptance Criteria) ─────────────────────────
+
   "OK"
-    → action: CONFIRM_ALL_MODULE
+    → action: CONFIRM_ALL_MODULE (confirm tất cả GENERATED + accept toàn bộ US)
 
   "OK US-WMS-001"
     → action: CONFIRM_US { us_id: "US-WMS-001" }
+      (confirm tất cả GENERATED ACs của US đó)
 
   "OK AC-WMS-001-01"
     → action: CONFIRM_AC { ac_id: "AC-WMS-001-01" }
@@ -1006,19 +1048,63 @@ Nhận reply từ user → parse thành danh sách actions:
   "BỎ AC-WMS-003-02"
     → action: REMOVE_AC { ac_id: "AC-WMS-003-02" }
 
-  "THÊM US-WMS-005: Given dashboard / When filter / Then hiển thị hôm nay"
+  "THÊM AC US-WMS-005: Given dashboard / When filter / Then hiển thị hôm nay"
     → action: ADD_AC { us_id: "US-WMS-005", text: "..." }
+  [NOTE: backward-compat — "THÊM US-WMS-005: ..." (không có từ AC) cũng parse được]
+
+─── US-level commands (User Stories) ────────────────────────────────
+
+  "SỬA US US-WMS-002 TITLE: Quản lý phiếu nhập kho"
+    → action: MODIFY_US_TITLE { us_id: "US-WMS-002", new_title: "..." }
+
+  "SỬA US US-WMS-002 PRIORITY: Must"
+    → action: MODIFY_US_PRIORITY { us_id: "US-WMS-002", priority: "Must" }
+    → priority values: Must / Should / Could / Won't
+
+  "SỬA US US-WMS-002 WANT: xem danh sách hàng tồn kho theo vị trí"
+    → action: MODIFY_US_WANT { us_id: "US-WMS-002", new_want: "..." }
+
+  "BỎ US US-WMS-007"
+    → action: REMOVE_US { us_id: "US-WMS-007" }
+    → [SAFETY] Nếu module còn ≥ 2 US sau khi xóa → OK
+    → [SAFETY] Nếu module còn < 2 US → warning + yêu cầu confirm thêm
+
+  "THÊM US: As a kho trưởng / I want xuất báo cáo tồn kho / So that kiểm soát hàng tháng"
+    → action: ADD_US { role: "...", want: "...", so_that: "..." }
+    → Auto-assign US ID tiếp theo trong module
+
+  "FLAG US US-WMS-003: AI hiểu sai — đây là import, không phải export"
+    → action: FLAG_US { us_id: "US-WMS-003", reason: "..." }
+    → Đánh dấu ⚠️ CONVERSION-ERROR để rewrite sau
+
+  "NFR: Thời gian load danh sách < 2 giây với 10,000 SKUs"
+    → action: ADD_NFR { text: "..." }
+    → Thêm vào NFR section của URS module
+
+  "XEM US-WMS-002"
+    → action: SHOW_US_DETAIL { us_id: "US-WMS-002" }
+    → Hiển thị full AC text của US đó (read-only, không thay đổi state)
+
+─── Navigation ───────────────────────────────────────────────────────
 
   Mixed (nhiều actions trên 1 dòng, ngăn cách bằng ";"):
-  "OK US-WMS-001; SỬA AC-WMS-002-01: ...; BỎ AC-WMS-003-02"
-    → [CONFIRM_US, MODIFY_AC, REMOVE_AC] → apply tuần tự
+  "OK US-WMS-001; SỬA AC-WMS-002-01: ...; BỎ AC-WMS-003-02; SỬA US US-WMS-004 PRIORITY: Must"
+    → [CONFIRM_US, MODIFY_AC, REMOVE_AC, MODIFY_US_PRIORITY] → apply tuần tự
 
-  "NEXT"    → action: DEFER_MODULE
-  "PAUSE"   → action: PAUSE_REVIEW
-  "BACK"    → action: BACK_TO_PREVIOUS_MODULE
+  "NEXT"       → action: DEFER_MODULE
+  "PAUSE"      → action: PAUSE_REVIEW
+  "BACK"       → action: BACK_TO_PREVIOUS_MODULE
   "REVIEW WMS" → action: JUMP_TO_MODULE { mod: "WMS" }
-  "SUMMARY" → action: SHOW_STATS (không thay đổi state)
-  "HELP"    → action: SHOW_HELP
+  "SUMMARY"    → action: SHOW_STATS (không thay đổi state)
+  "HELP"       → action: SHOW_HELP
+
+─── Disambiguation rules ─────────────────────────────────────────────
+  "BỎ AC-xxx"  → REMOVE_AC (prefix AC-)
+  "BỎ US-xxx"  → REMOVE_US (prefix US- nhưng không có AC dash pattern)
+  "SỬA AC-xxx" → MODIFY_AC
+  "SỬA US-xxx TITLE/PRIORITY/WANT" → MODIFY_US_*
+  "THÊM AC US-xxx" hoặc "THÊM US-xxx" → ADD_AC
+  "THÊM US: As a..." → ADD_US (không có ID number)
 
 Nếu input không rõ → hiển thị lại commands + hỏi lại:
   "Không nhận ra command. Gõ HELP để xem danh sách."
@@ -1030,18 +1116,20 @@ Nếu input không rõ → hiển thị lại commands + hỏi lại:
 ```
 Gộp TẤT CẢ changes của module này → apply 1 lần duy nhất (BATCH-APPLY):
 
+─── AC-level actions ────────────────────────────────────────────────
+
 Với CONFIRM (OK / OK US-xxx / OK AC-xxx):
   → Xóa "⚠️ **GENERATED**" tag khỏi AC section của US được confirm
   → Xóa "**Review needed:** Yes" khỏi mỗi AC được confirm
   → Thêm "✅ **Reviewed:** {date}" vào dòng ngay sau "#### Acceptance Criteria"
   → Nội dung AC KHÔNG thay đổi
 
-Với MODIFY (SỬA AC-xxx: ...):
+Với MODIFY_AC (SỬA AC-xxx: ...):
   → Replace toàn bộ nội dung dòng AC đó với text mới (Given/When/Then)
   → Xóa "⚠️ **GENERATED**" tag (BA đã review và sửa = confirmed)
   → Thêm "✏️ **BA Modified:** {date}" thay thế GENERATED tag
 
-Với REMOVE (BỎ AC-xxx):
+Với REMOVE_AC (BỎ AC-xxx):
   → Xóa toàn bộ AC block đó
   → [SAFETY CHECK] Đếm ACs còn lại của US đó:
       Nếu còn ≥ 2 ACs → OK, tiếp tục
@@ -1049,11 +1137,59 @@ Với REMOVE (BỎ AC-xxx):
         → Mark với "⚠️ **GENERATED (auto-replacement):**"
         → Show inline warning: "⚠️ Auto-generated 1 AC thay thế cho {US-xxx} — cần review"
 
-Với ADD (THÊM US-xxx: ...):
+Với ADD_AC (THÊM AC US-xxx: ...):
   → Thêm AC block mới vào cuối AC section của US đó
   → Auto-assign ID: AC-{MOD}-{US-NNN}-{next-XX} (increment từ ID cao nhất hiện có)
   → Mark với "✅ **BA Added:** {date}" (không cần GENERATED tag — BA tự viết)
   → Ghi vào REVIEW-PROGRESS: "added_ac: {ID}"
+
+─── US-level actions ────────────────────────────────────────────────
+
+Với MODIFY_US_TITLE (SỬA US US-xxx TITLE: ...):
+  → Replace dòng "**Title:**" của US đó với title mới
+  → Thêm "✏️ **BA Modified Title:** {date}" inline sau title
+  → Ghi vào REVIEW-PROGRESS: "us_modified: {ID} (title)"
+
+Với MODIFY_US_PRIORITY (SỬA US US-xxx PRIORITY: ...):
+  → Replace dòng "**Priority:**" của US đó với level mới (Must/Should/Could/Won't)
+  → Thêm "✏️ **BA Modified Priority:** {date}" inline
+  → Ghi vào REVIEW-PROGRESS: "us_modified: {ID} (priority)"
+
+Với MODIFY_US_WANT (SỬA US US-xxx WANT: ...):
+  → Replace phần "I want [...]" trong US description với text mới
+  → Thêm "✏️ **BA Modified Want:** {date}" inline
+  → Ghi vào REVIEW-PROGRESS: "us_modified: {ID} (want)"
+
+Với REMOVE_US (BỎ US US-xxx):
+  → [SAFETY CHECK] Đếm US còn lại sau khi xóa:
+      Nếu module còn ≥ 2 US → OK, xóa toàn bộ US block (title + ACs)
+      Nếu module còn < 2 US → hiển thị warning:
+        "⚠️ Module {MOD} sẽ còn {N-1} US sau khi xóa.
+         Xác nhận? [YES để tiếp tục] [NO để hủy]"
+  → Sau khi xóa: ghi vào REVIEW-PROGRESS "us_removed: {ID}"
+
+Với ADD_US (THÊM US: As a ... / I want ... / So that ...):
+  → Auto-assign US ID: US-{MOD}-{next-NNN} (increment từ ID cao nhất hiện có)
+  → Tạo US block đầy đủ với:
+      Title: {want text ngắn gọn — AI tự tóm tắt}
+      Priority: Should (default — BA có thể sửa bằng MODIFY_US_PRIORITY)
+      Role / Want / So That từ input
+      ACs: rỗng — BA tự thêm hoặc để /mcv3:requirements enrich
+  → Mark với "➕ **BA Added:** {date}"
+  → Ghi vào REVIEW-PROGRESS: "us_added: {ID}"
+
+Với FLAG_US (FLAG US US-xxx: reason):
+  → Thêm "⚠️ **CONVERSION-ERROR:** {reason} — Cần rewrite" vào đầu US block
+  → KHÔNG xóa US (vẫn giữ để có reference)
+  → Ghi vào REVIEW-PROGRESS: "us_flagged: {ID} reason: {reason}"
+  → Ghi vào module notes: "[REWRITE-NEEDED] {ID}: {reason}"
+
+Với ADD_NFR (NFR: text):
+  → Tìm section "## Non-Functional Requirements" trong URS file
+  → Nếu có: append NFR entry mới với ID NFR-{next-NNN}
+  → Nếu không có: tạo section mới trước "## Appendix" (hoặc cuối file)
+  → Mark với "➕ **BA Added:** {date}"
+  → Ghi vào REVIEW-PROGRESS: "nfr_added: NFR-{NNN}"
 ```
 
 #### Bước D — Post-Save Verification (sau mỗi module)
@@ -1166,7 +1302,7 @@ Nếu có lỗi từ mc_validate:
 ✅ BA REVIEW HOÀN THÀNH
 ══════════════════════════════════════════════
 
-📊 Kết quả review:
+📊 Kết quả review — Acceptance Criteria:
   ✅ Confirmed (không thay đổi):     {X} ACs ({X_pct}%)
   ✏️ Modified (BA sửa nội dung):     {Y} ACs
   ❌ Removed (đã xóa):               {Z} ACs
@@ -1174,33 +1310,51 @@ Nếu có lỗi từ mc_validate:
   ⏭️ Deferred (để sau):              {D} ACs — {D_MOD} modules
   ⚠️ Auto-replaced (safety):         {K} ACs (GENERATED — cần review thêm)
 
+📊 Kết quả review — User Stories:
+  ✏️ Modified title/priority/want:   {U_M} US
+  ❌ Removed (AI hiểu sai hoàn toàn): {U_R} US
+  ➕ Added (thiếu trong source):      {U_A} US
+  ⚠️ Flagged (CONVERSION-ERROR):     {U_F} US — cần rewrite
+  ➕ NFRs thêm mới:                   {N_NFR} entries
+
 📁 Modules đã review ({R}/{TOTAL}):
-  ✅ {MOD-1}: {C} confirmed | {M} modified | {R} removed
+  ✅ {MOD-1}: {C} ACs confirmed | {M} ACs modified | {U_M} US edited
   ✅ {MOD-2}: ...
 
-📁 Modules deferred — còn GENERATED ({D_MOD}):
-  ⏭️ {MOD-X}: {N} ACs chưa review
+📁 Modules deferred — chưa review ({D_MOD}):
+  ⏭️ {MOD-X}: {N} GENERATED ACs + {U} US chưa verify accuracy
   (Nếu rỗng: "Tất cả modules đã review ✅")
 
 {nếu có VERIFY-WARN}:
 ⚠️ Verification Warnings:
   - [VERIFY-WARN-001]: {mô tả issue — không block nhưng nên check}
 
+{nếu có CONVERSION-ERROR flags}:
+⚠️ US cần rewrite ({U_F} US):
+  - {US-xxx}: {lý do flag}
+  - {US-yyy}: {lý do flag}
+  → Rewrite bằng command: "SỬA US {ID} WANT: ..." hoặc "BỎ US {ID}" + "THÊM US: ..."
+
 ══════════════════════════════════════════════
-🔜 BƯỚC TIẾP THEO:
-   → /mcv3:requirements — Enrich URS:
-     • Bổ sung NFRs (performance, security, availability)
-     • Xác nhận priorities còn Should/Could chưa confirm
-     • Review {D} ACs deferred chưa confirm
+🔜 BƯỚC TIẾP THEO (THEO THỨ TỰ):
+
+{nếu có deferred hoặc CONVERSION-ERROR}:
+   ⚠️ ① Còn việc trong BA Review:
+      • {D_MOD} modules deferred chưa review
+      • {U_F} US flagged cần rewrite
+      → Gọi lại /mcv3:migrate → [1] BA Review để tiếp tục
+
+② /mcv3:tech-design — Thiết kế kỹ thuật từ URS đã review
+   [Không cần /mcv3:requirements — URS đã đầy đủ sau BA Review]
 
 {nếu deferred > 40%}:
-   ⚠️ Lưu ý: {D_MOD} modules deferred vẫn có GENERATED items.
+   ⚠️ Lưu ý: {D_MOD}/{TOTAL} modules deferred — nhiều US chưa verify accuracy.
       Cân nhắc review thêm trước /mcv3:tech-design.
 ══════════════════════════════════════════════
 💬 BẠN MUỐN:
-   [1] Review thêm modules deferred?
+   [1] Review thêm modules deferred / rewrite US flagged?
    [2] Xem chi tiết URS module nào?
-   [3] OK → /mcv3:requirements
+   [3] OK → /mcv3:tech-design
 ══════════════════════════════════════════════
 ```
 
@@ -1227,21 +1381,31 @@ File tracking review state — lưu tại `_mcv3-work/migration/REVIEW-PROGRESS.
 | ACs Modified | {M} |
 | ACs Removed | {R} |
 | ACs Added | {A} |
-| Auto-replaced | {K} |
+| ACs Auto-replaced | {K} |
+| US Modified | {U_M} |
+| US Removed | {U_R} |
+| US Added | {U_A} |
+| US Flagged (CONVERSION-ERROR) | {U_F} |
+| NFRs Added | {N_NFR} |
 
 ## Module Status
-| Module | Status | Confirmed | Modified | Removed | Added | Deferred ACs |
-|--------|--------|-----------|----------|---------|-------|--------------|
-| WMS | REVIEWED | 31 | 3 | 2 | 1 | 0 |
-| TMS | DEFERRED | 0 | 0 | 0 | 0 | 28 |
-| FIN | PENDING | 0 | 0 | 0 | 0 | 20 |
+| Module | Status | AC-Confirmed | AC-Modified | AC-Removed | AC-Added | US-Modified | US-Removed | US-Added | US-Flagged | Deferred-ACs |
+|--------|--------|-------------|-------------|------------|----------|-------------|------------|----------|------------|--------------|
+| WMS | REVIEWED | 31 | 3 | 2 | 1 | 2 | 0 | 0 | 1 | 0 |
+| TMS | DEFERRED | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 28 |
+| FIN | PENDING | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 20 |
+
+## Flagged US (CONVERSION-ERROR)
+| US-ID | Module | Reason | Status |
+|-------|--------|--------|--------|
+| US-WMS-007 | WMS | AI hiểu sai — đây là import không phải export | PENDING-REWRITE |
 
 ## Verify Warnings
 - [VERIFY-WARN-001]: {module} — {mô tả issue}
 (rỗng nếu không có warning)
 
 ## Change Log
-- {datetime} | WMS | 31 confirmed, 3 modified, 2 removed, 1 added
+- {datetime} | WMS | 31 AC-confirmed, 3 AC-modified, 2 AC-removed, 1 AC-added, 2 US-modified, 1 US-flagged
 - {datetime} | TMS | deferred — BA sẽ review sau với stakeholder
 - {datetime} | PAUSE | dừng tại FIN, resume lần sau
 ```
@@ -1253,16 +1417,23 @@ File tracking review state — lưu tại `_mcv3-work/migration/REVIEW-PROGRESS.
 ```
 TRIGGER-AUTO:    Detect checkpoint "ba-review-paused" khi resume → tự động hỏi tiếp tục
                  Detect checkpoint "migration-complete" + MIGRATION-REPORT.md → Entry Guard hỏi [1] BA Review
-MODULE-FIRST:    Luôn review theo module — không show từng AC lẻ nếu chưa load module
+FULL-SCOPE:      Review ALL modules (không chỉ GENERATED-heavy) — accuracy + completeness
+MODULE-FIRST:    Luôn review theo module — không show từng AC/US lẻ nếu chưa load module
+2-SECTION:       Mỗi module hiển thị 2 sections: ⚠️ GENERATED (urgent) → 📋 ALL US (accuracy)
 BATCH-APPLY:     Gộp tất cả changes của 1 module → 1 mc_save duy nhất (tránh save nhiều lần)
 MINIMUM-ACS:     BỎ AC làm US < 2 ACs → auto-generate replacement + flag GENERATED
+MINIMUM-US:      BỎ US làm module < 2 US → warning + yêu cầu user confirm thêm
 POST-SAVE-CHECK: Verify integrity sau mỗi mc_save (không để lỗi accumulate sang module sau)
 CHECKPOINT-PER:  mc_checkpoint sau mỗi module (RISK-003) — không chờ đến PAUSE
-AUDIT-TRAIL:     Mọi action (confirm/modify/remove/add/defer) ghi vào REVIEW-PROGRESS.md
+AUDIT-TRAIL:     Mọi action (AC/US confirm/modify/remove/add/flag/defer) ghi vào REVIEW-PROGRESS.md
 UNKNOWN-CMD:     Input không rõ → hiển thị lại HELP, KHÔNG tự đoán action
 DEFERRED-WARN:   Deferred > 40% tổng modules → cảnh báo rõ trong completion report
-NO-BLOCK:        Deferred modules không block transition sang /mcv3:requirements
+FLAG-DONT-DELETE: FLAG US không xóa US — giữ reference, chờ BA rewrite hoặc BỎ US
+NO-BLOCK:        Deferred + Flagged US không block transition sang /mcv3:tech-design
+NO-REQUIREMENTS: Sau BA Review đầy đủ → KHÔNG cần /mcv3:requirements
+                 /mcv3:requirements chỉ dùng khi URS chưa tồn tại (dự án từ đầu)
 BACK-ALLOWED:    User có thể BACK để sửa lại module vừa review (re-open và re-save)
+COMPAT-THÊM:     "THÊM US-xxx: ..." (không có từ AC) vẫn parse được như ADD_AC (backward-compat)
 ```
 
 ---
