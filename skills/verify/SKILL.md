@@ -119,6 +119,23 @@ Partial verify steps:
 
 ---
 
+## Phase 0 — Pre-Skill Safety Checkpoint
+
+Trước khi bắt đầu, tự động lưu checkpoint để có thể resume nếu bị interrupt:
+
+```
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "pre-verify",
+  sessionSummary: "Chuẩn bị chạy /mcv3:verify toàn bộ dự án",
+  nextActions: ["Tiếp tục /mcv3:verify — Phase 1: URS Verification"]
+})
+```
+
+→ "✅ Safety checkpoint đã lưu. Bắt đầu cross-verify traceability..."
+
+---
+
 ## Phase 1 — URS Verification (P1 Verify)
 
 ### 1a. Load và kiểm tra từng URS

@@ -76,6 +76,25 @@ Nếu không rõ → ghi DECISION + dùng Scope phù hợp nhất từ context
 
 ---
 
+## Phase 0 — Pre-Skill Safety Checkpoint
+
+Trước khi bắt đầu, tự động lưu checkpoint để có thể resume nếu bị interrupt:
+
+```
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "pre-migrate",
+  sessionSummary: "Chuẩn bị chạy /mcv3:migrate — import tài liệu cũ vào MCV3",
+  nextActions: ["Tiếp tục /mcv3:migrate — Phase 1: Project Initialization"]
+})
+```
+
+→ "✅ Safety checkpoint đã lưu. Bắt đầu migration..."
+
+> **Lưu ý:** Checkpoint này phục vụ **session resume**. Safety snapshot (Phase 1, SAFETY-FIRST) phục vụ **rollback data** — snapshot vẫn bắt buộc trước khi import bất kỳ document nào.
+
+---
+
 ## Phase 1 — Project Initialization
 
 > **⚠️ SAFETY-FIRST:** Migration luôn tạo snapshot trước khi import để có thể rollback nếu cần. Đây là bước bắt buộc, không bỏ qua.

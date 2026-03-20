@@ -77,6 +77,23 @@ TRƯỚC KHI BẮT ĐẦU:
 
 ---
 
+## Phase 0 — Pre-Skill Safety Checkpoint
+
+Trước khi bắt đầu phỏng vấn, tự động lưu checkpoint để có thể resume nếu bị interrupt:
+
+```
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "pre-discovery",
+  sessionSummary: "Chuẩn bị chạy /mcv3:discovery — bắt đầu phỏng vấn khám phá dự án",
+  nextActions: ["Tiếp tục /mcv3:discovery — Phase 1: Phỏng vấn Adaptive"]
+})
+```
+
+→ "✅ Safety checkpoint đã lưu. Bắt đầu phỏng vấn..."
+
+---
+
 ## Phase 1 — Phỏng vấn Adaptive
 
 ### Bước 1: Khởi động conversation

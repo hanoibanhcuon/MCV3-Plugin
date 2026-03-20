@@ -68,6 +68,25 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 
 ---
 
+## Phase 0 — Pre-Skill Safety Checkpoint
+
+Trước khi bắt đầu, tự động lưu checkpoint để có thể resume nếu bị interrupt:
+
+```
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "pre-change-manager",
+  sessionSummary: "Chuẩn bị chạy /mcv3:change-manager — quản lý requirements change",
+  nextActions: ["Tiếp tục /mcv3:change-manager — Phase 1: Change Intake"]
+})
+```
+
+→ "✅ Safety checkpoint đã lưu. Bắt đầu change intake..."
+
+> **Lưu ý:** Checkpoint này phục vụ **session resume**. Safety snapshot (Phase 3) phục vụ **rollback data** — cả hai cần thiết, SNAPSHOT-FIRST vẫn bắt buộc trước khi sửa documents.
+
+---
+
 ## Phase 1 — Change Intake
 
 ### 1a. Thu thập thông tin thay đổi

@@ -85,6 +85,25 @@ Tên dự án + domain: lấy từ message của user hoặc từ project name t
 
 ---
 
+## Phase 0 — Pre-Skill Safety Checkpoint
+
+Trước khi bắt đầu scan, tự động lưu checkpoint để có thể resume nếu bị interrupt:
+
+```
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "pre-assess",
+  sessionSummary: "Chuẩn bị chạy /mcv3:assess — đánh giá dự án in-progress",
+  nextActions: ["Tiếp tục /mcv3:assess — Phase 1: Project Structure Discovery"]
+})
+```
+
+→ "✅ Safety checkpoint đã lưu. Bắt đầu assessment..."
+
+> **Lưu ý:** Checkpoint này phục vụ **session resume**. Snapshot (step 6d, cuối assess) phục vụ **rollback data** — cả hai cần thiết, không thay thế nhau.
+
+---
+
 ## Phase 1 — Project Structure Discovery
 
 ### 1a. Scan codebase (nếu có code)

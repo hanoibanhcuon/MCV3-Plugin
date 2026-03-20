@@ -131,6 +131,23 @@ Multi-system với auth  → Load thêm AUTH-SPEC-TEMPLATE.md
 
 ---
 
+## Phase 0 — Pre-Skill Safety Checkpoint
+
+Trước khi bắt đầu, tự động lưu checkpoint để có thể resume nếu bị interrupt:
+
+```
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "pre-tech-design-{MOD}",
+  sessionSummary: "Chuẩn bị chạy /mcv3:tech-design cho module {MOD}",
+  nextActions: ["Tiếp tục /mcv3:tech-design cho module {MOD} — Phase 1: Context Loading & Tech Stack"]
+})
+```
+
+→ "✅ Safety checkpoint đã lưu. Bắt đầu thiết kế kỹ thuật..."
+
+---
+
 ## Phase 1 — Context Loading & Tech Stack Confirmation
 
 ### 1a. Load URS đầy đủ

@@ -161,6 +161,23 @@ Nếu project là Firmware/Embedded (phát hiện từ MODSPEC hoặc PROJECT-OV
 
 ---
 
+## Phase 0 — Pre-Skill Safety Checkpoint
+
+Trước khi bắt đầu, tự động lưu checkpoint để có thể resume nếu bị interrupt:
+
+```
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "pre-code-gen-{MOD}",
+  sessionSummary: "Chuẩn bị chạy /mcv3:code-gen cho module {MOD}",
+  nextActions: ["Tiếp tục /mcv3:code-gen cho module {MOD} — Phase 1: Context Loading & Tech Stack"]
+})
+```
+
+→ "✅ Safety checkpoint đã lưu. Bắt đầu sinh code..."
+
+---
+
 ## Phase 1 — Context Loading & Tech Stack
 
 ### 1a. Load MODSPEC đầy đủ

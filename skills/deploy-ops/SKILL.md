@@ -106,6 +106,23 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 
 ---
 
+## Phase 0 — Pre-Skill Safety Checkpoint
+
+Trước khi bắt đầu, tự động lưu checkpoint để có thể resume nếu bị interrupt:
+
+```
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "pre-deploy-ops",
+  sessionSummary: "Chuẩn bị chạy /mcv3:deploy-ops — tạo Deploy Plan, Rollback, Monitoring",
+  nextActions: ["Tiếp tục /mcv3:deploy-ops — Phase 1: Context Loading"]
+})
+```
+
+→ "✅ Safety checkpoint đã lưu. Bắt đầu tạo Deploy docs..."
+
+---
+
 ## Phase 1 — Context Loading
 
 ### 1a. Load thông tin cần thiết

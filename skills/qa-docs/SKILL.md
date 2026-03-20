@@ -136,6 +136,23 @@ Báo cáo sau khi tạo xong:
 
 ---
 
+## Phase 0 — Pre-Skill Safety Checkpoint
+
+Trước khi bắt đầu, tự động lưu checkpoint để có thể resume nếu bị interrupt:
+
+```
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "pre-qa-docs-{MOD}",
+  sessionSummary: "Chuẩn bị chạy /mcv3:qa-docs cho module {MOD}",
+  nextActions: ["Tiếp tục /mcv3:qa-docs cho module {MOD} — Phase 1: Context Loading"]
+})
+```
+
+→ "✅ Safety checkpoint đã lưu. Bắt đầu tạo QA docs..."
+
+---
+
 ## Phase 1 — Context Loading
 
 ### 1a. Load MODSPEC đầy đủ

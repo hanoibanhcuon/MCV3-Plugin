@@ -80,6 +80,23 @@ KIỂM TRA TRƯỚC KHI BẮT ĐẦU:
 
 ---
 
+## Phase 0 — Pre-Skill Safety Checkpoint
+
+Trước khi bắt đầu, tự động lưu checkpoint để có thể resume nếu bị interrupt:
+
+```
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "pre-expert-panel",
+  sessionSummary: "Chuẩn bị chạy /mcv3:expert-panel — triệu tập 3 expert agents phân tích",
+  nextActions: ["Tiếp tục /mcv3:expert-panel — Phase 1: Load Context"]
+})
+```
+
+→ "✅ Safety checkpoint đã lưu. Bắt đầu phân tích chuyên gia..."
+
+---
+
 ## Phase 1 — Load Context
 
 ```

@@ -102,6 +102,25 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 
 ---
 
+## Phase 0 — Pre-Skill Safety Checkpoint
+
+Trước khi bắt đầu, tự động lưu checkpoint để có thể resume nếu bị interrupt:
+
+```
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "pre-evolve-{scope}",
+  sessionSummary: "Chuẩn bị chạy /mcv3:evolve — mở rộng dự án",
+  nextActions: ["Tiếp tục /mcv3:evolve — Phase 1: Evolution Scope Definition"]
+})
+```
+
+→ "✅ Safety checkpoint đã lưu. Bắt đầu evolution planning..."
+
+> **Lưu ý:** Checkpoint này phục vụ **session resume**. Safety snapshot (Phase 3) phục vụ **rollback data** — SNAPSHOT-FIRST vẫn bắt buộc, không bỏ qua ngay cả khi đã có checkpoint.
+
+---
+
 ## Phase 1 — Evolution Scope Definition
 
 ### 1a. Feature Addition (Scope 1)
