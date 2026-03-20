@@ -1,469 +1,300 @@
-# MasterCraft DevKit v3.12.0 (MCV3)
+# MCV3-DevKit — Hướng dẫn sử dụng
 
-> **Claude Code Plugin** — Biến ý tưởng phần mềm thành bộ tài liệu hoàn chỉnh
-
-[![Version](https://img.shields.io/badge/version-3.12.0-blue)](CHANGELOG.md)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![MCP Tools](https://img.shields.io/badge/MCP%20Tools-19-orange)](mcv3-devkit/mcp-servers/project-memory/)
+> **Phiên bản:** 3.12.0 | **Cập nhật:** 2026-03-20
 
 ---
 
-## Giới thiệu
+## MCV3-DevKit là gì?
 
-MCV3 là một **Claude Code Plugin** giúp bạn hệ thống hóa toàn bộ quá trình phát triển phần mềm — từ ý tưởng ban đầu đến code scaffolding sẵn sàng implement.
+**MasterCraft DevKit v3 (MCV3)** là plugin cho Claude Code giúp bạn biến ý tưởng thành phần mềm hoàn chỉnh — từ tài liệu nghiệp vụ, thiết kế kỹ thuật, đến code và kế hoạch triển khai — theo một quy trình chuẩn hóa, tự động.
 
-### Đặc điểm nổi bật
+Thay vì tự mình soạn tài liệu rời rạc, MCV3 dẫn bạn qua **8 bước** có logic rõ ràng: từ vấn đề kinh doanh → yêu cầu phần mềm → thiết kế → code → kiểm tra → triển khai. Mọi thứ đều có thể truy ngược nguồn gốc để kiểm tra tính nhất quán.
 
-- **Formal ID System**: Truy vết từ vấn đề → yêu cầu → thiết kế → code → test
-- **MODSPEC All-in-One**: AI đọc 1 file → code được 1 module hoàn chỉnh
-- **Smart Code-Gen**: Sinh code thông minh — đầy đủ specs → code hoàn chỉnh; mơ hồ → REVIEW markers
-- **Code Quality Assurance**: Verification & Auto-Fix Loop (compile → lint → test → security → coverage)
-- **Multi-System Orchestration**: Build order tự động theo layer model, shared services, integration patterns
-- **Auto-Mode Framework**: Tất cả 15 skills chạy tự động hoàn toàn — DECISION-LOG khi ambiguous, Completion Report khi xong
-- **8 Risk Patterns**: BLOCKING prerequisites, per-module checkpoint, pre-completion gate, traceability register, batch processing
-- **Speed Optimization**: Parallel MCP calls, Parallel Module Mode (2-4 modules đồng thời), cache + dedup
-- **Smart Context Layering**: Quản lý context window hiệu quả cho dự án lớn
-- **Scale Decision Matrix**: Pipeline linh hoạt — Micro (3 phases) đến Enterprise (full 8 phases)
-- **12 Industries**: F&B, Logistics, Retail, SaaS, Healthcare, Fintech, E-Commerce, Real Estate, Manufacturing, Education, HR/HRM, Embedded/IoT
-- **19 MCP Tools**: Từ init đến snapshot, traceability, change management
-- **Pipeline 8 Phase**: Từ Discovery → Deploy, không bỏ sót bước nào
-- **Lifecycle Management**: Change Manager, Evolution, Migration, Assess cho dự án đang chạy
+---
+
+## Dành cho ai?
+
+| Bạn là | MCV3 giúp gì |
+|--------|--------------|
+| **Developer / Tech Lead** | Sinh code, test, API specs từ tài liệu — không tốn thời gian viết boilerplate |
+| **PM / BA** | Tạo User Stories, Business Rules có cấu trúc — dễ trình bày với stakeholder |
+| **Business Owner** | Mô tả ý tưởng bằng ngôn ngữ tự nhiên → nhận bộ tài liệu hoàn chỉnh để bàn giao team |
+| **Thành viên mới** | Dùng `/mcv3:onboard` để hiểu nhanh dự án và quy trình làm việc |
 
 ---
 
 ## Cài đặt
 
-### Mac / Linux / Git Bash (Windows)
+### Cách 1: Từ GitHub Release (dễ nhất)
 
 ```bash
-# 1. Tải plugin về (hoặc clone repo)
-# 2. Chạy installer — cài vào dự án của bạn
-bash scripts/install.sh /path/to/your-project
+# Tải file .plugin từ GitHub Releases, đổi đuôi thành .zip, giải nén:
+unzip mcv3-devkit-3.11.2.zip
+cd mcv3-devkit-3.11.2
+bash scripts/install.sh /đường/dẫn/dự-án-của-bạn
 ```
 
-Installer tự động:
-- Copy plugin files → `mcv3-devkit/`
-- Tạo `.claude/CLAUDE.md` với đầy đủ MCV3 instructions
-- Cài slash commands → `.claude/commands/mcv3/`
-- Cấu hình `.mcp.json` và `.claude/settings.json`
-- Build MCP Server (nếu cần)
+### Cách 2: Từ Git Clone
 
-### Windows (PowerShell)
+```bash
+git clone https://github.com/YOUR_ORG/mcv3-plugin.git
+cd mcv3-plugin
+bash scripts/install.sh /đường/dẫn/dự-án-của-bạn
+```
+
+### Cách 3: Windows (PowerShell)
 
 ```powershell
-.\scripts\install.ps1 C:\path\to\your-project
+Expand-Archive .\mcv3-devkit-3.11.2.zip -DestinationPath .
+.\scripts\install.ps1 -ProjectPath "C:\đường\dẫn\dự-án"
 ```
 
-### Verify
-
-```bash
-bash mcv3-devkit/scripts/verify-install.sh
-```
-
-Xem chi tiết: [INSTALL.md](INSTALL.md)
+Sau khi cài, mở thư mục dự án trong Claude Code là sẵn sàng dùng.
 
 ---
 
-## Pipeline 8 Phase
+## Sử dụng MCV3 cho dự án MỚI
 
+Bạn mô tả ý tưởng → MCV3 tự động phỏng vấn, tạo tài liệu, thiết kế, sinh code, kiểm tra, và lập kế hoạch triển khai. Bạn chỉ cần review kết quả và xác nhận hoặc yêu cầu thay đổi.
+
+**Lệnh bắt đầu:** `/mcv3:discovery`
+
+**Ví dụ prompt:**
 ```
-Idea → Discovery → Expert → BizDocs → Requirements → Design →
-QA → CodeGen → Verify → Deploy
+Tôi muốn làm app quản lý nhà hàng. Cần: quản lý order, quản lý bàn,
+quản lý kho nguyên liệu, báo cáo doanh thu. Có app cho nhân viên phục vụ
+và dashboard cho quản lý.
 ```
 
-| Phase | Lệnh | Output chính |
-|-------|------|-------------|
-| 0. Init | `mc_init_project(...)` | `.mc-data/` structure |
-| 1. Discovery | `/mcv3:discovery` | PROJECT-OVERVIEW.md |
-| 2. Expert Analysis | `/mcv3:expert-panel` | EXPERT-LOG.md |
-| 3. Business Docs | `/mcv3:biz-docs` | BIZ-POLICY, PROCESS, DATA-DICT |
-| 4. Requirements | `/mcv3:requirements` | URS-{MOD}.md (US, FT, AC, NFR) |
-| 5. Tech Design | `/mcv3:tech-design` | MODSPEC-{MOD}.md (API, DB, ADR) |
-| 6. QA & Docs | `/mcv3:qa-docs` | TEST-{MOD}.md, USER/ADMIN GUIDE |
-| 7. Code Gen | `/mcv3:code-gen` | Smart code-gen + Verification Loop (compile/lint/test/security) |
-| 8a. Verify | `/mcv3:verify` | Traceability matrix + report |
-| 8b. Deploy-Ops | `/mcv3:deploy-ops` | DEPLOY-OPS.md + checklist |
+MCV3 sẽ hỏi thêm vài câu để làm rõ, rồi tự chạy qua các bước cần thiết.
 
 ---
 
-## Lifecycle Skills (Sprint 4)
+### Dự án nhỏ (landing page, portfolio, tool nội bộ đơn giản)
 
-Dùng sau khi project đã ở Phase 5+:
+MCV3 tự nhận ra dự án nhỏ và **bỏ qua các bước không cần thiết** — chỉ làm: khám phá → thiết kế → code. Không cần bạn cấu hình gì thêm.
 
-| Lệnh | Mục đích |
-|------|---------|
-| `/mcv3:status` | Dashboard tiến độ dự án (tất cả phases/systems) |
-| `/mcv3:change-manager` | Quản lý requirements changes với impact analysis |
-| `/mcv3:evolve` | Thêm features/modules/systems mới vào dự án |
-| `/mcv3:migrate` | Import tài liệu cũ vào MCV3 format (incl. Scope 6: Ongoing) |
-| `/mcv3:onboard` | Hướng dẫn user mới sử dụng plugin |
-| `/mcv3:assess` | Đánh giá dự án in-progress, tìm gaps, tạo remediation plan |
+**Ví dụ prompt:**
+```
+Tôi cần làm landing page giới thiệu sản phẩm mới của công ty, có form
+đăng ký nhận thông tin và kết nối Google Analytics.
+```
 
 ---
 
-## Working with Existing Projects (Phase A)
+### Dự án lớn (ERP, nhiều hệ thống, nhiều người dùng)
 
-> **Bạn có dự án đang phát triển dở?** — MCV3 hỗ trợ tiếp nhận dự án in-progress.
+MCV3 chạy đầy đủ 8 bước, xử lý từng hệ thống theo đúng thứ tự dependency.
 
-### Vấn đề phổ biến
+**Ví dụ prompt:**
+```
+Dự án ERP cho công ty logistics. Cần các module: quản lý kho, quản lý đơn hàng,
+quản lý vận chuyển, kế toán. Có web admin và app mobile cho tài xế.
+```
 
-- Codebase đang chạy nhưng không có documentation
-- Docs cũ (Word/PDF/Confluence) không sync với code
-- Muốn biết dự án đang "thiếu" gì so với MCV3 pipeline
-- Cần onboard vào MCV3 mà không muốn restart từ đầu
+---
 
-### Skill `/mcv3:assess`
+## Sử dụng MCV3 cho dự án ĐANG LÀM DỞ
 
-Skill đánh giá chuyên biệt cho dự án in-progress:
+Nhận bàn giao code/docs cũ, hoặc dự án đã code một phần nhưng tài liệu chưa đồng bộ? MCV3 đánh giá hiện trạng, tìm ra thiếu sót, và đề xuất kế hoạch bổ sung.
 
+**Lệnh bắt đầu:** `/mcv3:assess`
+
+**Ví dụ prompt:**
+```
+Dự án ERP đang code được 60%, có docs Word cũ từ năm ngoái, code và docs
+chưa đồng bộ. Cần đánh giá và tiếp tục phát triển.
+```
+
+MCV3 sẽ: scan code + docs hiện có → phân tích gap → đề xuất bổ sung theo thứ tự ưu tiên → tự bổ sung khi bạn đồng ý.
+
+---
+
+## Workflow tổng quan
+
+```mermaid
+graph TD
+    START{Ban co du an nao} -->|Du an MOI| NEW_START
+    START -->|Du an CU| OLD_START
+
+    subgraph WF1[WORKFLOW 1 - DU AN MOI]
+    NEW_START[Mo ta y tuong] --> N1[mcv3 discovery]
+    N1 --> N2[mcv3 expert-panel]
+    N2 --> N3[mcv3 biz-docs]
+    N3 --> N4[mcv3 requirements]
+    N4 --> N5[mcv3 tech-design]
+    N5 --> N6[mcv3 qa-docs]
+    N6 --> N7[mcv3 code-gen]
+    N7 --> N8[mcv3 verify]
+    N8 --> N9[mcv3 deploy-ops]
+    N9 --> DONE1[San sang trien khai]
+    end
+
+    subgraph WF2[WORKFLOW 2 - DU AN CU]
+    OLD_START[Mo ta du an hien tai] --> O1[mcv3 assess]
+    O1 --> O2{Can import docs cu}
+    O2 -->|Co| O3[mcv3 migrate]
+    O2 -->|Khong| O4[Remediation Plan]
+    O3 --> O4
+    O4 --> O5{Thieu gi}
+    O5 -->|Thieu docs| O6[Chay skill tuong ung]
+    O5 -->|Code lech docs| O7[mcv3 change-manager]
+    O5 -->|Thieu code| O8[mcv3 code-gen]
+    O6 --> O9[mcv3 verify]
+    O7 --> O9
+    O8 --> O9
+    O9 --> O10{Dat muc tieu}
+    O10 -->|Chua| O4
+    O10 -->|Roi| DONE2[Tiep tuc phat trien]
+    end
+
+    style DONE1 fill:#4CAF50,color:#fff
+    style DONE2 fill:#4CAF50,color:#fff
+```
+
+**Tóm tắt:** Dự án MỚI — mô tả ý tưởng → MCV3 tự động đi qua 8 bước → sẵn sàng triển khai (dự án nhỏ tự bỏ bước không cần thiết). Dự án CŨ — assess hiện trạng → tìm gaps → chạy theo Remediation Plan → verify → lặp đến khi đạt mục tiêu.
+
+---
+
+## Các lệnh chính
+
+| Lệnh | Khi nào dùng | Ví dụ prompt |
+|------|-------------|--------------|
+| `/mcv3:discovery` | Bắt đầu dự án mới | "Tôi muốn làm app quản lý bán hàng..." |
+| `/mcv3:assess` | Đánh giá dự án đang làm dở | "Dự án đang code 60%, cần đánh giá..." |
+| `/mcv3:status` | Xem tiến độ dự án hiện tại | "Dự án đang ở giai đoạn nào rồi?" |
+| `/mcv3:expert-panel` | Phân tích chuyên gia sau khám phá | *(chạy tự động sau discovery)* |
+| `/mcv3:biz-docs` | Tạo tài liệu nghiệp vụ | *(chạy tự động sau expert panel)* |
+| `/mcv3:requirements` | Viết yêu cầu phần mềm chi tiết | *(chạy tự động sau biz-docs)* |
+| `/mcv3:tech-design` | Thiết kế kỹ thuật (API, database) | *(chạy tự động sau requirements)* |
+| `/mcv3:qa-docs` | Tạo test cases và hướng dẫn sử dụng | *(chạy tự động sau tech-design)* |
+| `/mcv3:code-gen` | Sinh code từ tài liệu thiết kế | "Sinh code cho module kho hàng" |
+| `/mcv3:verify` | Kiểm tra toàn bộ dự án | "Kiểm tra lại dự án xem có thiếu sót gì không" |
+| `/mcv3:deploy-ops` | Tạo kế hoạch triển khai | "Tạo kế hoạch deploy lên production" |
+| `/mcv3:change-manager` | Quản lý thay đổi yêu cầu | "Stakeholder muốn thay đổi quy trình tính giá" |
+| `/mcv3:evolve` | Thêm tính năng/module mới | "Thêm module HR vào hệ thống ERP" |
+| `/mcv3:migrate` | Import tài liệu cũ vào MCV3 | "Có docs Word cũ, cần chuyển sang MCV3" |
+| `/mcv3:onboard` | Hướng dẫn cho thành viên mới | "Tôi mới vào team, cần hiểu dự án này" |
+
+---
+
+## Cách MCV3 làm việc
+
+- **Chạy tự động** — MCV3 tự chọn thứ tự xử lý, tự quyết định khi gặp tình huống không rõ ràng, không dừng hỏi giữa chừng (ngoại trừ giai đoạn khám phá dự án cần input từ bạn)
+- **Tự tư vấn** — Khi gặp vấn đề phức tạp, MCV3 tham vấn "hội đồng chuyên gia ảo" (domain expert, tech expert, finance expert...) rồi chọn phương án tốt nhất
+- **Báo cáo tóm tắt** — Sau mỗi bước, MCV3 chỉ hiển thị tóm tắt ngắn (tên file đã tạo, quyết định quan trọng). Bạn có thể yêu cầu xem chi tiết bất kỳ file nào
+- **Bạn review** — Đọc tóm tắt → đồng ý tiếp tục, hoặc mô tả thay đổi → MCV3 tự cập nhật
+- **Gợi ý bước tiếp** — Sau mỗi bước MCV3 luôn gợi ý lệnh tiếp theo
+
+---
+
+## 12 Ngành nghề hỗ trợ chuyên sâu
+
+MCV3 hiểu đặc thù từng ngành (quy trình, quy định pháp lý, thuật ngữ chuyên môn):
+
+| Ngành | Đặc thù nổi bật |
+|-------|----------------|
+| F&B | Menu, bếp, giao hàng, POS |
+| Retail / Bán lẻ | POS, kho, omnichannel |
+| Logistics / Xuất nhập khẩu | WMS, TMS, vận tải |
+| E-Commerce | Giỏ hàng, thanh toán, marketplace |
+| Healthcare / Y tế | EMR, BHYT, quy định KCB |
+| Fintech | Core banking, AML, PCI-DSS |
+| SaaS | Subscription, onboarding, churn |
+| Manufacturing | BOM, MRP, ISO 9001 |
+| Real Estate | Quản lý BĐS, Luật Đất đai 2024 |
+| HR / HRM | Bảng lương, BHXH, Bộ Luật LĐ 2019 |
+| Education | LMS, quản lý học sinh, Bộ GD&ĐT |
+| Embedded / IoT | Firmware, MCU, giao thức IoT, smart home/farm |
+
+---
+
+## Lưu ý quan trọng khi sử dụng
+
+1. **Mô tả càng chi tiết → kết quả càng chính xác** — Đừng ngại viết dài, hãy mô tả đầy đủ nghiệp vụ, đối tượng người dùng, và các quy trình hiện tại
+2. **Dự án nhỏ không cần chạy hết tất cả bước** — MCV3 tự điều chỉnh theo quy mô, bạn không cần lo
+3. **MCV3 tự lưu file, bạn chỉ cần review tóm tắt** — Không cần copy-paste nội dung tài liệu
+4. **Khi muốn thay đổi** — Dùng `/mcv3:change-manager` mô tả thay đổi, MCV3 tự cập nhật tất cả tài liệu liên quan và phân tích tác động
+5. **Kiểm tra bất kỳ lúc nào** — `/mcv3:verify` để kiểm tra toàn bộ tính nhất quán của dự án
+6. **Xem tiến độ bất kỳ lúc nào** — `/mcv3:status` để biết dự án đang ở bước nào
+
+---
+
+## Ví dụ prompt thực tế
+
+### Bắt đầu dự án mới
+```
+/mcv3:discovery
+
+Tôi muốn làm ứng dụng quản lý nhà hàng. Cần các tính năng:
+- Quản lý order (gọi món, thêm/sửa/hủy, tách/gộp bill)
+- Quản lý bàn (sơ đồ bàn, trạng thái bàn)
+- Quản lý kho nguyên liệu (nhập kho, xuất kho, cảnh báo tồn kho thấp)
+- Báo cáo doanh thu theo ngày/tháng/món ăn
+Có app cho nhân viên phục vụ (iOS/Android) và web dashboard cho quản lý.
+Quy mô: 1 chi nhánh, khoảng 50 bàn, 20 nhân viên.
+```
+
+### Tiếp tục dự án đang làm dở
 ```
 /mcv3:assess
+
+Dự án ERP cho công ty logistics, đang phát triển được 8 tháng.
+Backend NestJS đã xong khoảng 60%, có docs Word từ năm ngoái nhưng
+code và docs chưa đồng bộ. Cần đánh giá hiện trạng và lên kế hoạch
+hoàn thiện trong 3 tháng tới.
 ```
 
-**Workflow:**
-1. **Project Type Detection** — Phân loại: code-only / docs-only / mixed / production
-2. **Structure Discovery** — Scan codebase → detect systems, modules, tech stack
-3. **Per-System Assessment** — Đánh giá từng system đang ở phase nào trong MCV3
-4. **Gap Analysis** — Phân loại gaps: CRITICAL / WARNING / INFO
-5. **Code-Docs Sync** — So sánh APIs, DB tables, business rules giữa code và docs
-6. **Remediation Roadmap** — Action plan với skill MCV3 tương ứng cho từng gap
-7. **Initialize MCV3** — Tạo .mc-data/ với per-system phases đúng
+### Thêm tính năng mới vào dự án đang chạy
+```
+/mcv3:evolve
 
-**Output:**
-- `_mcv3-work/assessment/PROJECT-MANIFEST.md`
-- `_mcv3-work/assessment/ASSESSMENT-MATRIX.md`
-- `_mcv3-work/assessment/GAP-REPORT.md`
-- `_mcv3-work/assessment/SYNC-REPORT.md` (nếu có code + docs)
-- `_mcv3-work/assessment/REMEDIATION-PLAN.md`
+Thêm module quản lý nhân sự (HR) vào hệ thống ERP hiện tại.
+Cần: chấm công (máy chấm công + app), tính lương, đóng BHXH,
+quản lý nghỉ phép. Kết nối với module kế toán đã có.
+```
 
-### Script: `scan-codebase.sh`
+### Import tài liệu cũ
+```
+/mcv3:migrate
 
-Tự động scan tech stack và cấu trúc code:
+Có file Word "Đặc tả yêu cầu phần mềm v2.3.docx" và "Thiết kế DB.xlsx"
+từ dự án cũ năm 2023. Cần convert vào MCV3 để tiếp tục phát triển.
+```
+
+### Kiểm tra dự án
+```
+/mcv3:verify
+
+Kiểm tra toàn bộ dự án xem có thiếu sót gì không, đặc biệt giữa
+tài liệu yêu cầu và code đã sinh.
+```
+
+### Thay đổi yêu cầu
+```
+/mcv3:change-manager
+
+Stakeholder muốn thay đổi quy trình tính giá vận chuyển:
+Trước đây tính theo km, nay muốn tính theo vùng (4 vùng địa lý).
+Cần phân tích tác động và cập nhật tài liệu liên quan.
+```
+
+---
+
+## Cập nhật MCV3
+
+Khi có phiên bản mới, chạy lại script cài đặt với flag `--update`:
 
 ```bash
-./scripts/scan-codebase.sh [project_root] [output.json]
+bash scripts/install.sh /đường/dẫn/dự-án --update
 ```
 
-Output `manifest.json` với:
-- Tech stack (language, framework, ORM, testing)
-- Systems và modules detected
-- API endpoint count
-- Database tables và migration count
-- Test file count
-- MCV3 REQ-ID comment status
-
-### Per-System Phase Tracking
-
-MCV3 hỗ trợ mỗi system có `currentPhase` riêng:
-
-```json
-{
-  "systems": [
-    { "code": "ERP", "currentPhase": "phase5-design" },
-    { "code": "WEB", "currentPhase": "phase3-bizdocs" }
-  ]
-}
-```
-
-`mc_status` hiển thị phase per system, giúp track tiến độ trong dự án phức tạp.
+Dữ liệu dự án trong `.mc-data/` giữ nguyên, không bị ảnh hưởng khi update plugin.
 
 ---
 
-## Formal ID System
+## Hỗ trợ
 
-Mọi tài liệu dùng formal IDs để traceability end-to-end:
-
-| Prefix | Loại | Ví dụ |
-|--------|------|-------|
-| `BR-{DOM}-NNN` | Business Rule | BR-INV-001 |
-| `US-{MOD}-NNN` | User Story | US-INV-001 |
-| `UC-{MOD}-NNN-XX` | Use Case | UC-INV-001-01 |
-| `AC-{MOD}-NNN-XX` | Acceptance Criteria | AC-INV-001-01 |
-| `FT-{MOD}-NNN` | Feature | FT-INV-001 |
-| `TC-{MOD}-NNN` | Test Case | TC-INV-001 |
-| `TBL-{SYS}-NNN` | Database Table | TBL-ERP-001 |
-| `API-{SYS}-NNN` | API Endpoint | API-ERP-001 |
-| `NFR-NNN` | Non-Functional Req | NFR-001 |
-
-Traceability chain: `PROB → BR → US → FT → AC → API/TBL → Code → TC`
-
----
-
-## Smart Context Layering
-
-Tiết kiệm context window với 4 layers:
-
-```
-mc_load({ filePath: "...", layer: 0 })  →  ~500B  Key facts (orientation)
-mc_load({ filePath: "...", layer: 1 })  →  ~200B  Dependency map only
-mc_load({ filePath: "...", layer: 2 })  →  ~5KB   Main sections
-mc_load({ filePath: "...", layer: 3 })  →  Full   All content (default)
-```
-
----
-
-## 19 MCP Tools
-
-### Sprint 0 — Core (5 tools)
-| Tool | Mục đích |
-|------|---------|
-| `mc_init_project` | Khởi tạo dự án, tạo .mc-data/ structure |
-| `mc_save` | Lưu artifact Markdown |
-| `mc_load` | Đọc với Smart Context Layering |
-| `mc_list` | Liệt kê documents |
-| `mc_status` | Dashboard trạng thái |
-
-### Sprint 1 — Session (5 tools)
-| Tool | Mục đích |
-|------|---------|
-| `mc_checkpoint` | Lưu checkpoint session |
-| `mc_resume` | Resume từ checkpoint |
-| `mc_validate` | Validate document format/completeness |
-| `mc_export` | Export bundle/summary/phase/index |
-| `mc_search` | Full-text search trong project memory |
-
-### Sprint 2 — Advanced (9 tools)
-| Tool | Mục đích |
-|------|---------|
-| `mc_snapshot` | Snapshot đầy đủ project state |
-| `mc_rollback` | Rollback về snapshot (với safety snapshot) |
-| `mc_impact_analysis` | Phân tích impact khi thay đổi element |
-| `mc_traceability` | Quản lý traceability matrix |
-| `mc_dependency` | Quản lý document dependencies |
-| `mc_compare` | So sánh 2 versions document |
-| `mc_merge` | Merge content vào document |
-| `mc_changelog` | Structured changelog management |
-| `mc_summary` | Tạo summary project/phase/module |
-
----
-
-## Cấu trúc Plugin
-
-```
-mcv3-devkit/
-├── .claude-plugin/plugin.json     # Plugin manifest (v3.12.0)
-├── .mcp.json                      # MCP server config
-├── settings.json                  # Permissions & env vars
-├── CLAUDE.md                      # Hướng dẫn cho Claude
-├── CHANGELOG.md                   # Lịch sử thay đổi
-├── skills/                        # 15 skills
-│   ├── discovery/                 # Phase 1
-│   ├── expert-panel/              # Phase 2
-│   ├── biz-docs/                  # Phase 3
-│   ├── requirements/              # Phase 4
-│   ├── tech-design/               # Phase 5
-│   ├── qa-docs/                   # Phase 6
-│   ├── code-gen/                  # Phase 7
-│   ├── verify/                    # Phase 8a
-│   ├── deploy-ops/                # Phase 8b
-│   ├── navigator/                 # Status dashboard
-│   ├── change-manager/            # Lifecycle: Change management
-│   ├── onboard/                   # Lifecycle: User onboarding
-│   ├── evolve/                    # Lifecycle: Feature evolution
-│   ├── migrate/                   # Lifecycle: Document migration
-│   └── assess/                    # Phase A: Ongoing project assessment
-├── agents/                        # 10 agents
-│   ├── orchestrator.md
-│   ├── doc-writer.md
-│   ├── domain-expert.md + 12 industry refs (F&B, Logistics, Retail, SaaS, Healthcare, Fintech, E-Commerce, Real Estate, Manufacturing, Education, HR/HRM, Embedded/IoT)
-│   ├── tech-expert.md
-│   ├── ux-expert.md
-│   ├── finance-expert.md + 3 refs
-│   ├── legal-compliance-expert.md
-│   ├── strategy-expert.md + 3 refs
-│   ├── verifier.md
-│   └── code-gen.md
-├── mcp-servers/
-│   └── project-memory/            # TypeScript MCP Server (19 tools)
-│       ├── src/
-│       │   ├── index.ts           # Server entry point
-│       │   ├── types.ts           # TypeScript types
-│       │   ├── tools/             # 19 tool implementations
-│       │   └── utils/             # file-io, id-system, template-engine
-│       ├── package.json
-│       └── tsconfig.json
-├── templates/                     # 31 document templates (tổ chức theo phase)
-│   ├── p0-init/                   # Phase 0: MASTER-INDEX, key-facts
-│   ├── p1-discovery/              # Phase 1: PROJECT-OVERVIEW
-│   ├── p2-expert/                 # Phase 2: EXPERT-LOG, PROJECT-ARCHITECTURE
-│   ├── p3-biz-docs/               # Phase 3: BIZ-POLICY, PROCESS, DATA-DICTIONARY
-│   ├── p4-requirements/           # Phase 4: SYSTEM-INDEX, URS
-│   ├── p5-tech-design/            # Phase 5: MODSPEC, ARCHITECTURE, DATA-MODEL, SERVICE-SPEC
-│   ├── p6-qa-docs/                # Phase 6: TEST, USER-GUIDE, ADMIN-GUIDE
-│   ├── p8a-verify/                # Phase 8a: VERIFY-P1/P2/P3, VERIFY-CROSS, VERIFY-INTEGRATION
-│   └── p8b-deploy-ops/            # Phase 8b: DEPLOY-OPS
-├── scripts/                       # 19 scripts (install, update, hooks, validation)
-└── hooks/                         # hooks.json + script references
-```
-
----
-
-## Cấu trúc Project Data (.mc-data/)
-
-Khi dùng MCV3 trên một dự án, dữ liệu lưu tại `.mc-data/`:
-
-```
-.mc-data/
-└── projects/
-    └── {project-slug}/
-        ├── _config.json              # Cấu hình project
-        ├── MASTER-INDEX.md           # Bản đồ toàn bộ tài liệu
-        ├── _changelog.md             # Lịch sử thay đổi
-        ├── _PROJECT/                 # Tài liệu cấp dự án
-        │   ├── PROJECT-OVERVIEW.md
-        │   ├── EXPERT-LOG.md
-        │   ├── DATA-DICTIONARY.md
-        │   ├── BIZ-POLICY/
-        │   ├── PROCESS/
-        │   ├── USER-GUIDE.md
-        │   ├── ADMIN-GUIDE.md
-        │   ├── DEPLOY-OPS.md
-        │   └── EVOLUTION-LOG.md      # Sprint 4: evolution history
-        ├── {SYSTEM-CODE}/
-        │   ├── P1-REQUIREMENTS/      # URS files
-        │   ├── P2-DESIGN/            # MODSPEC files
-        │   └── P3-QA-DOCS/           # TEST files
-        ├── _VERIFY-CROSS/            # Verification docs
-        └── _mcv3-work/               # Working files
-            ├── checkpoints/
-            ├── snapshots/
-            ├── change-log/           # Sprint 4: CHG records
-            ├── evolution/            # Sprint 4: EVOL plans
-            └── migration/            # Sprint 4: migration reports
-```
-
----
-
-## Agents
-
-| Agent | Dùng khi |
-|-------|---------|
-| `orchestrator` | Điều phối chung, multi-system build order |
-| `doc-writer` | Viết tài liệu MCV3 format |
-| `domain-expert` | Phân tích nghiệp vụ (12 industries) |
-| `tech-expert` | Tư vấn kỹ thuật, architecture |
-| `ux-expert` | UX/UI design |
-| `finance-expert` | Tài chính, pricing, ROI |
-| `legal-compliance-expert` | Pháp lý, compliance |
-| `strategy-expert` | Chiến lược, GTM, KPIs |
-| `verifier` | Kiểm tra document quality |
-| `code-gen` | Generate code + Verification Loop |
-
----
-
-## Hooks
-
-| Hook | Trigger | Mục đích |
-|------|---------|---------|
-| `SessionStart` | Bắt đầu session | Auto-load project context |
-| `SessionStop` | Kết thúc session | Auto-save checkpoint |
-| `PrePhaseTransition` | Chuyển phase | Validate documents đầy đủ |
-| `PostPhaseCompletion` | Xong phase | Auto-snapshot milestone |
-| `PreRequirementsGeneration` | Trước /mcv3:requirements | Check BizDocs ready |
-| `PreTechDesign` | Trước /mcv3:tech-design | Check URS ready |
-| `PreQADocs` | Trước /mcv3:qa-docs | Check MODSPEC ready |
-| `PreCodeGen` | Trước /mcv3:code-gen | Check test coverage |
-| `PreVerify` | Trước /mcv3:verify | Check code có REQ-IDs |
-| `PreDeployOps` | Trước /mcv3:deploy-ops | Block nếu not READY |
-| `PreChangeManager` | Trước /mcv3:change-manager | Check lifecycle prerequisites |
-| `PreEvolve` | Trước /mcv3:evolve | Check lifecycle prerequisites |
-| `PreMigrate` | Trước /mcv3:migrate | Check lifecycle prerequisites |
-| `PreAssess` | Trước /mcv3:assess | Check lifecycle prerequisites |
-
----
-
-## Scripts
-
-```bash
-# Validate test coverage (Phase 6 → 7)
-./scripts/validate-test-coverage.sh <project_slug> [system] [module]
-
-# Generate traceability report (Phase 8)
-./scripts/generate-traceability-report.sh <project_slug> [output_file]
-
-# Validate phase transition
-./scripts/validate-phase-transition.sh
-
-# Auto-checkpoint (gọi bởi SessionStop hook)
-./scripts/auto-checkpoint.sh
-
-# Auto-snapshot milestone (gọi bởi PostPhaseCompletion hook)
-./scripts/auto-snapshot-milestone.sh
-
-# Load project context (gọi bởi SessionStart hook)
-./scripts/load-project-context.sh
-
-# Sprint 4: Validate trước lifecycle skills (change-manager, evolve, migrate, assess)
-./scripts/check-lifecycle-prerequisites.sh <skill> <project_slug>
-
-# Phase A: Quét codebase để hỗ trợ /mcv3:assess
-./scripts/scan-codebase.sh [project_root] [output.json]
-```
-
----
-
-## Industry Support
-
-Domain Expert agent có knowledge base cho 12 ngành:
-
-| Industry | Knowledge Base | Trọng tâm |
-|----------|---------------|---------|
-| F&B | industry-fnb.md | Menu, kitchen ops, delivery |
-| Logistics | industry-logistics.md | WMS, TMS, last-mile |
-| Retail | industry-retail.md | POS, inventory, omnichannel |
-| SaaS | industry-saas.md | Subscription, onboarding, churn |
-| Healthcare | industry-healthcare.md | EMR, HIS, BHYT, KCB law |
-| Fintech | industry-fintech.md | Core banking, AML, PCI-DSS |
-| E-Commerce | industry-ecommerce.md | Cart, checkout, marketplace |
-| **Real Estate** | industry-realestate.md | BĐS, CRM, commission, Luật Đất đai 2024 |
-| **Manufacturing** | industry-manufacturing.md | BOM, MRP, QC, ISO 9001, C/O |
-| **Education** | industry-education.md | LMS, quản lý học sinh, Bộ GD&ĐT |
-| **HR/HRM** | industry-hr.md | Payroll, BHXH, PIT, Bộ Luật LĐ 2019 |
-| **Embedded/IoT** | industry-embedded.md | MCU platforms, firmware patterns, IoT protocols |
-
----
-
-## Quick Start
-
-```
-# Lần đầu dùng MCV3:
-/mcv3:onboard          → Tutorial tùy chỉnh theo loại user bạn là
-
-# Bắt đầu dự án mới:
-Nói với Claude: "Tạo dự án mới tên X, ngành Y"
-/mcv3:discovery        → Bắt đầu pipeline (discovery tự recommend scale phù hợp)
-
-# Dự án đang chạy:
-/mcv3:status           → Xem tiến độ hiện tại (per system)
-/mcv3:change-manager   → Quản lý requirements changes
-/mcv3:evolve           → Thêm features mới
-
-# Import tài liệu cũ:
-/mcv3:migrate          → Convert từ Word/Confluence/code
-
-# Dự án in-progress (code hoặc docs cũ, chưa đồng bộ):
-/mcv3:assess           → Đánh giá toàn diện, tìm gaps, nhận remediation plan
-```
-
----
-
-## Tài liệu kỹ thuật
-
-- [INSTALL.md](INSTALL.md) — Hướng dẫn cài đặt đầy đủ (update, uninstall, troubleshoot)
-- [CHANGELOG.md](CHANGELOG.md) — Lịch sử thay đổi
-- [CLAUDE.md](CLAUDE.md) — Hướng dẫn cho Claude (MCP tools, workflow, ID system)
-
----
-
-## Contributing
-
-Bug reports, feature requests, và pull requests đều được chào đón!
-
-- [Báo cáo bug / Đề xuất tính năng](https://github.com/username/mcv3-devkit/issues)
-- [Hướng dẫn đóng góp](CONTRIBUTING.md)
-
----
-
-## License
-
-MIT — Xem [LICENSE](LICENSE) để biết chi tiết.
+- **GitHub Issues:** [github.com/YOUR_ORG/mcv3-plugin/issues](https://github.com/YOUR_ORG/mcv3-plugin/issues)
+- **Báo lỗi:** Mô tả lệnh đã chạy, tên dự án (slug), và lỗi gặp phải
+- **Đóng góp ý kiến:** Tạo issue với label `feedback`
