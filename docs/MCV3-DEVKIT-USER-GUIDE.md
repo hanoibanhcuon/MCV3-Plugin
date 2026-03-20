@@ -1,6 +1,6 @@
 # MCV3-DevKit — Hướng dẫn sử dụng
 
-> **Phiên bản:** 3.11.2 | **Cập nhật:** 2026-03-20
+> **Phiên bản:** 3.12.0 | **Cập nhật:** 2026-03-20
 
 ---
 
