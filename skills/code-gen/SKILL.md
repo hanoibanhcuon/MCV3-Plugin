@@ -80,13 +80,25 @@ References:
 - Nếu vẫn fail → báo user: "⚠️ Không thể lưu/đọc [file]. Kiểm tra MCP server còn chạy không."
 - Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
 
+**Documents từ phases trước thiếu (RISK-008 — BLOCKING vs WARNING):**
+
+| Loại file thiếu | Phân loại | Hành động bắt buộc |
+|-----------------|-----------|---------------------|
+| MODSPEC-{MOD}.md | ❌ BLOCKING | DỪNG — không thể gen code. Chạy `/mcv3:tech-design` |
+| TEST-{MOD}.md | ❌ BLOCKING | DỪNG — không thể gen real tests. Chạy `/mcv3:qa-docs` |
+| PROJECT-OVERVIEW.md (tech stack) | ⚠️ WARNING | Tự chọn default tech stack — ghi DECISION |
+| PROJECT-ARCHITECTURE.md | ⚠️ WARNING | Bỏ qua convention check — tiếp tục với defaults |
+
+**Nguyên tắc phân loại:**
+- **BLOCKING** = file chứa specs cần thiết để gen code đúng → DỪNG ngay, báo user file nào thiếu + skill nào để tạo
+- **WARNING** = file convention/context → tiếp tục với defaults, ghi DECISION
+
 **MODSPEC chưa có:**
 - Báo user: "Chưa có MODSPEC cho module này → Chạy /mcv3:tech-design trước."
 
 **TEST file chưa có:**
-- Tiếp tục generate code nhưng không có real test assertions từ TC specs
-- Sinh test stubs với `// PENDING: Cần TEST-{MOD}.md để tạo real assertions`
-- Nhắc user: "Nên chạy /mcv3:qa-docs trước để có test specs tốt hơn."
+- ❌ BLOCKING: DỪNG — không thể generate real test assertions
+- Báo user: "Chưa có TEST-{MOD}.md. Chạy /mcv3:qa-docs trước để có test specs."
 
 **Verification Loop step thất bại liên tục (>3 retries):**
 - Dừng auto-fix, báo user cụ thể lỗi gì
@@ -129,11 +141,16 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
    - MODSPEC available → dependency order (shared/auth trước, business logic sau)
    - mc_checkpoint trước khi bắt đầu generate (pre-codegen checkpoint)
    - Tự bắt đầu generate — không hỏi user confirm
+
+6. [MANDATORY] Scale Detection — Đếm tổng số MODSPEC files:
+   - Nếu ≥ 5 modules → CHẾ ĐỘ LARGE PROJECT (xem Batch Mode ở Phase 0 Safety Checkpoint)
+     → Ghi log: "Large project: {N} modules detected — kích hoạt Batch Mode"
+   - Nếu < 5 modules → Chế độ Standard, tiếp tục bình thường
 ```
 
 **Nếu thiếu MODSPEC:**
 ```
-⚠️ Chưa có MODSPEC cho module này.
+⛔ BLOCKING — Chưa có MODSPEC cho module này.
    Hãy chạy /mcv3:tech-design trước.
 ```
 
@@ -176,6 +193,33 @@ mc_checkpoint({
 
 → "✅ Safety checkpoint đã lưu. Bắt đầu sinh code..."
 
+**Large project batch processing (RISK-006) — áp dụng khi ≥5 modules:**
+```
+// Phát hiện large project: mc_list({ subPath: "{SYSTEM}/P2-DESIGN" }) → đếm MODSPEC files
+// Nếu ≥5 MODSPEC files → kích hoạt Batch Mode:
+
+1. Lưu BATCH CHECKPOINT trước Phase 1:
+   mc_checkpoint({
+     label: "pre-code-gen-batch",
+     sessionSummary: "Large project: {N} modules cần code gen. Batch mode ON.",
+     nextActions: ["Batch 1: Layer 0 (Auth, Shared) + {MOD1}"]
+   })
+
+2. Chia modules thành batches theo Multi-System Build Order:
+   Batch 1: Layer 0 (Auth + Infrastructure)
+   Batch 2: Layer 1 (Master data modules)
+   Batch 3: Layer 2 (Business services)
+   Batch 4+: Layer 3-4 (Integration, Frontend)
+
+3. Per-module checkpoint sau mỗi module (BẮT BUỘC):
+   mc_checkpoint({ label: "code-gen-{MOD}-complete", ... })
+
+4. Batch checkpoint sau mỗi batch:
+   mc_checkpoint({ label: "code-gen-batch-{N}-complete", ... })
+
+5. KHÔNG load toàn bộ MODSPEC cùng lúc — chỉ load MODSPEC của module đang generate (layer: 3)
+```
+
 ---
 
 ## Phase 1 — Context Loading & Tech Stack
@@ -183,8 +227,16 @@ mc_checkpoint({
 ### 1a. Load MODSPEC đầy đủ
 
 ```
+// BLOCKING — nếu MODSPEC load fail: ❌ DỪNG ngay, báo user chạy /mcv3:tech-design trước
 mc_load({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md", layer: 3 })
+→ Nếu NOT FOUND / ERROR → ❌ DỪNG: "Chưa tìm thấy MODSPEC-{MOD}.md. Chạy /mcv3:tech-design trước."
+
+// BLOCKING — nếu TEST file load fail: ❌ DỪNG, báo user chạy /mcv3:qa-docs trước
+mc_load({ filePath: "{SYSTEM}/P3-QA-DOCS/TEST-{MOD}.md", layer: 2 })
+→ Nếu NOT FOUND / ERROR → ❌ DỪNG: "Chưa tìm thấy TEST-{MOD}.md. Chạy /mcv3:qa-docs trước."
+
 mc_load({ filePath: "_PROJECT/PROJECT-ARCHITECTURE.md", layer: 2 })
+→ Nếu NOT FOUND → ⚠️ WARNING (không dừng): "Thiếu PROJECT-ARCHITECTURE.md, dùng convention defaults"
 ```
 
 ### 1b. Parse từ MODSPEC
@@ -684,6 +736,9 @@ CI/CD:
 SAU KHI gen code cho mỗi module, **BẮT BUỘC** chạy verification loop.
 Không được bỏ qua hoặc rút ngắn dù specs đơn giản.
 
+> **RISK-004 — Pre-Completion Gate:** Phase 9 PHẢI chạy đủ 8 bước TRƯỚC KHI chuyển sang Phase 6 (Save) và trước Completion Report.
+> Compile FAIL hoặc Tests FAIL sau 3 retries → ❌ DỪNG toàn bộ module — không save, không báo cáo complete.
+
 > **Chi tiết đầy đủ:** `references/verification-loop.md`
 > **Security checklist:** `references/security-checklist.md`
 > **Rollback khi cần:** `references/rollback-mechanism.md`
@@ -703,7 +758,7 @@ go build ./...
 
 - PASS → tiếp tục 9.2
 - FAIL → đọc error → tự fix (type mismatch, missing import, syntax) → retry (max 3 lần)
-- Vẫn fail sau 3 lần → đánh dấu `// COMPILE-ERROR: [error]` → ghi vào Final Report
+- Vẫn fail sau 3 lần → ❌ DỪNG module này: đánh dấu `// COMPILE-ERROR: [error]`, ghi vào Final Report, KHÔNG save code, báo user fix thủ công
 
 ### 9.2 Lint Check
 
@@ -725,7 +780,10 @@ pytest -x --tb=short                     # pytest
 
 - ALL PASS → tiếp tục 9.4
 - FAIL → phân tích: lỗi trong code hay test? → fix đúng chỗ → retry (max 3 lần)
-- Vẫn fail → đánh dấu `// TEST-FAIL: [test name] — [lý do]`
+- Vẫn fail sau 3 lần → ❌ DỪNG module này: đánh dấu `// TEST-FAIL: [test name] — [lý do]`, ghi vào Final Report, KHÔNG save code, báo user fix thủ công
+  // RISK-007: Phân loại kết quả test:
+  // - Test fail do assertion sai → BLOCKING (fix code)
+  // - Test fail do mock/fixture sai → WARNING (fix test setup, ghi DECISION)
 
 ### 9.4 Security Scan
 
@@ -809,19 +867,26 @@ Nếu có FAIL không tự fix được → liệt kê rõ ràng + đề xuất 
 ## Phase 6 — Save & Traceability
 
 ```
+// CHỈ chạy Phase 6 khi Phase 9 (Verification Loop) đã PASS — RISK-004
+
 1. Với mỗi file code tạo ra, dùng Write tool (không qua mc_save —
    code là file thật, không phải project memory document)
 
-2. mc_traceability({
+2. [BẮT BUỘC] mc_traceability({
+     // RISK-005: đăng ký TẤT CẢ REQ-ID mappings — code file → spec IDs
      action: "link",
      items: [
+       { from: "US-{MOD}-001", to: "src/{sys}/{mod}/services/{mod}.service.ts" },
        { from: "FT-{MOD}-001", to: "src/{sys}/{mod}/services/{mod}.service.ts" },
        { from: "API-{SYS}-001", to: "src/{sys}/{mod}/controllers/{mod}.controller.ts" },
-       { from: "TBL-{SYS}-001", to: "db/migrations/V001__create_{table}.sql" }
+       { from: "TBL-{SYS}-001", to: "db/migrations/V001__create_{table}.sql" },
+       { from: "TC-{MOD}-001", to: "src/{sys}/{mod}/__tests__/{mod}.service.test.ts" },
+       // ... tất cả IDs từ MODSPEC và TEST file
      ]
    })
 
-3. mc_checkpoint({
+3. [BẮT BUỘC — per-module checkpoint] mc_checkpoint({
+     // RISK-003: checkpoint riêng cho mỗi module — BẮT BUỘC
      label: "sau-code-gen-{mod}",
      sessionSummary: "Code Gen {MOD}: {N} files, {M} API handlers, {K} migrations",
      nextActions: [

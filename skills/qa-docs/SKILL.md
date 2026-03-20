@@ -81,6 +81,18 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 - Nếu vẫn fail → báo user: "⚠️ Không thể lưu/đọc [file]. Kiểm tra MCP server còn chạy không."
 - Lưu draft tạm vào checkpoint, tiếp tục session — lưu lại sau
 
+**Documents từ phases trước thiếu (RISK-008 — BLOCKING vs WARNING):**
+
+| Loại file thiếu | Phân loại | Hành động bắt buộc |
+|-----------------|-----------|---------------------|
+| MODSPEC-{MOD}.md | ❌ BLOCKING | DỪNG — không thể tạo test cases. Chạy `/mcv3:tech-design` |
+| URS-{MOD}.md | ⚠️ WARNING | Tiếp tục nhưng tạo TC từ FT specs — ghi rõ "Thiếu AC, TC tạo từ FT" |
+| DATA-DICTIONARY.md | ⚠️ WARNING | Bỏ qua entity cross-check — ghi chú vào coverage report |
+
+**Nguyên tắc phân loại:**
+- **BLOCKING** = file core design specs → DỪNG ngay, báo user file nào thiếu + skill nào để tạo
+- **WARNING** = file supplementary → tiếp tục nhưng ghi rõ limitation vào coverage report
+
 **MODSPEC chưa có:**
 - Báo user: "Chưa tìm thấy MODSPEC trong {SYSTEM}/P2-DESIGN/. Chạy /mcv3:tech-design trước."
 
@@ -126,11 +138,16 @@ Báo cáo sau khi tạo xong:
    - Ưu tiên modules chưa có TEST file
    - Dependency order: Core → Business → Integration
    - Xử lý tất cả modules, không hỏi user chọn
+
+5. [MANDATORY] Scale Detection — Đếm tổng số MODSPEC files:
+   - Nếu ≥ 5 modules → CHẾ ĐỘ LARGE PROJECT (xem Batch Mode ở Phase 0 Safety Checkpoint)
+     → Ghi log: "Large project: {N} modules detected — kích hoạt Batch Mode"
+   - Nếu < 5 modules → Chế độ Standard, tiếp tục bình thường
 ```
 
 **Nếu không có MODSPEC:**
 ```
-⚠️ Chưa tìm thấy MODSPEC trong {SYSTEM}/P2-DESIGN/.
+⛔ BLOCKING — Chưa tìm thấy MODSPEC trong {SYSTEM}/P2-DESIGN/.
    Hãy chạy /mcv3:tech-design trước.
 ```
 
@@ -151,6 +168,32 @@ mc_checkpoint({
 
 → "✅ Safety checkpoint đã lưu. Bắt đầu tạo QA docs..."
 
+**Large project batch processing (RISK-006) — áp dụng khi ≥5 modules:**
+```
+// Phát hiện large project: mc_list({ subPath: "{SYSTEM}/P2-DESIGN" }) → đếm MODSPEC files
+// Nếu ≥5 MODSPEC files → kích hoạt Batch Mode:
+
+1. Lưu BATCH CHECKPOINT trước Phase 1:
+   mc_checkpoint({
+     label: "pre-qa-docs-batch",
+     sessionSummary: "Large project: {N} modules cần QA docs. Batch mode ON.",
+     nextActions: ["Batch 1: {MOD1}, {MOD2}, {MOD3}"]
+   })
+
+2. Chia modules thành batches (tối đa 3 modules / batch):
+   Batch 1: Core modules (Auth, Master data)
+   Batch 2: Business logic modules
+   Batch 3+: Integration, Reporting modules
+
+3. Per-module checkpoint sau mỗi module (BẮT BUỘC):
+   mc_checkpoint({ label: "qa-docs-{MOD}-complete", ... })
+
+4. Batch checkpoint sau mỗi batch (ngoài per-module):
+   mc_checkpoint({ label: "qa-docs-batch-{N}-complete", ... })
+
+5. KHÔNG load toàn bộ MODSPEC cùng lúc — chỉ load MODSPEC của module đang làm (layer: 3)
+```
+
 ---
 
 ## Phase 1 — Context Loading
@@ -158,9 +201,15 @@ mc_checkpoint({
 ### 1a. Load MODSPEC đầy đủ
 
 ```
+// BLOCKING — nếu MODSPEC load fail: ❌ DỪNG ngay, báo user chạy /mcv3:tech-design trước
 mc_load({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md", layer: 3 })
+→ Nếu NOT FOUND / ERROR → ❌ DỪNG: "Chưa tìm thấy MODSPEC-{MOD}.md. Chạy /mcv3:tech-design trước."
+
 mc_load({ filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md", layer: 2 })
+→ Nếu NOT FOUND → ⚠️ WARNING (không dừng): "Thiếu URS-{MOD}.md, TC sẽ tạo từ FT specs — không có AC traceability đầy đủ"
+
 mc_load({ filePath: "_PROJECT/DATA-DICTIONARY.md", layer: 1 })
+→ Nếu NOT FOUND → ⚠️ WARNING (không dừng): "Thiếu DATA-DICTIONARY.md, bỏ qua entity cross-check"
 ```
 
 ### 1b. Extract traceability links
@@ -433,14 +482,22 @@ A: {Câu trả lời ngắn gọn}
      documentType: "admin-guide"
    })
 
-4. mc_validate({ filePath: "{SYSTEM}/P3-QA-DOCS/TEST-{MOD}.md" })
-   → Xử lý issues nếu có
+4. [BẮT BUỘC — BLOCKING GATE] mc_validate({ filePath: "{SYSTEM}/P3-QA-DOCS/TEST-{MOD}.md" })
+   // RISK-001: BLOCKING GATE — phân loại kết quả (RISK-007):
+   → ERROR   → ❌ DỪNG ngay. Fix lỗi → mc_save lại → mc_validate lại (tối đa 3 lần retry)
+              Nếu vẫn ERROR sau 3 lần → báo user, không tiếp tục module này
+   → WARNING → Phân loại:
+       - Format warning (TC ID format sai, thiếu required section) → FIX trước khi tiếp tục
+       - Content warning (thiếu pass criteria, AC coverage chưa đủ) → Ghi DECISION + tiếp tục
+   → PASS    → ✅ Tiếp tục bước 5
 
-5. mc_traceability({
+5. [BẮT BUỘC] mc_traceability({
      action: "link",
      items: [
        { from: "AC-{MOD}-001-01", to: "TC-{MOD}-001" },
        { from: "FT-{MOD}-001", to: "TC-{MOD}-001" },
+       { from: "US-{MOD}-001", to: "UAT-{MOD}-001" },
+       // RISK-005: đăng ký TẤT CẢ TC, UAT IDs — không bỏ sót
        ...
      ]
    })
@@ -451,7 +508,8 @@ A: {Câu trả lời ngắn gọn}
      dependsOn: ["MODSPEC-{MOD}.md", "URS-{MOD}.md"]
    })
 
-7. mc_checkpoint({
+7. [BẮT BUỘC — per-module checkpoint] mc_checkpoint({
+     // RISK-003: checkpoint riêng cho mỗi module — BẮT BUỘC
      label: "sau-qa-docs-{mod}",
      sessionSummary: "QA Docs {MOD}: {N} TCs, {M} UAT, user/admin guide updated",
      nextActions: ["Tiếp tục module khác hoặc /mcv3:code-gen"]
