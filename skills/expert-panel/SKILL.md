@@ -54,6 +54,18 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 **PROJECT-OVERVIEW.md chưa có:**
 - Báo user: "Thiếu PROJECT-OVERVIEW.md → Chạy /mcv3:discovery trước để tạo."
 
+**Documents input thiếu (RISK-008 — BLOCKING vs WARNING):**
+
+| Loại file thiếu | Phân loại | Hành động bắt buộc |
+|-----------------|-----------|---------------------|
+| PROJECT-OVERVIEW.md | ❌ BLOCKING | DỪNG — experts không có input để phân tích. Chạy `/mcv3:discovery` |
+| PROJECT-OVERVIEW thiếu PROB-IDs hoặc GL-IDs | ❌ BLOCKING | DỪNG — PROJECT-OVERVIEW không đủ để phân tích. Bổ sung qua `/mcv3:discovery` |
+| EXPERT-LOG.md đã tồn tại (chạy lại) | ⚠️ WARNING | Tạo SESSION-002 thay vì SESSION-001, ghi chú trong EXPERT-LOG |
+
+**Nguyên tắc phân loại:**
+- **BLOCKING** = file bắt buộc để expert agents có thể phân tích → DỪNG ngay, báo user skill nào để tạo
+- **WARNING** = trạng thái cần chú ý nhưng có thể tiếp tục với điều chỉnh
+
 **Agent không spawn được (subagent bị lỗi hoặc timeout):**
 - Đóng vai expert đó trực tiếp thay vì spawn agent riêng
 - Báo user: "Agent [strategy-expert / finance-expert / domain-expert] không spawn được — tôi sẽ đóng vai expert đó."
@@ -72,10 +84,16 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 KIỂM TRA TRƯỚC KHI BẮT ĐẦU:
 1. mc_status() → xác nhận project slug
 2. mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 0 })
-   → Nếu không có → "Cần chạy /mcv3:discovery trước"
-   → Nếu có → tiếp tục
+   → Nếu KHÔNG CÓ → ❌ BLOCKING: "Thiếu PROJECT-OVERVIEW.md → Chạy /mcv3:discovery trước."
+   → Nếu có nhưng không có PROB-IDs hoặc GL-IDs → ❌ BLOCKING: "PROJECT-OVERVIEW thiếu nội dung cốt lõi → Bổ sung qua /mcv3:discovery"
+   → Nếu có và đầy đủ → tiếp tục
 3. Đọc panel-protocol.md để nắm workflow
 4. Thông báo cho user: "Sẽ gọi 3 expert agents phân tích song song..."
+
+5. [MANDATORY] Scale Detection — Đếm số SC-IN systems từ PROJECT-OVERVIEW:
+   - Nếu ≥ 3 systems trong SC-IN → CHẾ ĐỘ LARGE PROJECT
+     → Ghi log: "Large project: {N} systems — domain expert sẽ cover tất cả systems"
+   - Nếu < 3 systems → Chế độ Standard, tiếp tục bình thường
 ```
 
 ---
@@ -183,6 +201,24 @@ Thông tin nào cần làm rõ thêm:
 → Ghi vào section "OPEN ISSUES" + list câu hỏi cần hỏi user
 ```
 
+### 3d. Consensus Validation Gate (RISK-001)
+
+```
+[BẮT BUỘC] Kiểm tra CONSENSUS trước khi tiếp tục Phase 4:
+
+✓ CONSENSUS có ≥ 1 điểm được tất cả experts đồng thuận
+  → Nếu CONSENSUS rỗng → ❌ BLOCKING:
+    "3 expert agents cho kết quả hoàn toàn mâu thuẫn — không có consensus.
+    Lý do có thể: PROJECT-OVERVIEW thiếu context quan trọng.
+    Hành động: Load full PROJECT-OVERVIEW (layer: 3) và retry synthesis."
+
+✓ CONSENSUS không có 2 điểm contradicts nhau
+  → Nếu có mâu thuẫn nội tại → sửa: ghi điểm mâu thuẫn vào OPEN DEBATES, không giữ trong CONSENSUS
+
+✓ OPEN DEBATES ghi rõ (không tự chọn 1 bên bỏ 1 bên)
+  → Nếu chỉ có 1 expert có analysis → ghi rõ "Chỉ có 1/3 expert đề cập vấn đề này" — Confidence: LOW
+```
+
 ---
 
 ## Phase 4 — Generate EXPERT-LOG.md
@@ -239,15 +275,17 @@ Nếu sau khi nhận báo cáo, user cung cấp thêm thông tin → tự update
      documentType: "expert-log"
    })
 
-2. mc_validate({
+2. [BẮT BUỘC] mc_validate({
      projectSlug: "...",
      filePath: "_PROJECT/EXPERT-LOG.md"
    })
+   → Nếu có ERRORs → ❌ BLOCKING: sửa ngay (thiếu CONSENSUS, thiếu expert analysis, ...)
+   → Nếu chỉ có WARNINGs → ghi DECISION, tiếp tục
 
-3. mc_checkpoint({
+3. [BẮT BUỘC] mc_checkpoint({
      projectSlug: "...",
      label: "sau-expert-panel",
-     sessionSummary: "Expert Panel SESSION-001 hoàn thành",
+     sessionSummary: "Expert Panel SESSION-001 hoàn thành — {N} consensus, {M} risks, {K} open issues",
      nextActions: ["Chạy /mcv3:biz-docs để tạo chính sách và quy trình"]
    })
 ```
@@ -296,6 +334,8 @@ Content Quality:
 ## Post-Gate
 
 ```
+[BẮT BUỘC RISK-004] Chạy Pre-Completion Verification (section ở trên) TRƯỚC khi show Completion Report.
+
 ✅ EXPERT-LOG.md đã saved
 ✅ Có SESSION-001 với đủ 3 expert analyses
 ✅ Có CONSENSUS section
