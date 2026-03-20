@@ -20,6 +20,6 @@
     "MCV3_TEMPLATES_DIR": "./templates",
     "MCV3_LOG_LEVEL": "info",
     "MCV3_SPRINT": "8",
-    "MCV3_VERSION": "3.10.1"
+    "MCV3_VERSION": "3.11.2"
   }
 }

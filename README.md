@@ -446,8 +446,18 @@ Nói với Claude: "Tạo dự án mới tên X, ngành Y"
 
 ## Tài liệu kỹ thuật
 
+- [INSTALL.md](INSTALL.md) — Hướng dẫn cài đặt đầy đủ (update, uninstall, troubleshoot)
 - [CHANGELOG.md](CHANGELOG.md) — Lịch sử thay đổi
 - [CLAUDE.md](CLAUDE.md) — Hướng dẫn cho Claude (MCP tools, workflow, ID system)
+
+---
+
+## Contributing
+
+Bug reports, feature requests, và pull requests đều được chào đón!
+
+- [Báo cáo bug / Đề xuất tính năng](https://github.com/username/mcv3-devkit/issues)
+- [Hướng dẫn đóng góp](CONTRIBUTING.md)
 
 ---
 
