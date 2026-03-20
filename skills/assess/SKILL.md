@@ -746,6 +746,40 @@ Quality Gate:
 
 ---
 
+### 6e-verify-inter. Inter-Phase Verification
+
+Kiểm tra tính nhất quán GIỮA các phases (chạy sau Pre-Completion Verification):
+
+```
+Phase Prerequisite Check (với mỗi system):
+  ✓ Nếu phase ≥ 5 (MODSPEC done) → Phase 4 (URS) phải có ≥ 1 URS file
+  ✓ Nếu phase ≥ 6 (QA done) → Phase 5 (MODSPEC) phải có ≥ 1 MODSPEC file
+  ✓ Nếu phase ≥ 7 (code done) → Phase 6 (TEST) phải có ≥ 1 TEST file
+  ✓ Không có system nào skip phase trung gian mà không có lý do ghi trong ASSESSMENT-MATRIX
+
+Phase-Doc Drift Check (với mỗi system ở phase 5+):
+  ✓ MODSPEC modules khớp với URS modules (không có MODSPEC orphan không có URS)
+  ✓ TEST modules khớp với MODSPEC modules (không có TEST orphan không có MODSPEC)
+  ✓ Code modules (nếu có) có entry tương ứng trong ASSESSMENT-MATRIX
+
+Gap Severity Escalation:
+  ✓ Nếu phase skip được phát hiện → severity phải là Critical (không phải Warning)
+  ✓ Nếu doc drift được phát hiện → có entry trong GAP-REPORT với action rõ ràng
+  ✓ Nếu Type C/D và có SYNC-REPORT → mọi ERROR trong SYNC-REPORT có Critical gap entry
+
+Inter-System Consistency (nếu có nhiều systems):
+  ✓ Shared services (AUTH, NOTIFICATION, FILE) được classify đúng — không duplicate across systems
+  ✓ Integration dependencies giữa systems được note trong REMEDIATION-PLAN nếu liên quan
+  ✓ Build order cho remediation phản ánh đúng inter-system dependencies
+
+Auto-Fix Rule:
+  → Nếu phát hiện phase prerequisite violation: tự downgrade phase về đúng level + log decision
+  → Nếu phát hiện doc drift: tự thêm Critical gap entry vào GAP-REPORT + REMEDIATION-PLAN
+  → Không dừng hỏi user — ghi DECISION-LOG và tiếp tục
+```
+
+---
+
 ### 6f. Post-Gate
 
 ```

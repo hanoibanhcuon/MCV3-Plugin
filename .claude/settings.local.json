@@ -17,7 +17,23 @@
       "Bash(grep -r version.*3. /z/Working/MCV3-Plugin/package.json /z/Working/MCV3-Plugin/README.md /z/Working/MCV3-Plugin/CHANGELOG.md)",
       "Bash(ls /z/Working/MCV3-Plugin/*.json /z/Working/MCV3-Plugin/CHANGELOG*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git -C \"Z:/Working/MCV3-Plugin\" worktree list)",
+      "Bash(git -C Z:/Working/MCV3-Plugin/.claude/worktrees/adoring-hermann diff .claude/rules/mc-data.md .claude/settings.local.json)",
+      "Bash(git -C \"Z:/Working/MCV3-Plugin/.claude/worktrees/adoring-hermann\" diff HEAD -- .claude/rules/mc-data.md)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /z/Working/MCV3-Plugin/scripts/auto-checkpoint.sh"
+          }
+        ]
+      }
     ]
   }
 }
