@@ -1,3 +1,5 @@
-Đọc file `skills/assess/SKILL.md` và thực thi các hướng dẫn trong đó để đánh giá dự án đang phát triển dở, phân tích gaps, và tạo remediation plan để tích hợp vào MCV3 workflow.
+Đánh giá dự án đang phát triển dở — scan codebase, phân tích gaps, tạo remediation plan. Trigger khi user có dự án cũ, code + docs không đồng bộ, muốn tiếp tục phát triển dự án dang dở.
+
+Đọc file `skills/assess/SKILL.md` và thực thi các hướng dẫn trong đó.
 
 $ARGUMENTS

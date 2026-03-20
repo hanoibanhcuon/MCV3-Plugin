@@ -164,6 +164,63 @@ Nếu user hỏi "dự án nhỏ cần làm hết 8 phases không?" hoặc tươ
 
 ---
 
+---
+
+### Bước 6 — Error State Routing
+
+Khi `mc_status` trả về lỗi hoặc phát hiện trạng thái bất thường:
+
+**Lỗi: Project config bị hỏng / thiếu _config.json**
+```
+"⚠️ Không đọc được cấu hình dự án.
+
+Nguyên nhân có thể:
+  - File _config.json bị corrupt hoặc thiếu
+  - Project chưa được khởi tạo đúng cách
+
+Giải pháp:
+  [1] Thử rollback về snapshot gần nhất: mc_rollback({ projectSlug, snapshotLabel: 'latest' })
+  [2] Khởi tạo lại project: mc_init_project({ projectName, domain })
+  [3] Xem chi tiết lỗi: mc_status({ projectSlug, verbose: true })"
+```
+
+**Lỗi: Validation failures trong documents**
+```
+"⚠️ Phát hiện {N} documents có validation errors:
+
+| Document | Lỗi |
+|----------|-----|
+| URS-WH.md | Thiếu section DEPENDENCY MAP |
+| MODSPEC-WH.md | IDs không sequential (gap ở NNN-007 → NNN-009) |
+
+Giải pháp:
+  → Chạy mc_validate({ filePath: '<doc>' }) để xem chi tiết
+  → Fix từng document hoặc dùng /mcv3:change-manager để update"
+```
+
+**Lỗi: Snapshot bị hỏng hoặc rollback thất bại**
+```
+"❌ Rollback thất bại — snapshot '{label}' không còn hợp lệ.
+
+Snapshot hiện có:
+  {mc_list({ subPath: '_mcv3-work/_snapshots' })}
+
+Chọn snapshot khác để rollback, hoặc tiếp tục với state hiện tại."
+```
+
+**Trạng thái: Phase inconsistency (per-system phases bất hợp lý)**
+```
+"⚠️ Phase inconsistency phát hiện:
+
+| System | currentPhase | Documents có | Vấn đề |
+|--------|-------------|-------------|--------|
+| ERP    | phase7-codegen | Chỉ có URS, thiếu MODSPEC | Không thể code-gen khi chưa có MODSPEC |
+
+→ Chạy /mcv3:assess để đánh giá lại và reset phases về đúng trạng thái."
+```
+
+---
+
 ## Tools sử dụng
 
 - `mc_status` — đọc trạng thái project

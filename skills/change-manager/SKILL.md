@@ -144,6 +144,57 @@ Bạn muốn:
 3. Chỉ ghi changelog (update thủ công sau)
 ```
 
+### 2d. Breaking Change — Downstream System Warning
+
+Khi `changeType = "breaking"`, kiểm tra thêm các systems phụ thuộc:
+
+```
+// Tìm downstream dependents
+mc_dependency({
+  action: "dependents",
+  projectSlug: "<slug>",
+  source: "<ID thay đổi>"   // VD: API-ERP-001, TBL-ERP-003
+})
+```
+
+Nếu có downstream systems bị ảnh hưởng, hiển thị cảnh báo TRƯỚC KHI tiếp tục:
+
+```
+🚨 BREAKING CHANGE — Ảnh hưởng downstream systems!
+
+Thay đổi {ID} sẽ phá vỡ contract với các systems sau:
+
+| System | Module | Dependency | Tác động cụ thể |
+|--------|--------|-----------|----------------|
+| WEB    | CART   | API-ERP-001 (response shape) | Frontend cần update payload parsing |
+| MOB    | ORDER  | API-ERP-001 (auth header)    | Mobile app cần update SDK |
+| RPT    | REPORT | TBL-ERP-003 (column removed) | Report query sẽ fail |
+
+⚠️ Khuyến nghị: Coordinate với teams phụ trách các systems trên trước khi apply.
+
+Bạn muốn:
+1. Tiếp tục (tôi sẽ thêm downstream notice vào CHANGE record)
+2. Hủy — cần coordinate trước
+```
+
+Thêm vào CHANGE-{ID} record phần downstream notice:
+
+```markdown
+## Breaking Change — Downstream Impact
+
+**Systems bị ảnh hưởng:**
+| System | Module | Contract bị phá vỡ | Action cần thiết |
+|--------|--------|-------------------|-----------------|
+| {SYS1} | {MOD1} | {API/schema/event} | {action} |
+| {SYS2} | {MOD2} | {API/schema/event} | {action} |
+
+**Developer action items:**
+- [ ] Notify team {SYS1} về breaking change tại {ID}
+- [ ] Update integration test tại {SYS2}
+- [ ] Version bump API (nếu public API): v{N} → v{N+1}
+- [ ] Update API changelog + deprecation notice
+```
+
 ---
 
 ## Phase 3 — Snapshot (Safety)

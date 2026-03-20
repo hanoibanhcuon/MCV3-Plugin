@@ -614,3 +614,31 @@ PROGRESSIVE: Dự án in-progress không cần hoàn thiện từ phase 1 → 8 
 DOCUMENT-REALITY: ASSESSMENT-MATRIX phản ánh thực tế, không phải mong muốn
 SNAPSHOT-BEFORE-CHANGES: Luôn snapshot trước khi bắt đầu remediation
 ```
+
+---
+
+## Token Optimization — Dự án lớn
+
+Khi project có nhiều systems/modules (> 3), dùng Smart Context Layering để tránh quá tải context window:
+
+```
+Bước đầu (orientation):
+  mc_load({ layer: 0 })  → Key facts (~500B) — đủ để biết phase hiện tại
+  mc_load({ layer: 1 })  → Dependency map — đủ để biết cần đọc gì tiếp
+
+Khi assess từng system:
+  mc_load({ layer: 2 })  → Sections chính (~10KB) — đủ để review phase gaps
+  mc_load({ layer: 3 })  → Full doc — chỉ khi cần full detail để sync check
+
+Chiến lược load tuần tự (tránh load nhiều files cùng lúc):
+  1. MASTER-INDEX (layer 1) → lấy danh sách systems
+  2. Với mỗi system: load MODSPEC (layer 2) → xác định tech stack + phase
+  3. Assess xong system A → lưu vào ASSESSMENT-MATRIX → sang system B
+  4. Chỉ load full (layer 3) khi detect drift hoặc cần sync check chi tiết
+
+Chia nhỏ assessment theo session:
+  - Session 1: Phase 1 (scan) + Phase 2 (assess systems 1-2)
+  - Session 2: Phase 2 tiếp (assess systems 3+) + Phase 3 (gap analysis)
+  - Session 3: Phase 4 (sync check) + Phase 5 (remediation plan)
+  Dùng mc_checkpoint giữa các sessions để resume.
+```

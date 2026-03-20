@@ -76,6 +76,8 @@ Bạn đang migrate từ đâu?
 
 ## Phase 1 — Project Initialization
 
+> **⚠️ SAFETY-FIRST:** Migration luôn tạo snapshot trước khi import để có thể rollback nếu cần. Đây là bước bắt buộc, không bỏ qua.
+
 ### 1a. Nếu chưa có project MCV3
 
 ```
@@ -83,6 +85,16 @@ Bạn đang migrate từ đâu?
 Domain? (VD: Logistics, Retail, SaaS...)"
 
 mc_init_project({ projectName, domain })
+```
+
+Sau khi khởi tạo project mới, tạo ngay baseline snapshot:
+```
+mc_snapshot({
+  projectSlug: "<slug>",
+  label: "baseline-before-migration",
+  description: "Trạng thái ban đầu trước khi import bất kỳ tài liệu nào"
+})
+→ "✅ Baseline snapshot đã tạo. Migration có thể rollback về trạng thái này nếu cần."
 ```
 
 ### 1b. Nếu đã có project MCV3
@@ -98,6 +110,7 @@ mc_snapshot({
   label: "before-migration-{source}",
   description: "Snapshot trước khi import từ {source} — có thể rollback nếu cần"
 })
+→ "✅ Safety snapshot đã tạo. Nếu migration có vấn đề, dùng mc_rollback để khôi phục."
 ```
 
 ---
@@ -408,9 +421,17 @@ LINK_WITH_ASSESS: Nên có ASSESSMENT-MATRIX từ /mcv3:assess trước khi làm
 
 ### Workflow Mixed-Phase
 
-**Bước 0: Kiểm tra assessment (nếu chưa có)**
+**Bước 0: Safety snapshot + kiểm tra assessment**
 
 ```
+// LUÔN tạo snapshot trước khi bắt đầu mixed-phase import
+mc_snapshot({
+  projectSlug: "<slug>",
+  label: "before-mixed-phase-import-{date}",
+  description: "Snapshot trước khi import mixed-phase assets — có thể rollback toàn bộ"
+})
+→ "✅ Safety snapshot đã tạo."
+
 "Bạn đã chạy /mcv3:assess chưa?
 [Y] Đã có ASSESSMENT-MATRIX → tiến hành import ngay
 [N] Chưa có → Khuyến nghị: chạy /mcv3:assess trước để có full picture
