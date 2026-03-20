@@ -502,6 +502,49 @@ traceability-matrix.md:
 
 ---
 
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển sang phase tiếp theo:
+
+### Sau Phase 0 → trước Phase 1:
+- ✓ Tất cả documents cần thiết đã liệt kê: URS, MODSPEC, TEST, src/ code files
+- ✓ Scope xác định rõ (full verify hay partial) — ghi DECISION nếu partial
+- ✓ Safety checkpoint đã lưu
+
+### Sau Phase 1 → trước Phase 2:
+- ✓ VERIFY-P1 document đã tạo cho tất cả URS modules (không bỏ sót module nào)
+- ✓ BR-IDs tham chiếu trong URS đều có trong BIZ-POLICY (không orphan refs)
+- ✓ Issues từ Phase 1 được ghi nhận cụ thể (không ghi "có issues" chung chung)
+
+### Sau Phase 2 → trước Phase 3:
+- ✓ Mỗi FT-ID trong URS có ≥ 1 API hoặc COMP trong MODSPEC (không orphan FTs)
+- ✓ Không có API-ID trong MODSPEC thiếu FT-ID origin (không orphan APIs)
+- ✓ Data type inconsistency giữa TBL specs và DATA-DICTIONARY đã được flag
+
+### Sau Phase 3 → trước Phase 4:
+- ✓ **AC Coverage**: tất cả AC-IDs có ≥ 1 TC tương ứng — 100% hoặc gaps liệt kê cụ thể
+- ✓ **API Test Coverage**: tất cả API-IDs có ≥ 1 API test case trong TEST files
+- ✓ Không có TC không link về AC hoặc BR (orphan TCs được flag)
+
+### Sau Phase 4 → trước Phase 5 (Traceability Matrix):
+- ✓ Tất cả code files đã được scan REQ-ID (grep đã chạy)
+- ✓ REVIEW/PENDING markers đã liệt kê đầy đủ — không bỏ sót
+- ✓ **Không có false positives**: test files không bị count là source modules; generated files không inflate coverage
+- ✓ Verification Loop check (Phase 4b.7) đã hoàn thành hoặc warning được ghi rõ nếu thiếu
+- ✓ Nếu dự án lớn: per-system verification status tóm tắt trước khi build matrix
+
+### Sau Phase 5 → trước Phase 6 (Verification Report):
+- ✓ **Traceability matrix complete**: mọi FT-ID từ URS xuất hiện trong matrix (không bỏ sót)
+- ✓ **Coverage % accurate**: số đếm thực tế trong matrix khớp với % sẽ báo cáo (không estimate)
+- ✓ Không có row thiếu status (✅/⚠️/❌) trong matrix
+
+### Sau Phase 6 → trước Phase 7 (Save):
+- ✓ Overall status rõ ràng: READY / NEEDS ATTENTION / NOT READY
+- ✓ Số Critical gaps trong report = số gaps thực tế đếm được trong matrix (không under-report)
+- ✓ VERIFY-{SYS}-P{N}-{MOD}.md đã tạo cho tất cả modules đã verify
+
+---
+
 ## Post-Gate
 
 ```
