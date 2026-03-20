@@ -871,6 +871,51 @@ Code-Gen có **Phase 9 — Verification & Auto-Fix Loop** tích hợp sẵn (xem
 
 ---
 
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+> **Lưu ý:** Phase 9 Verification Loop kiểm tra output code (compile/test/security). Section này kiểm tra transitions GIỮA các phases — đảm bảo input cho mỗi phase đầy đủ trước khi bước vào.
+
+Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển sang phase tiếp theo:
+
+### Sau Phase 0 → trước Phase 1:
+- ✓ Tech stack xác định từ MODSPEC hoặc PROJECT-OVERVIEW (không để "unknown")
+- ✓ Module order xác định theo dependency (auth/shared trước, business logic sau)
+- ✓ Safety checkpoint đã lưu (pre-codegen checkpoint)
+
+### Sau Phase 1 → trước Phase 2:
+- ✓ Danh sách đầy đủ: API-IDs, TBL-IDs, BR-IDs, COMP-IDs đã extract từ MODSPEC
+- ✓ Mức độ chi tiết của mỗi spec đã phân loại (FULL / VAGUE / MISSING)
+- ✓ References phù hợp với tech stack đã load (không load references không liên quan)
+
+### Sau Phase 2 → trước Phase 3:
+- ✓ Project structure khớp với tech stack (Flutter structure không dùng cho Node.js project)
+- ✓ Tất cả required folders đã định nghĩa trước khi gen code
+
+### Sau Phase 3 → trước Phase 4:
+- ✓ **REQ-ID comments**: mỗi file code có `@req-ids` / `@feat-ids` / `@api-ids` header trỏ về IDs trong MODSPEC (không phantom IDs)
+- ✓ **API Coverage**: tất cả API-IDs từ MODSPEC có route handler tương ứng (hoặc PENDING marker)
+- ✓ **TBL Coverage**: tất cả TBL-IDs từ MODSPEC có migration file tương ứng (hoặc PENDING marker)
+- ✓ **BR Implementation**: BR-IDs trong code comments match BR-IDs trong MODSPEC
+- ✓ Nếu dự án lớn: checkpoint sau mỗi module — ghi tóm tắt files đã gen + REVIEW/PENDING count
+
+### Sau Phase 4 → trước Phase 5 (Review):
+- ✓ Config files có thông tin từ specs (không phải toàn `{placeholder}`)
+- ✓ CI pipeline có đủ steps: install → typecheck → lint → test
+
+### Sau Phase 5 → trước Phase 9 (Verification Loop):
+- ✓ Code Review Checklist (Phase 5a) đã chạy xong
+- ✓ Không có TODO/FIXME markers (chỉ dùng REVIEW/PENDING)
+- ✓ REVIEW markers có câu hỏi cụ thể (không vague như "check this")
+
+### Sau Phase 9 → trước Phase 6 (Save):
+- ✓ Verification Loop đã chạy đủ 8 bước (9.1 Compile → 9.8 Final Report)
+- ✓ Compile: PASS | Lint: PASS | Tests: PASS | Security: 0 CRITICAL
+- ✓ Coverage đạt threshold (Lines ≥ 80%, Branches ≥ 70%)
+- ✓ Final Report (9.8) đã tạo cho module này
+- ✓ Nếu dự án lớn: progress tracking rõ ràng — biết module nào DONE / IN-PROGRESS / PENDING
+
+---
+
 ## Post-Gate — Quality Assurance
 
 ```

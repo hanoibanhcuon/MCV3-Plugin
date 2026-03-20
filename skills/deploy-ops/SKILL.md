@@ -523,6 +523,47 @@ Content Quality:
 
 ---
 
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển sang phase tiếp theo:
+
+### Sau Phase 0 → trước Phase 1:
+- ✓ verification-report.md status là READY hoặc NEEDS ATTENTION (không NOT READY trừ khi user đã confirm)
+- ✓ PROJECT-ARCHITECTURE.md tồn tại và có tech stack + infrastructure info
+- ✓ Safety checkpoint đã lưu
+
+### Sau Phase 1 → trước Phase 2 (Deploy Plan):
+- ✓ Tech stack và deployment target đã xác định (server / cloud / mobile / firmware)
+- ✓ Deployment strategy đã chọn phù hợp project scale (không Kubernetes cho Micro/Small project)
+- ✓ Thiếu infrastructure info → DECISION đã ghi với confidence level rõ ràng
+
+### Sau Phase 2 → trước Phase 3 (Go-Live Checklist):
+- ✓ **Deployment commands valid**: không còn `{placeholder}` quan trọng chưa điền (registry, app-name, domain)
+- ✓ Deployment order consistent với Multi-System Build Layers (Layer 0 trước Layer 4)
+- ✓ Nếu dự án lớn (3+ systems): per-system deploy sequence rõ ràng — system nào deploy trước, system nào sau
+
+### Sau Phase 3 → trước Phase 4 (Rollback Plan):
+- ✓ Go-Live Checklist có đủ T-7 → T+7 steps (không bỏ giai đoạn)
+- ✓ Tất cả P0 test requirements từ TEST-{MOD}.md files được include trong pre-deployment checklist
+- ✓ Infrastructure checklist items cụ thể (không "setup monitoring" chung chung)
+
+### Sau Phase 4 → trước Phase 5 (Monitoring):
+- ✓ **Rollback plan complete**: có Triggers + Decision Matrix + Commands + Testing steps
+- ✓ Rollback commands thực tế (không phải `{rollback_command}` placeholder)
+- ✓ Database rollback strategy rõ ràng (có hoặc "N/A" với lý do)
+
+### Sau Phase 5 → trước Phase 6 (SLA):
+- ✓ Monitoring có ≥ 3 critical metrics với alert thresholds cụ thể (% hoặc ms — không "khi cần")
+- ✓ Tool names cụ thể (Grafana / Datadog / Prometheus) hoặc "TBD — cần điền"
+- ✓ Alerting channels có response time cụ thể cho mỗi severity
+
+### Sau Phase 6 → trước Phase 7 (Save):
+- ✓ **SLA has numbers**: Uptime %, Response time p95 ms, RTO giờ, RPO giờ — không để `{N}` placeholder
+- ✓ Support tiers có response time SLA cụ thể (không để trống)
+- ✓ Toàn bộ DEPLOY-OPS.md không còn `{placeholder}` quan trọng chưa điền
+
+---
+
 ## Post-Gate
 
 ```

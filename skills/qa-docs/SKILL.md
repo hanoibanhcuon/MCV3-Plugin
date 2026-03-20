@@ -505,6 +505,47 @@ Content Quality:
 
 ---
 
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển sang phase tiếp theo:
+
+### Sau Phase 0 → trước Phase 1:
+- ✓ Ít nhất 1 MODSPEC tìm thấy trong {SYSTEM}/P2-DESIGN/
+- ✓ Module order xác định rõ ràng (dependency: Core → Business → Integration)
+- ✓ Safety checkpoint đã lưu trước khi bắt đầu
+
+### Sau Phase 1 → trước Phase 2:
+- ✓ Danh sách đầy đủ: FT-IDs, AC-IDs, API-IDs, BR-IDs đã extract từ MODSPEC + URS
+- ✓ Test strategy đã chọn tự động theo project type — ghi DECISION nếu cần
+- ✓ Nếu dự án lớn (5+ modules): checkpoint trước khi bắt đầu Phase 2
+
+### Sau Phase 2 → trước Phase 3:
+- ✓ Coverage Matrix đã liệt kê TẤT CẢ FT-IDs và AC-IDs (không bỏ sót)
+- ✓ Mỗi row trong Coverage Matrix có Priority và Test type placeholder
+
+### Sau Phase 3 → trước Phase 4:
+- ✓ **API Coverage**: tất cả API-IDs từ MODSPEC có ≥ 1 API test case (happy path + error)
+- ✓ **AC Coverage**: tất cả AC-IDs có ≥ 1 TC — không có orphan AC (xem Auto-Coverage Report Phase 3e)
+- ✓ **TC IDs unique**: không có 2 TCs trùng ID trong cùng module
+- ✓ **Edge cases**: mỗi FT-ID có ≥ 1 happy path TC + ≥ 1 error/edge case TC
+- ✓ [VERIFIED-BY: AC-{MOD}-NNN-XX] tag có đầy đủ trong mỗi TC
+- ✓ Nếu dự án lớn: checkpoint sau mỗi module — coverage matrix riêng per module trước khi chuyển module tiếp
+
+### Sau Phase 4 → trước Phase 5:
+- ✓ Mỗi US-ID có ≥ 1 UAT scenario (không orphan User Stories)
+- ✓ UAT scenarios viết bằng ngôn ngữ business (không technical API details)
+
+### Sau Phase 5 → trước Phase 6:
+- ✓ USER-GUIDE có chapter cho module vừa xử lý
+- ✓ Không có placeholder text chưa điền trong User Guide chapter
+
+### Sau Phase 6 → trước Phase 7 (Save):
+- ✓ ADMIN-GUIDE có section cho module vừa xử lý
+- ✓ Coverage matrix tổng hợp đầy đủ tất cả modules đã xử lý
+- ✓ Nếu dự án lớn: mọi modules có TEST file — không bỏ sót module nào trong coverage matrix
+
+---
+
 ## Post-Gate
 
 ```
