@@ -14,7 +14,10 @@
       "Bash(do echo:*)",
       "Read(//z/Working/MCV3-Plugin/.claude/worktrees/angry-hofstadter/**)",
       "Bash(done)",
-      "Bash(grep -r version.*3. /z/Working/MCV3-Plugin/package.json /z/Working/MCV3-Plugin/README.md /z/Working/MCV3-Plugin/CHANGELOG.md)"
+      "Bash(grep -r version.*3. /z/Working/MCV3-Plugin/package.json /z/Working/MCV3-Plugin/README.md /z/Working/MCV3-Plugin/CHANGELOG.md)",
+      "Bash(ls /z/Working/MCV3-Plugin/*.json /z/Working/MCV3-Plugin/CHANGELOG*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
