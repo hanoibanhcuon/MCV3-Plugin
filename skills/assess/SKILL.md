@@ -605,11 +605,22 @@ Muốn bắt đầu từ action nào? [1/2/3/4/5/6]"
 ### 5c. Tạo REMEDIATION-PLAN
 
 ```
-mc_save({
+[MANDATORY] mc_save({
   filePath: "_mcv3-work/assessment/REMEDIATION-PLAN.md",
   documentType: "custom"
 })
 ```
+
+SAU KHI REMEDIATION-PLAN ĐÃ TẠO:
+╔══════════════════════════════════════════════════════════╗
+║  [BẮT BUỘC] Chạy Pre-Completion Verification            ║
+║  Xem section "Pre-Completion Verification" bên dưới      ║
+║  TRƯỚC KHI viết Completion Report                         ║
+║                                                            ║
+║  Tầng 1 PASS + Tầng 2 PASS + Tầng 3 PASS                ║
+║  → mới được viết Completion Report                        ║
+║  Nếu FAIL → tự fix → re-verify (max 2 lần)               ║
+╚══════════════════════════════════════════════════════════╝
 
 ---
 
@@ -700,7 +711,7 @@ mc_snapshot({
 ### 6e. Lưu checkpoint
 
 ```
-mc_checkpoint({
+[MANDATORY] mc_checkpoint({
   projectSlug: {slug},
   sessionSummary: "Assessment hoàn thành: {N} systems, {M} critical gaps",
   nextActions: [
@@ -738,10 +749,14 @@ Cross-check:
   ✓ Phase per system: currentPhase = last fully DONE phase (⚠️ partial KHÔNG count là done)
   ✓ Docs imported (Phase 6c, nếu có): không rỗng, có markdown heading, không duplicate IDs
 
-Quality Gate:
+Tầng 3 — Quality Gate [🚫 BLOCKING GATE]:
+
+> **BẮT BUỘC:** Toàn bộ checklist phải PASS trước khi viết Completion Report.
+> Nếu FAIL → tự fix → re-verify (max 2 lần). KHÔNG viết Completion Report khi còn lỗi.
+
   ✅ REMEDIATION-PLAN có ≥ 1 actionable item
   ✅ Critical gaps được list rõ ràng (nếu có)
-  ✅ mc_validate PASS cho assessment docs
+  ✅ [MANDATORY] mc_validate PASS cho assessment docs
 ```
 
 ---
@@ -844,7 +859,7 @@ Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển phase:
 - ✓ PROJECT-MANIFEST: ≥1 system detected
 - ✓ Mỗi system có: tên, tech stack (hoặc "unknown"), modules list (không để trống)
 - ✓ Scan results: không có false positives rõ ràng (folder test data bị detect là module thật)
-- ✓ Nếu dự án lớn (5+ systems): checkpoint trước Phase 2
+- ✓ Nếu dự án lớn (≥ 5 systems hoặc ≥ 5 modules): mc_checkpoint trước khi tiếp tục Phase 2 (tránh mất progress nếu session bị interrupt)
 
 ### Sau Phase 2 → trước Phase 3:
 - ✓ ASSESSMENT-MATRIX: mỗi system có phase assignment (phase1 → phase8)

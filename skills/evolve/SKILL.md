@@ -437,19 +437,30 @@ Week 4:
 Gợi ý: Giữ scope nhỏ — tốt hơn 3-4 small evolutions hơn 1 big bang"
 ```
 
+SAU KHI EVOLUTION DOCUMENTS ĐÃ TẠO/UPDATE:
+╔══════════════════════════════════════════════════════════╗
+║  [BẮT BUỘC] Chạy Pre-Completion Verification            ║
+║  Xem section "Pre-Completion Verification" bên dưới      ║
+║  TRƯỚC KHI viết Completion Report                         ║
+║                                                            ║
+║  Tầng 1 PASS + Tầng 2 PASS + Tầng 3 PASS                ║
+║  → mới được viết Completion Report                        ║
+║  Nếu FAIL → tự fix → re-verify (max 2 lần)               ║
+╚══════════════════════════════════════════════════════════╝
+
 ---
 
 ## Phase 8 — Post-Gate
 
 ```
-mc_changelog({
+[MANDATORY] mc_changelog({
   action: "add",
   entry: "EVOL-{ID}: {Module} v{N+1} — {description}",
   changeType: "added",
   phase: "evolution"
 })
 
-mc_checkpoint({
+[MANDATORY] mc_checkpoint({
   label: "evolution-{MOD}-v{N+1}",
   sessionSummary: "Evolution: {N} new features added to {MOD}",
   nextActions: [
@@ -479,12 +490,16 @@ Tầng 2 — Cross-Document:
   ✓ Backward compatibility: existing IDs không bị remove hoặc break
   ✓ Dependencies của features mới đã được identify và document
 
-Tầng 3 — Quality Gate:
+Tầng 3 — Quality Gate [🚫 BLOCKING GATE]:
+
+> **BẮT BUỘC:** Toàn bộ checklist phải PASS trước khi viết Completion Report.
+> Nếu FAIL → tự fix → re-verify (max 2 lần). KHÔNG viết Completion Report khi còn lỗi.
+
   ✅ Snapshot trước evolution đã tạo (trước khi evolve)
   ✅ Không có ID conflicts
   ✅ Existing traceability links không bị broken bởi evolution
   ✅ EVOLUTION-LOG.md đã cập nhật với EVOL-{ID}
-  ✅ mc_validate PASS cho tất cả updated/new documents
+  ✅ [MANDATORY] mc_validate PASS cho tất cả updated/new documents
 ```
 
 **Post-Gate checklist:**

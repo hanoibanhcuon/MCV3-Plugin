@@ -305,6 +305,17 @@ mc_save({
 })
 ```
 
+### 4e. Checkpoint per batch
+
+```
+mc_checkpoint({
+  label: "sau-migrate-{source-type}",
+  sessionSummary: "Migrated {N} documents from {source}",
+  nextActions: ["Tiếp tục source tiếp theo hoặc Phase 6 Validation"]
+})
+[MANDATORY — PER BATCH] Checkpoint sau mỗi batch/scope, KHÔNG gộp cuối session.
+```
+
 ---
 
 ## Phase 5 — Codebase Reverse Engineering (Scope 3)
@@ -358,6 +369,7 @@ mc_validate({
   validationType: "all"
 })
 → Xử lý tất cả warnings/errors
+[MANDATORY] Nếu ERROR → sửa ngay. KHÔNG tiếp tục khi còn ERROR.
 ```
 
 ### 6b. Detect gaps sau migration
@@ -561,6 +573,7 @@ mc_traceability({
   source: "migration",
   ids: ["BR-WH-001", ..., "US-WH-001", ..., "FT-WH-001", ...]
 })
+[MANDATORY] Traceability PHẢI được register trước khi sang Phase 8.
 ```
 
 ---
@@ -577,7 +590,19 @@ mc_checkpoint({
     "Continue: /mcv3:tech-design hoặc /mcv3:requirements (nếu cần)"
   ]
 })
+[MANDATORY] Checkpoint PHẢI được gọi trước khi kết thúc skill.
 ```
+
+SAU KHI TẤT CẢ DOCUMENTS ĐÃ CONVERT VÀ VALIDATE:
+╔══════════════════════════════════════════════════════════╗
+║  [BẮT BUỘC] Chạy Pre-Completion Verification            ║
+║  Xem section "Pre-Completion Verification" bên dưới      ║
+║  TRƯỚC KHI viết Completion Report                         ║
+║                                                            ║
+║  Tầng 1 PASS + Tầng 2 PASS + Tầng 3 PASS                ║
+║  → mới được viết Completion Report                        ║
+║  Nếu FAIL → tự fix → re-verify (max 2 lần)               ║
+╚══════════════════════════════════════════════════════════╝
 
 **Pre-Completion Verification:**
 
@@ -602,7 +627,11 @@ Tầng 2 — Cross-Document:
   ✓ Entities mention trong source có ENT-ID trong DATA-DICTIONARY (hoặc gap flagged)
   ✓ Tất cả content significant từ source đã được extract (không bỏ sót)
 
-Tầng 3 — Quality Gate:
+Tầng 3 — Quality Gate [🚫 BLOCKING GATE]:
+
+> **BẮT BUỘC:** Toàn bộ checklist phải PASS trước khi viết Completion Report.
+> Nếu FAIL → tự fix → re-verify (max 2 lần). KHÔNG viết Completion Report khi còn lỗi.
+
   ✅ Tất cả source documents đã process (không skip)
   ✅ IDs sequential và không conflict
   ✅ MIGRATION-REPORT có đầy đủ gaps list

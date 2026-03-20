@@ -346,6 +346,17 @@ Lưu ý: Change Manager không tự sửa code để tránh lỗi.
 Sau khi sửa code, chạy /mcv3:verify để kiểm tra lại.
 ```
 
+SAU KHI TẤT CẢ DOCUMENTS ĐÃ UPDATE:
+╔══════════════════════════════════════════════════════════╗
+║  [BẮT BUỘC] Chạy Pre-Completion Verification            ║
+║  Xem section "Pre-Completion Verification" bên dưới      ║
+║  TRƯỚC KHI viết Completion Report                         ║
+║                                                            ║
+║  Tầng 1 PASS + Tầng 2 PASS + Tầng 3 PASS                ║
+║  → mới được viết Completion Report                        ║
+║  Nếu FAIL → tự fix → re-verify (max 2 lần)               ║
+╚══════════════════════════════════════════════════════════╝
+
 ---
 
 ## Pre-Completion Verification
@@ -376,14 +387,17 @@ Updated Documents:
   ✓ IDs được reference trong updated docs vẫn tồn tại (không orphan refs)
 ```
 
-### Tầng 3 — Quality Gate
+### Tầng 3 — Quality Gate [🚫 BLOCKING GATE]
+
+> **BẮT BUỘC:** Toàn bộ checklist phải PASS trước khi viết Completion Report.
+> Nếu FAIL → tự fix → re-verify (max 2 lần). KHÔNG viết Completion Report khi còn lỗi.
 
 ```
 ✅ Safety snapshot đã tạo (mc_snapshot trước thay đổi)
 ✅ Tất cả documents trong impact list đã update hoặc có lý do skip ghi rõ
 ✅ Changelog entry CHG-{ID} đã ghi đầy đủ
 ✅ Traceability vẫn valid sau thay đổi
-✅ mc_validate PASS cho tất cả updated documents
+✅ [MANDATORY] mc_validate PASS cho tất cả updated documents
 ```
 
 ---
@@ -391,7 +405,7 @@ Updated Documents:
 ## Phase 8 — Post-Gate & Summary
 
 ```
-mc_checkpoint({
+[MANDATORY] mc_checkpoint({
   projectSlug: "<slug>",
   label: "after-change-{CHG-ID}",
   sessionSummary: "Applied CHG-{ID}: {N} documents cập nhật",
