@@ -112,54 +112,49 @@ MCV3 sẽ: scan code + docs hiện có → phân tích gap → đề xuất bổ
 
 ## Workflow tổng quan
 
-### Dự án MỚI — Từ ý tưởng đến sản phẩm
-
 ```mermaid
 flowchart TD
-    A["Bắt đầu dự án mới"] --> B["/mcv3:discovery"]
-    B -->|Phỏng vấn ý tưởng| C["/mcv3:expert-panel"]
-    C -->|Phân tích chuyên gia| D["/mcv3:biz-docs"]
-    D -->|Tài liệu nghiệp vụ| E["/mcv3:requirements"]
-    E -->|Yêu cầu kỹ thuật| F["/mcv3:tech-design"]
-    F -->|Thiết kế kỹ thuật| G["/mcv3:qa-docs"]
-    G -->|Test cases| H["/mcv3:code-gen"]
-    H -->|Sinh code + verify| I["/mcv3:verify"]
-    I -->|Kiểm tra toàn diện| J["/mcv3:deploy-ops"]
-    J --> K["Sẵn sàng triển khai"]
+    START{"Ban co du an nao?"} -->|"Du an MOI"| NEW_START
+    START -->|"Du an CU"| OLD_START
 
-    style A fill:#4CAF50,color:#fff
-    style K fill:#4CAF50,color:#fff
+    subgraph NEW ["WORKFLOW 1: Du an MOI"]
+        direction TD
+        NEW_START["Mo ta y tuong"] --> N1["/mcv3:discovery"]
+        N1 --> N2["/mcv3:expert-panel"]
+        N2 --> N3["/mcv3:biz-docs"]
+        N3 --> N4["/mcv3:requirements"]
+        N4 --> N5["/mcv3:tech-design"]
+        N5 --> N6["/mcv3:qa-docs"]
+        N6 --> N7["/mcv3:code-gen"]
+        N7 --> N8["/mcv3:verify"]
+        N8 --> N9["/mcv3:deploy-ops"]
+        N9 --> DONE1["San sang trien khai"]
+    end
+
+    subgraph OLD ["WORKFLOW 2: Du an CU"]
+        direction TD
+        OLD_START["Mo ta du an hien tai"] --> O1["/mcv3:assess"]
+        O1 --> O2{"Can import docs cu?"}
+        O2 -->|"Co"| O3["/mcv3:migrate"]
+        O2 -->|"Khong"| O4["Remediation Plan"]
+        O3 --> O4
+        O4 --> O5{"Thieu gi?"}
+        O5 -->|"Thieu docs"| O6["Chay skill tuong ung"]
+        O5 -->|"Code lech docs"| O7["/mcv3:change-manager"]
+        O5 -->|"Thieu code"| O8["/mcv3:code-gen"]
+        O6 --> O9["/mcv3:verify"]
+        O7 --> O9
+        O8 --> O9
+        O9 --> O10{"Dat muc tieu?"}
+        O10 -->|"Chua"| O4
+        O10 -->|"Roi"| DONE2["Tiep tuc phat trien"]
+    end
+
+    style DONE1 fill:#4CAF50,color:#fff
+    style DONE2 fill:#4CAF50,color:#fff
 ```
 
-**Tóm tắt:** Bạn mô tả ý tưởng → MCV3 tự động đi qua từng bước → tạo tài liệu → thiết kế → code → test → sẵn sàng triển khai. Dự án nhỏ (landing page, tool nội bộ) có thể bỏ qua một số bước — MCV3 tự nhận ra và điều chỉnh.
-
----
-
-### Dự án CŨ/ĐANG LÀM DỞ — Đánh giá và tiếp tục
-
-```mermaid
-flowchart TD
-    A["Dự án đang phát triển"] --> B["/mcv3:assess"]
-    B -->|Đánh giá + tìm gaps| C{"Cần import docs cũ?"}
-    C -->|Có| D["/mcv3:migrate"]
-    C -->|Không| E[Remediation Plan]
-    D --> E
-    E --> F{"Thiếu gì?"}
-    F -->|Thiếu docs| G[Chạy skill tương ứng]
-    F -->|Code lệch docs| H["/mcv3:change-manager"]
-    F -->|Thiếu code| I["/mcv3:code-gen"]
-    G --> J["/mcv3:verify"]
-    H --> J
-    I --> J
-    J -->|Health Score OK?| K{"Đạt mục tiêu?"}
-    K -->|Chưa| E
-    K -->|Rồi| L["Tiếp tục phát triển"]
-
-    style A fill:#FF9800,color:#fff
-    style L fill:#4CAF50,color:#fff
-```
-
-**Tóm tắt:** MCV3 đánh giá dự án → tìm thiếu sót → đề xuất kế hoạch fix → bạn chạy từng bước theo plan → kiểm tra → lặp lại cho đến khi đạt.
+**Tóm tắt:** Dự án MỚI — mô tả ý tưởng → MCV3 tự động đi qua 8 bước → sẵn sàng triển khai (dự án nhỏ tự bỏ bước không cần thiết). Dự án CŨ — assess hiện trạng → tìm gaps → chạy theo Remediation Plan → verify → lặp đến khi đạt mục tiêu.
 
 ---
 
