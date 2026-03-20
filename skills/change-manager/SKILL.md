@@ -33,16 +33,18 @@ References:
 
 ---
 
-## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+## CHẾ ĐỘ VẬN HÀNH — Type C (Hybrid)
 
-Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
-1. **Tự động hoàn toàn** — parse change description từ user message, tự phân tích impact, tự apply updates
-2. **Tự giải quyết vấn đề** — tự quyết định thứ tự update documents, ghi DECISION khi ambiguous
-3. **Báo cáo sau khi xong** — CHG-xxx record + danh sách documents đã update + code notice
-4. **User review** — user review diffs; nếu muốn rollback → dùng mc_rollback
-5. **Gợi ý bước tiếp** — `/mcv3:verify` để re-verify sau thay đổi
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`) — **Type C: Hybrid**:
+1. **Nhận input ban đầu** — cần mô tả thay đổi (element ID + nội dung thay đổi) từ user; nếu đã có trong message → bắt đầu ngay
+2. **Tự động sau khi có input** — tự parse change, tự phân tích impact, tự apply updates; không hỏi confirm từng document
+3. **Tự giải quyết vấn đề** — tự quyết định thứ tự update documents, ghi DECISION khi ambiguous
+4. **Báo cáo sau khi xong** — CHG-xxx record + danh sách documents đã update (với diff) + code notice
+5. **User review** — user review diffs trong Completion Report; nếu muốn rollback → dùng mc_rollback
+6. **Gợi ý bước tiếp** — `/mcv3:verify` để re-verify sau thay đổi
 
 **Input bắt buộc từ user:** Mô tả thay đổi (element ID + nội dung thay đổi)
+**Exception duy nhất:** Breaking change ảnh hưởng downstream systems → hỏi confirm trước khi apply (rủi ro cao)
 
 ---
 
@@ -418,8 +420,9 @@ Tự động xử lý theo thứ tự dependency (an toàn nhất):
 
 ```
 SNAPSHOT-FIRST: Luôn snapshot trước khi thay đổi
-GUIDED: Không tự ý thay đổi nội dung — luôn hiển thị cho user review
-CODE-MANUAL: Không tự sửa code files (quá rủi ro)
+AUTO-APPLY-WITH-DIFF: Tự apply thay đổi tất cả docs — hiển thị diff trong Completion Report (không hỏi confirm từng doc)
+BREAKING-EXCEPTION: Chỉ dừng hỏi confirm khi breaking change ảnh hưởng downstream systems (rủi ro cao)
+CODE-MANUAL: Không tự sửa code files (quá rủi ro) — chỉ gợi ý + notice
 CHANGELOG-ALWAYS: Mọi thay đổi phải có changelog entry
 TRACE-MAINTAIN: Sau thay đổi, traceability phải vẫn valid
 VERIFY-AFTER: Khuyến nghị chạy /mcv3:verify sau major/breaking changes

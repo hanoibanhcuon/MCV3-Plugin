@@ -34,16 +34,18 @@ References:
 
 ---
 
-## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+## CHẾ ĐỘ VẬN HÀNH — Type C (Hybrid)
 
-Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
-1. **Tự động hoàn toàn** — parse evolution scope từ user message, tự xác định versioning strategy
-2. **Tự giải quyết vấn đề** — tự quyết định Minor/Major, backward-compat approach, ghi DECISION
-3. **Báo cáo sau khi xong** — EVOL-xxx record + updated documents + sprint plan
-4. **User review** — user review plan, điều chỉnh nếu cần
-5. **Gợi ý bước tiếp** — `/mcv3:qa-docs` → `/mcv3:code-gen`
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`) — **Type C: Hybrid**:
+1. **Nhận input ban đầu** — cần mô tả features/modules/systems muốn thêm từ user; nếu đã có trong message → bắt đầu ngay
+2. **Tự động sau khi có input** — tự parse scope, tự xác định versioning strategy; không hỏi thêm về tech stack hoặc approach
+3. **Tự giải quyết vấn đề** — tự quyết định Minor/Major, backward-compat approach, ghi DECISION
+4. **Báo cáo sau khi xong** — EVOL-xxx record + updated documents + sprint plan
+5. **User review** — user review plan, điều chỉnh nếu cần
+6. **Gợi ý bước tiếp** — `/mcv3:qa-docs` → `/mcv3:code-gen`
 
 **Input bắt buộc từ user:** Mô tả features/modules/systems muốn thêm
+**Exception duy nhất:** mc_compare/mc_merge conflict → hỏi user chọn version (không thể auto-resolve)
 
 ---
 
@@ -125,48 +127,52 @@ mc_checkpoint({
 
 ### 1a. Feature Addition (Scope 1)
 
-User muốn thêm features vào module WH chẳng hạn:
+Detect từ message của user — không hỏi lại:
 
 ```
-"Features mới bạn muốn thêm vào {MODULE}:
+Auto-detect features muốn thêm từ message:
+  - "thêm barcode scanning, batch export cho WH" → parse từng feature
+  - Nếu không rõ module → tự chọn module phù hợp nhất từ mc_list(), ghi DECISION
 
-Mô tả: (VD: 'Thêm barcode scanning cho nhập kho, thêm batch export')
-
-Tôi sẽ:
-1. Đọc MODSPEC-{MOD} hiện tại
-2. Identify điểm tích hợp
-3. Đề xuất cách extend (không break current)'
+Thực hiện:
+1. mc_load({ filePath: "MODSPEC-{MOD}.md", layer: 2 }) → đọc current state
+2. Identify điểm tích hợp cho từng feature
+3. Đề xuất cách extend (không break current)
+→ Chuyển sang Phase 2 ngay, không hỏi confirm
 ```
 
 ### 1b. New Module Addition (Scope 2)
 
 ```
-"Module mới:
-  - Tên module: (VD: 'HR - Quản lý nhân sự')
-  - Hệ thống chứa: {list systems}
-  - Phụ thuộc vào module nào?
-  - Tích hợp với module nào?
+Auto-detect từ message:
+  - Tên module: extract từ message (VD: "thêm module HR - quản lý nhân sự")
+  - Hệ thống chứa: detect từ context hoặc default system, ghi DECISION
+  - Dependencies: mc_dependency({ action: "list" }) → xác định tự động
+  - Integrations: đọc MASTER-INDEX, phân tích từ architecture hiện có
 
-Tôi sẽ tạo luồng URS → MODSPEC mới cho module này."
+→ Tạo luồng URS → MODSPEC mới cho module này, không hỏi lại
 ```
 
 ### 1c. New System Addition (Scope 3)
 
 ```
-"System mới:
-  - Tên: (VD: 'MOB - Mobile App cho thủ kho')
-  - Tech stack: React Native / Flutter / other
-  - Tích hợp với system nào? (APIs từ ERP?)
-  - Target users?
+Auto-detect từ message:
+  - Tên/code system: extract từ message (VD: "MOB - Mobile App")
+  - Tech stack: detect từ message hoặc PROJECT-OVERVIEW, ghi DECISION nếu infer
+  - Integrations: xem MASTER-INDEX → biết APIs cần consume từ system nào
+  - Target users: infer từ context (mobile → end-user / warehouse staff)
 
-Tôi sẽ extend architecture hiện tại với system mới."
+→ Extend architecture với system mới, không hỏi lại
 ```
 
 ### 1d. MVP → Full Product (Scope 4)
 
 ```
-"Tôi sẽ review toàn bộ scope hiện tại và đề xuất evolution roadmap.
-Ưu tiên: Must-have features còn thiếu, Nice-to-have, Future backlog."
+Review toàn bộ scope hiện tại:
+  mc_list({ documentType: "all" }) → inventory đầy đủ
+  mc_load({ filePath: "MASTER-INDEX.md", layer: 2 }) → gaps hiện tại
+→ Đề xuất evolution roadmap: Must-have còn thiếu → Nice-to-have → Future backlog
+→ Chuyển sang Phase 2 ngay
 ```
 
 ---

@@ -1,5 +1,49 @@
 # AUTO-MODE PROTOCOL — Quy trình vận hành chung cho tất cả MCV3 Skills
 
+---
+
+## Taxonomy chế độ vận hành
+
+Các MCV3 skills được phân loại thành 3 chế độ dựa trên mức độ cần tương tác:
+
+### Type A — Full Auto (không cần user input)
+
+Skills: `expert-panel`, `biz-docs`, `requirements`, `qa-docs`, `code-gen`, `verify`, `navigator`
+
+```
+→ Đọc toàn bộ context từ docs có sẵn
+→ Chạy hoàn toàn tự động
+→ Kết thúc bằng Completion Report
+```
+
+### Type B — Smart Interview (cần thu thập info qua phỏng vấn)
+
+Skills: `discovery`
+
+```
+→ Phỏng vấn block-based (không hỏi từng câu)
+→ Auto-process sau mỗi block
+→ Kết thúc bằng Completion Report
+```
+
+### Type C — Hybrid (cần input ban đầu, sau đó auto)
+
+Skills: `assess`, `change-manager`, `evolve`, `migrate`, `onboard`, `tech-design`, `deploy-ops`
+
+```
+→ Nhận mô tả/input từ user (1 lần duy nhất ở đầu)
+→ Auto-detect nếu có đủ context trong message (không hỏi lại)
+→ Tự analyze + execute hoàn toàn sau khi có input
+→ Kết thúc bằng Completion Report
+```
+
+**Nguyên tắc Type C:**
+- Nếu đã có đủ thông tin trong message → bắt đầu ngay, không hỏi lại
+- Nếu thiếu thông tin BLOCKING → hỏi 1 câu duy nhất, súc tích
+- Sau khi nhận đủ input → KHÔNG hỏi thêm bất cứ thứ gì, tự chạy đến cuối
+
+---
+
 ## Nguyên tắc cốt lõi
 
 - **Tự động hoàn toàn** — Skill chạy tự động từ đầu đến cuối, KHÔNG dừng giữa chừng hỏi user
@@ -228,13 +272,14 @@ Nếu project đã xong toàn bộ phases:
 
 ### Skills cần initial user input (nhận input 1 lần, chạy tự động sau đó)
 
-| Skill | Input cần từ user | Sau khi nhận: |
-|-------|------------------|---------------|
-| `change-manager` | Mô tả thay đổi (what/why/scope) | Tự phân tích impact + cập nhật tất cả docs |
-| `evolve` | Features mới muốn thêm | Tự phân tích dependencies + tạo evolution plan |
-| `migrate` | Nội dung/source cần migrate | Tự convert + assign IDs + detect gaps |
-| `discovery` | Ý tưởng dự án (mô tả vấn đề, goals) | Tự phỏng vấn adaptive + tạo PROJECT-OVERVIEW |
-| `onboard` | User type (Developer/PM/Business) | Tự run tutorial phù hợp + gợi ý bước tiếp |
+| Skill | Type | Input cần từ user | Sau khi nhận: |
+|-------|------|------------------|---------------|
+| `change-manager` | C | Mô tả thay đổi (element ID + nội dung thay đổi) | Tự phân tích impact + cập nhật tất cả docs |
+| `evolve` | C | Mô tả features/modules/systems muốn thêm | Tự phân tích dependencies + tạo evolution plan |
+| `migrate` | C | Nội dung/source cần migrate (paste hoặc mô tả codebase) | Tự convert + assign IDs + detect gaps |
+| `assess` | C | Mô tả dự án + path codebase/docs (nếu chưa trong context) | Tự scan + classify + tạo remediation plan |
+| `discovery` | B | Ý tưởng dự án (mô tả vấn đề, goals) | Tự phỏng vấn adaptive + tạo PROJECT-OVERVIEW |
+| `onboard` | C | User type (Developer/PM/Business) — tự detect nếu có context | Tự run tutorial phù hợp + gợi ý bước tiếp |
 
 ### Skills cần context detection (không hỏi — tự detect)
 

@@ -29,16 +29,16 @@ References:
 
 ---
 
-## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+## CHẾ ĐỘ VẬN HÀNH — Type C (Hybrid)
 
-Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
-1. **Detect user type** — từ context trong message (từ khóa: dev/PM/owner/codebase/dự án cũ...)
-2. **Tự chọn tutorial** — theo user type detect được, chạy ngay
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`) — **Type C: Hybrid**:
+1. **Detect user type** — từ context trong message (từ khóa: dev/PM/owner/codebase/dự án cũ...); auto-detect nếu rõ
+2. **Tự chọn tutorial** — theo user type detect được, chạy ngay không hỏi lại
 3. **Tự điều chỉnh** — demo, examples, next steps phù hợp với type
 4. **Báo cáo sau khi xong** — cheat sheet + next step cụ thể
 5. **Gợi ý bước tiếp** — `/mcv3:discovery` hoặc action phù hợp với user type
 
-**Lưu ý:** Nếu user type không detect được từ context → hỏi [1/2/3/4/5] (đây là exception duy nhất)
+**Exception duy nhất:** User type không detect được từ context → hỏi [1/2/3/4/5] (interactive là bắt buộc vì tutorial phải tailored theo role)
 
 ---
 

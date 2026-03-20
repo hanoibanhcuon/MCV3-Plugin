@@ -42,14 +42,15 @@ References:
 
 ---
 
-## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
+## CHẾ ĐỘ VẬN HÀNH — Type C (Hybrid)
 
-Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
-1. **Tự động hoàn toàn** — tự detect project type (A/B/C/D), tự scan, tự tạo reports
-2. **Tự giải quyết vấn đề** — tự classify docs/code vào đúng phases, ghi DECISION khi ambiguous
-3. **Báo cáo sau khi xong** — PROJECT-MANIFEST + ASSESSMENT-MATRIX + GAP-REPORT + REMEDIATION-PLAN
-4. **User review** — user xem REMEDIATION-PLAN và chọn action
-5. **Gợi ý bước tiếp** — Skill phù hợp theo gap type
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`) — **Type C: Hybrid**:
+1. **Nhận input ban đầu** — cần mô tả dự án hoặc path codebase/docs từ user (1 lần); nếu đã có đủ trong message → bắt đầu ngay
+2. **Tự động sau khi có input** — tự detect project type (A/B/C/D), tự scan codebase/docs, không hỏi thêm
+3. **Tự giải quyết vấn đề** — tự classify docs/code vào đúng phases, ghi DECISION khi ambiguous
+4. **Báo cáo sau khi xong** — PROJECT-MANIFEST + ASSESSMENT-MATRIX + GAP-REPORT + REMEDIATION-PLAN
+5. **User review** — user xem REMEDIATION-PLAN và chọn action
+6. **Gợi ý bước tiếp** — Skill phù hợp theo gap type
 
 ---
 
@@ -143,14 +144,16 @@ Module Detection:
 ### 1b. Classify docs (nếu có docs)
 
 ```
-"Paste danh sách files tài liệu bạn có.
-Tôi sẽ classify mỗi file thuộc phase nào trong MCV3:
-
-VD:
-  BRD.docx → Phase 3: Business Docs
-  API_Spec.xlsx → Phase 5: Tech Design
-  Test_Plan.md → Phase 6: QA
-  user_manual.pdf → Phase 6: QA Docs"
+Tự động detect docs — không hỏi user:
+1. mc_list({ projectSlug }) → liệt kê docs đã có trong .mc-data/
+2. Glob/Read các thư mục docs/ hoặc đường dẫn user đề cập trong message
+3. Classify mỗi file thuộc phase nào trong MCV3:
+   VD:
+     BRD.docx → Phase 3: Business Docs
+     API_Spec.xlsx → Phase 5: Tech Design
+     Test_Plan.md → Phase 6: QA
+     user_manual.pdf → Phase 6: QA Docs
+4. Nếu user cung cấp danh sách files trong message → dùng ngay, không hỏi lại
 ```
 
 ### 1c. Tạo PROJECT-MANIFEST
