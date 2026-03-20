@@ -627,7 +627,7 @@ SAU KHI TẤT CẢ DOCUMENTS ĐÃ CONVERT VÀ VALIDATE:
 ║  Nếu FAIL → tự fix → re-verify (max 2 lần)               ║
 ╚══════════════════════════════════════════════════════════╝
 
-**Pre-Completion Verification:**
+**Pre-Completion Verification (BẮT BUỘC — RISK-004):**
 
 Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5):
 

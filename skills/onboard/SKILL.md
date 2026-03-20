@@ -344,7 +344,7 @@ Kết quả: Dự án từ 'chaos' → có full traceability trong 2-3 sessions.
 
 ## Phase 2 — Setup Verification
 
-Sau tutorial, kiểm tra setup:
+[BẮT BUỘC — RISK-002] Sau tutorial, BẮT BUỘC kiểm tra setup — không skip:
 
 ```
 "🔧 Kiểm tra cài đặt MCV3:
@@ -352,7 +352,7 @@ Sau tutorial, kiểm tra setup:
 Kiểm tra MCP Server:"
 mc_status()
 
-Nếu MCP server không connect:
+Nếu MCP server không connect: ❌ BLOCKING — DỪNG tutorial, hướng dẫn fix trước khi tiếp tục:
 ```
 "⚠️ MCP Server chưa chạy. Cần build trước:
 
@@ -398,6 +398,7 @@ Nếu MCP server kết nối OK:
 
 Nếu user đã cung cấp tên dự án và domain trong message:
   → mc_init_project({ projectName, domain }) ngay
+  → [BẮT BUỘC — RISK-002] mc_checkpoint({ projectSlug, label: "onboard-complete", sessionSummary: "Onboard xong — project tạo mới, sẵn sàng bắt đầu pipeline", nextActions: ["/mcv3:discovery"] })
   → "✅ Project đã tạo! Chạy /mcv3:discovery để bắt đầu."
 ```
 
@@ -433,6 +434,21 @@ MCP Tools thường dùng:
   mc_checkpoint()      → Lưu progress
   mc_impact_analysis() → Phân tích impact thay đổi"
 ```
+
+---
+
+## Pre-Completion Verification (BẮT BUỘC — RISK-004)
+
+[BẮT BUỘC RISK-004] Chạy Pre-Completion Verification TRƯỚC khi show Phase 4 Cheat Sheet.
+
+### Checklist:
+- ✓ User type đã detect và tutorial đúng loại (Developer / PM / Business Owner / Ongoing)
+- ✓ mc_status đã chạy thành công trong Phase 2 — không skip
+- ✓ MCP server status rõ ràng (connected hoặc hướng dẫn fix đầy đủ)
+- ✓ Cheat sheet commands đúng tên (`/mcv3:discovery`, không phải `/discovery`)
+- ✓ Nếu project đã tạo → mc_checkpoint đã gọi (BẮT BUỘC RISK-002)
+
+❌ **BLOCKING (RISK-004):** Nếu MCP server BLOCKING và chưa hướng dẫn fix → KHÔNG tiếp tục sang cheat sheet. Fix setup trước.
 
 ---
 

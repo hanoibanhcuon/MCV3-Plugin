@@ -496,7 +496,7 @@ SAU KHI EVOLUTION DOCUMENTS ĐÃ TẠO/UPDATE:
 })
 ```
 
-**Pre-Completion Verification:**
+**Pre-Completion Verification (BẮT BUỘC — RISK-004):**
 
 Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5):
 

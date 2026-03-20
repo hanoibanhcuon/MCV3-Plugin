@@ -364,7 +364,7 @@ Sau khi hoàn thành TẤT CẢ modules:
 
 ---
 
-## Pre-Completion Verification
+## Pre-Completion Verification (BẮT BUỘC — RISK-004)
 
 ⛔ **BẮT BUỘC chạy section này trước Completion Report. Không bỏ qua.**
 
