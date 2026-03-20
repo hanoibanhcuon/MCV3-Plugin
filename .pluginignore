@@ -1,0 +1,39 @@
+# .pluginignore — Files excluded when creating release package
+# Dùng bởi scripts/package.sh
+# Format: một pattern mỗi dòng, hỗ trợ glob * và ?
+
+# ── Version control ──────────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+
+# ── User data — KHÔNG đưa vào package ───────────────────────────────────────
+.mc-data
+
+# ── Development files ────────────────────────────────────────────────────────
+docs
+.claude/worktrees
+.claude/settings.local.json
+
+# ── Build artifacts & dependencies ──────────────────────────────────────────
+node_modules
+mcp-servers/project-memory/node_modules
+dist/*.plugin
+dist/*.zip
+
+# ── OS files ────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── Editor files ────────────────────────────────────────────────────────────
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# ── Temp files ───────────────────────────────────────────────────────────────
+*.tmp
+*.temp
+*.log

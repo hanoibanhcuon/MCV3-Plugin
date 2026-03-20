@@ -2,7 +2,7 @@
 
 > **Claude Code Plugin** — Biến ý tưởng phần mềm thành bộ tài liệu hoàn chỉnh
 
-[![Version](https://img.shields.io/badge/version-3.10.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-3.11.2-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![MCP Tools](https://img.shields.io/badge/MCP%20Tools-19-orange)](mcv3-devkit/mcp-servers/project-memory/)
 
@@ -30,40 +30,34 @@ MCV3 là một **Claude Code Plugin** giúp bạn hệ thống hóa toàn bộ q
 
 ## Cài đặt
 
-```bash
-# 1. Copy plugin vào dự án của bạn
-cp -r mcv3-devkit/ /path/to/your/project/
-cd /path/to/your/project/
+### Mac / Linux / Git Bash (Windows)
 
-# 2. Build MCP Server
-cd mcv3-devkit/mcp-servers/project-memory
-npm install
-npm run build
+```bash
+# 1. Tải plugin về (hoặc clone repo)
+# 2. Chạy installer — cài vào dự án của bạn
+bash scripts/install.sh /path/to/your-project
 ```
 
-### Cấu hình MCP
+Installer tự động:
+- Copy plugin files → `mcv3-devkit/`
+- Tạo `.claude/CLAUDE.md` với đầy đủ MCV3 instructions
+- Cài slash commands → `.claude/commands/mcv3/`
+- Cấu hình `.mcp.json` và `.claude/settings.json`
+- Build MCP Server (nếu cần)
 
-Thêm vào `.mcp.json` ở root project:
+### Windows (PowerShell)
 
-```json
-{
-  "mcpServers": {
-    "mcv3-project-memory": {
-      "command": "node",
-      "args": ["mcv3-devkit/mcp-servers/project-memory/dist/index.js"],
-      "env": {
-        "MCV3_PROJECT_ROOT": "."
-      }
-    }
-  }
-}
+```powershell
+.\scripts\install.ps1 C:\path\to\your-project
 ```
 
 ### Verify
 
+```bash
+bash mcv3-devkit/scripts/verify-install.sh
 ```
-mc_status()  →  "No projects found. Use mc_init_project to create one."
-```
+
+Xem chi tiết: [INSTALL.md](INSTALL.md)
 
 ---
 
