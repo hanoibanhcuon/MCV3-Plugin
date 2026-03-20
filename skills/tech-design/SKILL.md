@@ -148,6 +148,29 @@ mc_checkpoint({
 
 → "✅ Safety checkpoint đã lưu. Bắt đầu thiết kế kỹ thuật..."
 
+**Large project batch processing (RISK-006) — áp dụng khi ≥5 modules:**
+```
+// Phát hiện large project: mc_list({ subPath: "{SYSTEM}/P1-REQUIREMENTS" }) → đếm URS files
+// Nếu ≥5 URS files → kích hoạt Batch Mode:
+
+1. Lưu BATCH CHECKPOINT trước Phase 1:
+   mc_checkpoint({
+     label: "pre-tech-design-batch",
+     sessionSummary: "Large project: {N} modules cần thiết kế. Batch mode ON.",
+     nextActions: ["Batch 1: {MOD1}, {MOD2}, {MOD3}"]
+   })
+
+2. Chia modules thành batches (tối đa 3 modules / batch):
+   Batch 1: Layer 0 (Auth, Shared services) + Module cốt lõi đầu tiên
+   Batch 2: Business logic modules
+   Batch 3+: Integration, Reporting, Frontend modules
+
+3. Checkpoint sau mỗi batch (ngoài per-module checkpoint):
+   mc_checkpoint({ label: "batch-{N}-complete", ... })
+
+4. KHÔNG load toàn bộ URS cùng lúc — chỉ load URS của batch hiện tại
+```
+
 ---
 
 ## Phase 1 — Context Loading & Tech Stack Confirmation
@@ -155,8 +178,20 @@ mc_checkpoint({
 ### 1a. Load URS đầy đủ
 
 ```
+// BLOCKING — nếu URS load fail: ❌ DỪNG ngay, báo user chạy /mcv3:requirements trước
 mc_load({ filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md", layer: 3 })
+→ Nếu NOT FOUND / ERROR → ❌ DỪNG: "Chưa tìm thấy URS-{MOD}.md. Chạy /mcv3:requirements trước."
+
 mc_load({ filePath: "_PROJECT/DATA-DICTIONARY.md", layer: 2 })
+→ Nếu NOT FOUND → ⚠️ WARNING (không dừng): ghi DECISION "Thiếu DATA-DICTIONARY, dùng entity names từ URS"
+```
+
+**Load ARCHITECTURE context (nếu có):**
+```
+// WARNING-only — không dừng nếu chưa có
+mc_load({ filePath: "{SYSTEM}/P2-DESIGN/ARCHITECTURE.md", layer: 1 })
+→ Nếu NOT FOUND → ⚠️ WARNING: "Chưa có ARCHITECTURE.md, sẽ tạo mới trong phase này"
+→ Tiếp tục bình thường
 ```
 
 ### 1b. Extract Tech Stack từ docs
@@ -458,7 +493,13 @@ Với mỗi quyết định kỹ thuật quan trọng:
    })
 
 4. mc_validate({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md" })
-   → Xử lý issues
+   // BLOCKING GATE (RISK-001) — phân loại kết quả (RISK-007):
+   → ERROR   → ❌ DỪNG ngay. Fix lỗi → mc_save lại → mc_validate lại (tối đa 3 lần retry)
+              Nếu vẫn ERROR sau 3 lần → báo user, không tiếp tục
+   → WARNING → Phân loại:
+       - Format warning (ID format sai, thiếu required section, sai template) → FIX trước khi tiếp tục
+       - Content warning (thiếu mô tả, chưa đủ AC detail, missing rationale) → Ghi DECISION + tiếp tục
+   → PASS    → ✅ Tiếp tục bước 5
 
 5. mc_dependency({
      action: "register",
@@ -466,19 +507,34 @@ Với mỗi quyết định kỹ thuật quan trọng:
      dependsOn: ["URS-{MOD}.md", "DATA-DICTIONARY.md"]
    })
 
+// BẮT BUỘC (RISK-002, RISK-005) — đăng ký ĐẦY ĐỦ tất cả IDs: API, TBL, COMP, ADR, INT
 6. mc_traceability({
      action: "link",
      items: [
+       // FT → API links (tất cả FT-IDs có API)
        { from: "FT-WH-001", to: "API-ERP-001" },
-       { from: "FT-WH-002", to: "TBL-ERP-001" }
+       // FT → TBL links (tất cả FT-IDs có TBL)
+       { from: "FT-WH-002", to: "TBL-ERP-001" },
+       // FT → COMP links (tất cả FT-IDs có COMP)
+       { from: "FT-WH-001", to: "COMP-ERP-001" },
+       // COMP → TBL links (component phụ thuộc table nào)
+       { from: "COMP-ERP-001", to: "TBL-ERP-001" },
+       // ADR links (design decision ảnh hưởng API/TBL nào)
+       { from: "ADR-ERP-001", to: "API-ERP-001" },
+       // INT links — CHỈ khi có cross-system calls
+       { from: "API-ERP-001", to: "INT-ERP-001" }
      ]
    })
+   // Ghi chú: Thêm đủ tất cả items theo module thực tế — ví dụ trên chỉ minh họa pattern
 
+// BẮT BUỘC per-module checkpoint (RISK-003) — lưu sau MỖI MODSPEC, kể cả khi còn modules khác
 7. mc_checkpoint({
      label: "sau-modspec-{mod}",
-     sessionSummary: "Thiết kế MODSPEC-{MOD}: {N} APIs, {M} tables",
-     nextActions: ["Tiếp tục module khác hoặc /mcv3:qa-docs"]
+     sessionSummary: "Thiết kế MODSPEC-{MOD}: {N} APIs, {M} tables, {K} components, {J} ADRs",
+     nextActions: ["Tiếp tục module tiếp theo: {MOD-NEXT}" // hoặc "/mcv3:qa-docs nếu xong tất cả"]
    })
+   → ✅ Per-module checkpoint đã lưu — có thể resume từ đây nếu session bị interrupt
+   → Lặp lại Phase 1–6 cho module tiếp theo (nếu còn)
 ```
 
 ---
@@ -523,7 +579,23 @@ Content Quality:
 ✅ Không có duplicate API paths
 ✅ ADR có ≥ 1 record (ít nhất 1 major design decision đã ghi)
 ✅ mc_validate PASS
-✅ mc_traceability link FT → API đã register
+✅ mc_traceability đã register: FT→API, FT→TBL, FT→COMP, COMP→TBL, ADR→API (và INT nếu có)
+```
+
+---
+
+## Phase 6.5 — Pre-Completion Verification (BẮT BUỘC — RISK-004)
+
+> Gọi EXPLICIT sau khi xong tất cả modules, TRƯỚC khi show Completion Report.
+
+```
+// Thực thi Pre-Completion Verification (xem section bên dưới) theo thứ tự:
+1. Tầng 1 — Self-Verification: kiểm tra format & IDs
+2. Tầng 2 — Cross-Document: kiểm tra FT coverage, orphan APIs
+3. Tầng 3 — Quality Gate: tổng hợp
+
+→ Nếu Quality Gate có item FAIL → fix trước khi tiếp tục Post-Gate
+→ Nếu tất cả ✅ → tiếp tục Post-Gate
 ```
 
 ---
@@ -534,7 +606,7 @@ Content Quality:
 ✅ Ít nhất 1 MODSPEC đã saved
 ✅ Tất cả FT có ít nhất 1 API-ID tương ứng
 ✅ Tất cả Entities có TBL-ID tương ứng
-✅ Traceability đã link FT → API và Entity → TBL
+✅ Traceability đã link FT → API, FT → TBL, FT → COMP, ADR → API, COMP → TBL (và INT nếu có cross-system)
 ✅ Không có MODSPEC ERRORs từ mc_validate
 ✅ Architecture có ADR cho ít nhất 1 major decision
 
