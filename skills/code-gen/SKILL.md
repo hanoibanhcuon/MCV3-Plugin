@@ -858,13 +858,38 @@ Verification Loop (Phase 9):
 ✅ PENDING markers: [count] — cần bổ sung specs
 ✅ SECURITY-WARNING: [count] — documented trong Final Report
 
-Thông báo kết quả:
-  Không có issue    → "✅ Phase 7 + Verification hoàn thành! Code sẵn sàng verify."
-  Có REVIEW marker  → "⚠️ Code gen xong, {M} điểm cần xác nhận specs (xem REVIEW markers)."
-  Có PENDING marker → "📋 Code gen xong, {P} phần thiếu specs (xem PENDING markers)."
-  Có lỗi còn lại    → "❌ Verification có vấn đề cần fix thủ công (xem Final Report)."
+Completion Report (KHÔNG show full code — chỉ show tóm tắt):
 
-Tiếp theo: Chạy /mcv3:verify
+═══════════════════════════════════════════════
+📋 HOÀN THÀNH: /mcv3:code-gen
+═══════════════════════════════════════════════
+
+✅ Đã sinh code cho {N} modules:
+   {MOD1}: {X} files (controller, service, repo, validator, test)
+           {M} API handlers, {K} migrations
+   {MOD2}: ...
+
+📊 Verification Loop:
+   Compile: ✅/❌ | Lint: ✅/❌ | Tests: {X}/{Y} pass
+   Coverage: Lines {L}% | Branches {B}%
+   Security: {S} CRITICAL, {W} warnings
+   REVIEW markers: {R} — cần xác nhận specs
+   PENDING markers: {P} — cần bổ sung specs
+
+⚠️ Tổng kết:
+   Không có issue    → ✅ Code sẵn sàng verify
+   Có REVIEW marker  → ⚠️ {R} điểm cần xác nhận specs (xem REVIEW markers trong code)
+   Có PENDING marker → 📋 {P} phần thiếu specs (xem PENDING markers trong code)
+   Có lỗi còn lại    → ❌ Cần fix thủ công (xem Final Report ở trên)
+
+🔜 Bước tiếp theo: /mcv3:verify — Cross-verify traceability
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem danh sách files đã tạo? (cho biết module)
+   [2] Xem REVIEW/PENDING markers? (để bổ sung specs)
+   [3] OK, tiếp tục → /mcv3:verify
+═══════════════════════════════════════════════
 ```
 
 ---

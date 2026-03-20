@@ -471,10 +471,32 @@ A: {Câu trả lời ngắn gọn}
 ✅ Traceability: AC → TC đã link
 ✅ Không có TEST errors từ mc_validate
 
-→ "✅ Phase 6 QA & Docs hoàn thành!
-   {N} Test Cases, {M} UAT Scenarios.
-   Test coverage: {X}% AC covered.
-   Tiếp theo: /mcv3:code-gen"
+→ Dùng Completion Report format (xem auto-mode-protocol.md Phase 3):
+
+═══════════════════════════════════════════════
+📋 HOÀN THÀNH: /mcv3:qa-docs
+═══════════════════════════════════════════════
+
+✅ Đã tạo/cập nhật {N+2} files:
+   TEST-{MOD1}.md — {X} TCs, {M} UAT scenarios
+   TEST-{MOD2}.md — ...
+   USER-GUIDE.md  — cập nhật {N} chapters
+   ADMIN-GUIDE.md — cập nhật {N} sections
+
+📊 Test Coverage:
+   AC Coverage: {X}% ({A}/{B} ACs có TC)
+   FT Coverage: {Y}% ({C}/{D} FTs có TC)
+
+⚠️ {D} quyết định đã tự xử lý (xem DECISION-LOG)
+
+🔜 Bước tiếp theo: /mcv3:code-gen — Generate source code
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem chi tiết file nào? (cho biết tên file)
+   [2] Có thay đổi gì không? (mô tả thay đổi)
+   [3] OK, tiếp tục → /mcv3:code-gen
+═══════════════════════════════════════════════
 ```
 
 ---

@@ -6,6 +6,62 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [3.11.1] — Output Display Protocol — Skills chỉ show tóm tắt, không dump full content — 2026-03-20
+
+### Added
+
+- **`knowledge/auto-mode-protocol.md`** — Thêm section `## OUTPUT DISPLAY PROTOCOL` với 6 rules:
+  - Rule 1: `mc_save` trước, chỉ show tóm tắt sau — KHÔNG dump full markdown vào chat
+  - Rule 2: Format tóm tắt per document: tên file + metrics (IDs, counts, ranges)
+  - Rule 3: Completion Report + user options [1] Xem chi tiết / [2] Thay đổi / [3] Tiếp tục
+  - Rule 4: Khi user request xem chi tiết → `mc_load` layer 2 → show phần được hỏi
+  - Rule 5: Khi user muốn thay đổi → update → show diff tóm tắt
+  - Rule 6: Navigator exception — navigator được phép show dashboard đầy đủ
+  - Cập nhật Phase 3 Completion Report format: thêm user options ở cuối
+  - Cập nhật Tóm tắt nhanh: thêm `mc_save TRƯỚC`, `chỉ show tóm tắt`, `kết thúc [1]/[2]/[3]` vào LUÔN LUÔN; thêm `Paste/dump full document` vào KHÔNG BAO GIỜ
+
+### Changed
+
+- **`agents/doc-writer.md`** — Cập nhật Output Protocol + Auto-Mode Protocol:
+  - Output Protocol: trả về `metrics` object (counts, ranges, decisions) thay vì full content
+  - Auto-Mode Protocol: thêm rule `NO-DUMP-CONTENT` — KHÔNG paste full document vào chat
+  - Thêm ví dụ tóm tắt sau `mc_save` theo OUTPUT DISPLAY PROTOCOL
+
+- **`skills/requirements/SKILL.md`** — Cập nhật output display:
+  - Mô tả đổi từ "Guided Generation Protocol" → "Auto-Mode Protocol" (mc_save → show tóm tắt)
+  - Phase 5 Save & Register: thêm bước 5 show tóm tắt sau mc_save, ghi rõ KHÔNG hiển thị nội dung
+  - Post-Gate: đổi sang Completion Report format chuẩn với user options [1]/[2]/[3]
+
+- **`skills/biz-docs/SKILL.md`** — Cập nhật output display:
+  - Mô tả đổi từ "Guided Generation protocol: skeleton → user review" → "Auto-Mode Protocol: mc_save → tóm tắt"
+  - Phase 2c: đổi "Thay vì trình bày skeleton để hỏi user" → "Hoàn thành tự động — KHÔNG trình bày"
+  - Phase 5 Save: thêm tóm tắt ngắn sau mỗi mc_save
+  - Post-Gate: Completion Report format + user options
+
+- **`skills/discovery/SKILL.md`** — Post-Gate: Completion Report format với user options
+- **`skills/expert-panel/SKILL.md`** — Post-Gate: Completion Report format với user options
+- **`skills/tech-design/SKILL.md`** — Phase 6 Save: thêm tóm tắt sau mc_save; Post-Gate: Completion Report format
+- **`skills/qa-docs/SKILL.md`** — Post-Gate: Completion Report format với coverage metrics + user options
+- **`skills/code-gen/SKILL.md`** — Post-Gate: Completion Report format với verification summary + user options
+- **`skills/verify/SKILL.md`** — Post-Gate: Completion Report format với traceability coverage + user options
+- **`skills/deploy-ops/SKILL.md`** — Post-Gate: Completion Report format + user options
+- **`skills/assess/SKILL.md`** — Post-Gate: Completion Report format với user options
+- **`skills/change-manager/SKILL.md`** — Post-Gate: Completion Report format + user options
+- **`skills/evolve/SKILL.md`** — Section 2d: đổi "Hiển thị evolution plan" → "Tóm tắt evolution plan"; Post-Gate: Completion Report format
+- **`skills/migrate/SKILL.md`** — Post-Gate: Completion Report format với user options
+- **`skills/onboard/SKILL.md`** — Phase 3 tutorial complete: thêm user options
+
+- **`CLAUDE.md`** — Auto-Mode Framework section:
+  - KHÔNG BAO GIỜ: thêm "Paste / hiển thị toàn bộ nội dung document vào chat"
+  - LUÔN LUÔN: thêm 3 rules về output display
+  - Thêm section "Output Display" mô tả cơ chế mc_save → tóm tắt
+
+### Rationale
+
+User phản hồi: khi chạy `/mcv3:requirements`, skill show TOÀN BỘ nội dung URS lên chat — dài, khó đọc, tốn context window. Fix: tất cả skills phải mc_save trước, chỉ show tóm tắt ngắn với metrics. User có thể request xem chi tiết file bất kỳ khi cần.
+
+---
+
 ## [3.11.0] — Auto-Mode Framework — Tất cả skills chạy tự động hoàn toàn — 2026-03-20
 
 ### Added

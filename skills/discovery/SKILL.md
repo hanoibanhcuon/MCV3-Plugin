@@ -239,8 +239,30 @@ Kiểm tra trước khi thông báo hoàn thành:
 ✅ Validated không có ERRORs
 ✅ Checkpoint đã lưu
 
-→ Nếu tất cả pass:
-   Báo cáo hoàn thành theo Auto-Mode format (xem knowledge/auto-mode-protocol.md Phase 3)
+→ Nếu tất cả pass — Dùng Completion Report format (auto-mode-protocol.md Phase 3):
+
+═══════════════════════════════════════════════
+📋 HOÀN THÀNH: /mcv3:discovery
+═══════════════════════════════════════════════
+
+✅ Đã tạo: _PROJECT/PROJECT-OVERVIEW.md
+   → {N} PROB-IDs (vấn đề cốt lõi)
+   → {M} GL-IDs (mục tiêu)
+   → {K} SC-IN-IDs (phạm vi dự án)
+   → {J} ST-IDs (stakeholders)
+   → Pipeline variant: {Micro/Small/Medium/Large/Enterprise}
+
+⚠️ {D} quyết định đã tự xử lý (xem DECISION-LOG)
+
+🔜 Bước tiếp theo: /mcv3:expert-panel — Phân tích chuyên gia
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem chi tiết file nào? (cho biết tên file)
+   [2] Có thay đổi gì không? (mô tả thay đổi)
+   [3] OK, tiếp tục → /mcv3:expert-panel
+═══════════════════════════════════════════════
+
 → Nếu thiếu:
    "⚠️ Discovery chưa hoàn chỉnh: [liệt kê những gì còn thiếu]"
 ```

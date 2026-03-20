@@ -435,10 +435,13 @@ Với mỗi quyết định kỹ thuật quan trọng:
 ## Phase 6 — Save & Validate
 
 ```
+// KHÔNG hiển thị nội dung MODSPEC lên chat — chỉ show tóm tắt sau mc_save
+
 1. mc_save({
      filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md",
      documentType: "modspec"
    })
+   → 📄 Đã lưu: MODSPEC-{MOD}.md — {N} APIs (API-{SYS}-001 → ...), {M} tables, {K} components
 
 // Lưu ARCHITECTURE.md nếu đã tạo trong phase này (lần đầu hoặc cập nhật)
 2. mc_save({
@@ -488,10 +491,31 @@ Với mỗi quyết định kỹ thuật quan trọng:
 ✅ Không có MODSPEC ERRORs từ mc_validate
 ✅ Architecture có ADR cho ít nhất 1 major decision
 
-→ "✅ Phase 5 Technical Design hoàn thành!
-   {N} MODSPEC files, {X} APIs, {Y} tables thiết kế.
-   Tiếp theo: /mcv3:qa-docs (đầy đủ — khuyến nghị)
-   Hoặc: /mcv3:code-gen trực tiếp (chỉ cho Micro/Small project, skip Phase 6)."
+→ Dùng Completion Report format (xem auto-mode-protocol.md Phase 3):
+
+═══════════════════════════════════════════════
+📋 HOÀN THÀNH: /mcv3:tech-design
+═══════════════════════════════════════════════
+
+✅ Đã tạo {N} MODSPEC files:
+   1. MODSPEC-{MOD1}.md — {X} APIs (API-{SYS}-001 → ...), {Y} tables
+   2. MODSPEC-{MOD2}.md — ...
+   ARCHITECTURE.md — cập nhật
+   DATA-MODEL.md   — cập nhật
+
+⚠️ {D} quyết định đã tự xử lý (xem DECISION-LOG)
+   ADRs: {K} Architecture Decision Records
+
+🔜 Bước tiếp theo:
+   → /mcv3:qa-docs (khuyến nghị — full pipeline)
+   → /mcv3:code-gen (Micro/Small project — skip Phase 6)
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem chi tiết file nào? (cho biết tên file)
+   [2] Có thay đổi gì không? (mô tả thay đổi)
+   [3] OK, tiếp tục → /mcv3:qa-docs
+═══════════════════════════════════════════════
 ```
 
 ---

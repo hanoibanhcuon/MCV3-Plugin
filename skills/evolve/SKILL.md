@@ -221,7 +221,7 @@ Các systems/modules sau đang phụ thuộc vào {MODULE}:
 ⚠️ Evolution scope 'Major' hoặc có breaking changes → cần coordinate với teams trên."
 ```
 
-### 2d. Hiển thị evolution plan
+### 2d. Tóm tắt evolution plan
 
 ```
 "📋 EVOLUTION PLAN — {MODULE} v{N} → v{N+1}
@@ -464,9 +464,31 @@ mc_checkpoint({
 ✅ EVOLUTION-LOG ghi nhận
 ✅ Sprint plan tạo (nếu major)
 
-→ "✅ Evolution v{N+1} kế hoạch xong!
-   {N} features mới, {M} APIs mới.
-   Tiếp theo: /mcv3:qa-docs → /mcv3:code-gen"
+→ Dùng Completion Report format (xem auto-mode-protocol.md Phase 3):
+
+═══════════════════════════════════════════════
+📋 HOÀN THÀNH: /mcv3:evolve — EVOL-{ID}
+═══════════════════════════════════════════════
+
+✅ Đã cập nhật documents (v{N} → v{N+1}):
+   URS-{MOD}.md    — +{X} User Stories mới
+   MODSPEC-{MOD}.md — +{M} APIs mới, +{K} tables
+   EVOLUTION-LOG.md — ghi nhận EVOL-{ID}
+
+📊 Scope: {Minor/Major}
+   Features mới: {N} | APIs mới: {M}
+   Backward compat: ✅ / ⚠️ breaking: {list}
+
+🔜 Bước tiếp theo:
+   → /mcv3:qa-docs — Tạo test cases cho features mới
+   → /mcv3:code-gen — Generate code cho features mới
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem chi tiết documents đã update?
+   [2] Điều chỉnh features/scope?
+   [3] OK, tiếp tục → /mcv3:qa-docs
+═══════════════════════════════════════════════
 ```
 
 ---

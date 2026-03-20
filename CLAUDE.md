@@ -335,12 +335,18 @@ Tất cả skills chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-proto
 - Hỏi "confirm tiếp tục không?"
 - Dừng giữa chừng chờ user approve
 - Hỏi "tech stack đúng không?"
+- Paste / hiển thị toàn bộ nội dung document vào chat
 
 **LUÔN LUÔN:**
 - Tự chọn module order theo dependency
 - Tự detect tech stack từ docs
 - Tự quyết + ghi DECISION khi ambiguous
 - Checkpoint sau mỗi module
+- `mc_save` trước khi show bất cứ thứ gì
+- Chỉ show tóm tắt: tên file + metrics + decisions
+- Kết thúc bằng user options [1] Xem chi tiết / [2] Thay đổi / [3] Tiếp tục
+
+**Output Display:** Skills tự lưu file qua `mc_save`, chỉ show tóm tắt ngắn. User có thể request xem chi tiết bất kỳ file nào bằng cách nói tên file. Chi tiết tại `knowledge/auto-mode-protocol.md` — OUTPUT DISPLAY PROTOCOL.
 
 ---
 

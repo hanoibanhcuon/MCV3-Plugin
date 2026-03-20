@@ -594,27 +594,34 @@ mc_checkpoint({
 ### 6f. Post-Gate
 
 ```
-"✅ Assessment hoàn thành!
+Dùng Completion Report format (xem auto-mode-protocol.md Phase 3):
+
+═══════════════════════════════════════════════
+📋 HOÀN THÀNH: /mcv3:assess
+═══════════════════════════════════════════════
+
+✅ Đã tạo assessment docs:
+   PROJECT-MANIFEST.md    — {N} systems, {M} modules
+   ASSESSMENT-MATRIX.md   — phase per system
+   GAP-REPORT.md          — {K} critical gaps
+   [SYNC-REPORT.md]       — (nếu type C/D)
+   REMEDIATION-PLAN.md    — priority order
 
 📊 Tổng kết:
-  - {N} systems phát hiện
-  - {M} modules phân tích
-  - Phase hiện tại per system: {summary}
-  - {K} critical gaps cần xử lý
-  - {L} docs sẵn sàng migrate
+   {N} systems | Phase per system: {summary}
+   {K} critical gaps cần xử lý
+   {L} docs sẵn sàng migrate/formalize
 
-📁 Files tạo ra:
-  - _mcv3-work/assessment/PROJECT-MANIFEST.md
-  - _mcv3-work/assessment/ASSESSMENT-MATRIX.md
-  - _mcv3-work/assessment/GAP-REPORT.md
-  [- _mcv3-work/assessment/SYNC-REPORT.md] (nếu type C/D)
-  - _mcv3-work/assessment/REMEDIATION-PLAN.md
+🔜 Bước tiếp theo (theo REMEDIATION-PLAN.md):
+   → {Skill 1}: {description}
+   → {Skill 2}: {description}
 
-🚀 Bước tiếp theo (theo REMEDIATION-PLAN.md):
-  → {Skill 1}: {description}
-  → {Skill 2}: {description}
-
-Bước tiếp theo theo REMEDIATION-PLAN: {Skill 1} — {description}"
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem chi tiết GAP-REPORT hoặc REMEDIATION-PLAN?
+   [2] Điều chỉnh priority nào?
+   [3] OK, bắt đầu → {Skill 1 từ REMEDIATION-PLAN}
+═══════════════════════════════════════════════
 ```
 
 ---

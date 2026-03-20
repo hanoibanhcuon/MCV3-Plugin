@@ -7,7 +7,7 @@ Tạo bộ **tài liệu nghiệp vụ đầy đủ** (Phase 3):
 - `PROCESS-{DOMAIN}.md` — Quy trình AS-IS & TO-BE
 - `DATA-DICTIONARY.md` — Từ điển dữ liệu
 
-Sử dụng **Guided Generation protocol**: doc-writer tạo skeleton → user review & enrich → hoàn chỉnh.
+Sử dụng **Auto-Mode Protocol**: doc-writer tạo hoàn chỉnh từ industry knowledge + context — mc_save → show tóm tắt, không show toàn bộ nội dung.
 
 ---
 
@@ -153,7 +153,7 @@ Doc-writer tạo skeleton BIZ-POLICY với:
 
 ### 2c. Auto-fill document từ industry knowledge + context
 
-Thay vì trình bày skeleton để hỏi user, tự hoàn thành tài liệu:
+Hoàn thành tài liệu tự động — KHÔNG trình bày hay hiển thị nội dung lên chat, chỉ mc_save → show tóm tắt:
 
 ```
 1. Load industry references đã match với domain
@@ -236,12 +236,18 @@ Nếu không chắc chắn → ghi DECISION với Confidence: MEDIUM
 ## Phase 5 — Save & Validate All
 
 ```
-Với mỗi document:
+Với mỗi document (KHÔNG hiển thị nội dung lên chat — chỉ show tóm tắt sau mc_save):
+
 1. mc_save({ filePath: "_PROJECT/BIZ-POLICY/BIZ-POLICY-{DOM}.md", documentType: "biz-policy" })
+   → 📄 Đã lưu: BIZ-POLICY-{DOM}.md — {N} Business Rules (BR-{DOM}-001 → BR-{DOM}-{NNN})
+
 2. mc_save({ filePath: "_PROJECT/PROCESS/PROCESS-{DOM}.md", documentType: "process" })
+   → 📄 Đã lưu: PROCESS-{DOM}.md — {M} quy trình (AS-IS + TO-BE)
 
 Cuối cùng:
 3. mc_save({ filePath: "_PROJECT/DATA-DICTIONARY.md", documentType: "data-dictionary" })
+   → 📄 Đã lưu: DATA-DICTIONARY.md — {K} TERM, {J} ENT, {L} ENUM
+
 4. mc_validate({ filePath: ... }) cho mỗi file
 
 5. mc_checkpoint({
@@ -263,8 +269,29 @@ Cuối cùng:
 ✅ PROCESS có cả AS-IS và TO-BE
 ✅ Validated không có ERRORs
 
-→ "✅ Phase 3 Business Docs hoàn thành!
-   Tiếp theo: /mcv3:requirements để viết URS."
+→ Dùng Completion Report format (xem auto-mode-protocol.md Phase 3):
+
+═══════════════════════════════════════════════
+📋 HOÀN THÀNH: /mcv3:biz-docs
+═══════════════════════════════════════════════
+
+✅ Đã tạo {N×3 + 1} files:
+   BIZ-POLICY-{DOM1}.md — {X} BRs
+   PROCESS-{DOM1}.md    — {M} quy trình
+   BIZ-POLICY-{DOM2}.md — ...
+   DATA-DICTIONARY.md   — {K} TERM, {J} ENT
+
+⚠️ {D} quyết định đã tự xử lý (xem DECISION-LOG)
+📋 Tất cả files trong .mc-data/_PROJECT/
+
+🔜 Bước tiếp theo: /mcv3:requirements — Viết URS cho từng module
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem chi tiết file nào? (cho biết tên file)
+   [2] Có thay đổi gì không? (mô tả thay đổi)
+   [3] OK, tiếp tục → /mcv3:requirements
+═══════════════════════════════════════════════
 ```
 
 ---

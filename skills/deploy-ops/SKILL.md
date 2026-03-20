@@ -490,16 +490,33 @@ On-call → Tech Lead → CTO (nếu RTO > 2h)
 ✅ SLA đã định nghĩa
 ✅ Pre-production snapshot đã tạo
 
-→ "✅ Phase 8 Deploy-Ops hoàn thành!
-   🚀 Dự án {name} sẵn sàng cho go-live.
+→ Dùng Completion Report format (xem auto-mode-protocol.md Phase 3):
 
-   Next steps:
+═══════════════════════════════════════════════
+📋 HOÀN THÀNH: /mcv3:deploy-ops
+═══════════════════════════════════════════════
+
+✅ Đã tạo deployment documentation:
+   DEPLOY-OPS.md             — Deploy Plan + Rollback + Monitoring + SLA
+   deploy-readiness-checklist.md — Go-Live Checklist (T-7 → T+7)
+
+⚠️ {D} quyết định đã tự điền (xem DECISION-LOG)
+   Infra defaults, SLA targets, alert thresholds cần team review
+
+🚀 Next steps khi đã review:
    1. Review DEPLOY-OPS.md với team
    2. Execute go-live checklist (T-7 days)
    3. Deploy theo deployment plan
    4. Monitor 48h đầu sau go-live
 
-   🎉 Chúc mừng! Đây là phase cuối của pipeline MCV3."
+🎉 Đây là phase cuối của pipeline MCV3!
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem chi tiết DEPLOY-OPS.md?
+   [2] Điều chỉnh SLA / monitoring config?
+   [3] Hoàn tất — bắt đầu go-live checklist
+═══════════════════════════════════════════════
 ```
 
 ---

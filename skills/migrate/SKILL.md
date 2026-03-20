@@ -588,10 +588,33 @@ mc_checkpoint({
 ✅ MIGRATION-REPORT.md đã tạo
 ✅ Traceability registered
 
-→ "✅ Migration hoàn thành!
-   {N} documents converted, {M} IDs assigned.
-   Xem MIGRATION-REPORT.md để biết items cần review.
-   Tiếp theo: Review gaps → /mcv3:requirements hoặc /mcv3:tech-design"
+→ Dùng Completion Report format (xem auto-mode-protocol.md Phase 3):
+
+═══════════════════════════════════════════════
+📋 HOÀN THÀNH: /mcv3:migrate
+═══════════════════════════════════════════════
+
+✅ Đã convert {N} documents:
+   BIZ-POLICY-{DOM}.md — {X} BRs extracted
+   URS-{MOD}.md        — {Y} US, {Z} FT (nếu có)
+   MIGRATION-REPORT.md — gaps + items cần review
+
+📊 Metrics:
+   {M} IDs assigned | {K} gaps cần fill
+   Generated items: {G} (cần human verify)
+   Ambiguous items: {A} (đánh dấu trong docs)
+
+🔜 Bước tiếp theo:
+   → Review MIGRATION-REPORT.md để biết gaps
+   → /mcv3:requirements (nếu cần fill URS gaps)
+   → /mcv3:tech-design (nếu đã có URS đầy đủ)
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem MIGRATION-REPORT để biết gaps?
+   [2] Xem file đã convert nào?
+   [3] OK, tiếp tục → /mcv3:requirements
+═══════════════════════════════════════════════
 ```
 
 ---

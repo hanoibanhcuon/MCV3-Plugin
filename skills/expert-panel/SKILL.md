@@ -263,8 +263,28 @@ Nếu sau khi nhận báo cáo, user cung cấp thêm thông tin → tự update
 ✅ Validated không có ERRORs
 ✅ Checkpoint saved
 
-→ "✅ Expert Panel Phase 2 hoàn thành!
-   Tiếp theo: /mcv3:biz-docs để tạo tài liệu nghiệp vụ."
+→ Dùng Completion Report format (xem auto-mode-protocol.md Phase 3):
+
+═══════════════════════════════════════════════
+📋 HOÀN THÀNH: /mcv3:expert-panel
+═══════════════════════════════════════════════
+
+✅ Đã tạo: _PROJECT/EXPERT-LOG.md
+   → SESSION-001 với 3 expert analyses (Strategy + Finance + Domain)
+   → {N} điểm CONSENSUS
+   → {M} RISKS đã phát hiện
+   → {K} OPEN ISSUES ghi nhận (sẽ giải quyết tại Phase 3)
+
+⚠️ {D} quyết định đã tự xử lý (xem DECISION-LOG)
+
+🔜 Bước tiếp theo: /mcv3:biz-docs — Tạo tài liệu nghiệp vụ
+
+═══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Xem chi tiết file nào? (cho biết tên file)
+   [2] Có thay đổi gì không? (mô tả thay đổi)
+   [3] OK, tiếp tục → /mcv3:biz-docs
+═══════════════════════════════════════════════
 ```
 
 ---
