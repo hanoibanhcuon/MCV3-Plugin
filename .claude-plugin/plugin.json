@@ -6,7 +6,6 @@
     "name": "hanoibanhcuon"
   },
   "skills": "./skills/",
-  "agents": "./agents/",
   "commands": "./.claude/commands/mcv3",
   "hooks": "./hooks/hooks.json",
   "mcpServers": "./.mcp.json",

@@ -3,7 +3,7 @@
     "mcv3-project-memory": {
       "type": "stdio",
       "command": "node",
-      "args": ["./mcp-servers/project-memory/dist/index.js"],
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp-servers/project-memory/dist/index.js"],
       "env": {
         "MCV3_PROJECT_ROOT": "."
       },
