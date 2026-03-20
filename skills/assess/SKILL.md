@@ -829,7 +829,9 @@ SNAPSHOT-BEFORE-CHANGES: Luôn snapshot trước khi bắt đầu remediation
 
 ---
 
-## Inter-Phase Verification
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+> **Phân biệt với `6e-verify-inter`:** Section này là checklist nhanh GIỮA các phases (trước khi chuyển sang phase tiếp theo). Section `6e-verify-inter` ở trên là cross-cutting consistency check chạy SAU KHI hoàn thành toàn bộ phân tích.
 
 Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển phase:
 
