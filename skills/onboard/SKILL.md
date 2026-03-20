@@ -61,7 +61,11 @@ từ Business Requirements → Architecture Design → Code Scaffolding.
     → 5 phút overview
 
 [4] Tôi đã quen — muốn tạo dự án ngay
-    → Chuyển thẳng đến /mcv3:discovery"
+    → Chuyển thẳng đến /mcv3:discovery
+
+[5] Tôi có dự án đang chạy — muốn tích hợp MCV3
+    → Tutorial cho dự án in-progress / ongoing project
+    → 10 phút hướng dẫn onboard dự án cũ"
 ```
 
 ---
@@ -254,6 +258,86 @@ Không cần technical knowledge. Chỉ cần biết:
 - Bạn đang giải quyết vấn đề gì?
 - Ai là người dùng?
 - Kết quả mong đợi là gì?"
+```
+
+---
+
+## Phase 1D — Ongoing Project Tutorial
+
+Đọc `references/quick-start-developer.md` (phần ongoing) và hướng dẫn:
+
+### 1D.1 — Dự án của bạn đang ở đâu?
+
+```
+"🔄 Ongoing Project Onboarding
+
+Dự án của bạn đang ở trạng thái nào?
+
+[A] Có codebase nhưng ít/không có tài liệu
+    → Tôi hướng dẫn tạo docs từ code
+
+[B] Có tài liệu cũ (Word, PDF, Confluence) nhưng chưa dùng MCV3
+    → Tôi hướng dẫn migrate sang MCV3 format
+
+[C] Có cả code lẫn docs nhưng chưa đồng bộ
+    → Tôi hướng dẫn assess + sync
+
+[D] Đang dùng MCV3, muốn thêm features mới
+    → Tôi hướng dẫn evolve workflow
+
+Chọn [A/B/C/D]:"
+```
+
+### 1D.2 — Recommended Workflow cho Ongoing Projects
+
+```
+"🗺️ Workflow cho dự án in-progress:
+
+Bước 1: ĐÁNH GIÁ (bắt buộc)
+  /mcv3:assess → Scan dự án, xác định gaps, tạo remediation plan
+  → Output: REMEDIATION-PLAN.md với thứ tự ưu tiên rõ ràng
+
+Bước 2: IMPORT TÀI LIỆU CŨ (nếu có)
+  /mcv3:migrate → Convert Word/PDF/Confluence sang MCV3 format
+  → Hỗ trợ: Documents, Swagger/API specs, database schema, code
+
+Bước 3: BỔ SUNG TÀI LIỆU THIẾU (theo remediation plan)
+  /mcv3:requirements → Viết URS cho modules chưa có
+  /mcv3:tech-design  → Tạo MODSPEC từ existing code
+  /mcv3:qa-docs      → Tạo test cases cho existing features
+
+Bước 4: SYNC & VERIFY (khi đã đủ docs)
+  /mcv3:change-manager → Sync docs với code hiện tại
+  /mcv3:verify         → Kiểm tra traceability end-to-end
+
+Bước 5: TIẾP TỤC PHÁT TRIỂN
+  /mcv3:evolve → Thêm features mới với full documentation
+  /mcv3:status → Dashboard tiến độ bất kỳ lúc nào
+
+💡 Tip: Không cần hoàn thiện docs từ Phase 1 → 8 tuần tự.
+   MCV3 cho phép mỗi system ở phase khác nhau — rất bình thường
+   với dự án in-progress."
+```
+
+### 1D.3 — Ví dụ thực tế
+
+```
+"📖 Case study: Dự án có code, không có docs
+
+Tình huống: ERP system đã chạy 6 tháng, có 3 developers,
+  src/ có ~50 files, không có tài liệu formal.
+
+Làm với MCV3:
+  1. /mcv3:assess → phát hiện: 8 modules, thiếu toàn bộ Phase 1-6 docs
+  2. /mcv3:migrate (Scope 3) → reverse-engineer từ code:
+     - Extract 25 API endpoints → MODSPEC
+     - Extract business logic từ services → BIZ-POLICY, URS
+     - Extract DB schema → DATA-DICTIONARY
+  3. /mcv3:requirements → bổ sung AC, NFR còn thiếu
+  4. /mcv3:verify → build traceability matrix
+  5. /mcv3:evolve → thêm Sprint 3 features với docs đầy đủ
+
+Kết quả: Dự án từ 'chaos' → có full traceability trong 2-3 sessions."
 ```
 
 ---

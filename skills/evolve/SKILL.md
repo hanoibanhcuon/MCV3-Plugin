@@ -142,7 +142,34 @@ mc_compare({
 | Minor (0.x.0) | Thêm optional feature, không break existing | New section trong file |
 | Major (x.0.0) | Thêm required feature, thay đổi contract | New file v{N+1} |
 
-### 2c. Hiển thị evolution plan
+### 2c. Dependency Check trước khi evolve
+
+Trước khi confirm evolution plan, kiểm tra các modules/systems phụ thuộc vào module đang evolve:
+
+```
+// Tìm ai đang depend vào module này
+mc_dependency({
+  action: "dependents",
+  projectSlug: "<slug>",
+  source: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md"
+})
+```
+
+Nếu có dependents:
+```
+"🔍 Dependency Check — {MODULE}
+
+Các systems/modules sau đang phụ thuộc vào {MODULE}:
+
+| Dependent | Loại phụ thuộc | Ảnh hưởng khi evolve |
+|-----------|---------------|---------------------|
+| {SYS2}/{MOD2} | API consumer | Cần verify API backward compat |
+| {SYS3}/MODSPEC | DB shared table | Migration phải backward compat |
+
+⚠️ Evolution scope 'Major' hoặc có breaking changes → cần coordinate với teams trên."
+```
+
+### 2d. Hiển thị evolution plan
 
 ```
 "📋 EVOLUTION PLAN — {MODULE} v{N} → v{N+1}
@@ -162,9 +189,41 @@ Backward compatibility:
   ✅ Existing tables: Chỉ thêm columns (nullable)
   ⚠️ Breaking: {list nếu có}
 
+Downstream impact: {N} systems cần notify (nếu có breaking)
+
 Effort estimate: {S/M/L}
 
 Bắt đầu evolution?"
+```
+
+### 2e. Breaking Change Protocol
+
+Khi evolution tạo ra breaking changes (thay đổi API contract, xóa field, đổi auth scheme):
+
+```
+🚨 BREAKING CHANGE trong Evolution v{N+1}
+
+Breaking items phát hiện:
+  - API-{SYS}-{NNN}: Response shape thay đổi (field X bị xóa)
+  - TBL-{SYS}-{NNN}: Column Y NOT NULL thêm vào (migration cần backfill)
+
+Downstream systems bị ảnh hưởng:
+  - {SYS2}: consumer của API-{SYS}-{NNN}
+  - {SYS3}: shared table TBL-{SYS}-{NNN}
+
+Xử lý breaking changes:
+  [1] Versioned API: Giữ v1, thêm v2 endpoint mới (khuyến nghị)
+  [2] Deprecation period: v1 deprecated, v2 mới — set sunset date
+  [3] Force breaking: Chấp nhận breaking, notify downstream teams ngay
+
+Chọn [1/2/3]:"
+```
+
+Với tùy chọn 1 hoặc 2, thêm vào MODSPEC:
+```markdown
+### API-{SYS}-{NNN}-v2: {Endpoint} (Breaking Evolution)
+> ⚠️ v1 deprecated as of {date}. Sunset: {date+90d}
+> v1 endpoint giữ nguyên cho đến sunset date.
 ```
 
 ---
