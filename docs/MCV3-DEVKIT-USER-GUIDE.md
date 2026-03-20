@@ -116,16 +116,16 @@ MCV3 sẽ: scan code + docs hiện có → phân tích gap → đề xuất bổ
 
 ```mermaid
 flowchart TD
-    A[🚀 Bắt đầu dự án mới] --> B[/mcv3:discovery/]
-    B -->|Phỏng vấn ý tưởng| C[/mcv3:expert-panel/]
-    C -->|Phân tích chuyên gia| D[/mcv3:biz-docs/]
-    D -->|Tài liệu nghiệp vụ| E[/mcv3:requirements/]
-    E -->|Yêu cầu kỹ thuật| F[/mcv3:tech-design/]
-    F -->|Thiết kế kỹ thuật| G[/mcv3:qa-docs/]
-    G -->|Test cases| H[/mcv3:code-gen/]
-    H -->|Sinh code + verify| I[/mcv3:verify/]
-    I -->|Kiểm tra toàn diện| J[/mcv3:deploy-ops/]
-    J --> K[✅ Sẵn sàng triển khai]
+    A["Bắt đầu dự án mới"] --> B["/mcv3:discovery"]
+    B -->|Phỏng vấn ý tưởng| C["/mcv3:expert-panel"]
+    C -->|Phân tích chuyên gia| D["/mcv3:biz-docs"]
+    D -->|Tài liệu nghiệp vụ| E["/mcv3:requirements"]
+    E -->|Yêu cầu kỹ thuật| F["/mcv3:tech-design"]
+    F -->|Thiết kế kỹ thuật| G["/mcv3:qa-docs"]
+    G -->|Test cases| H["/mcv3:code-gen"]
+    H -->|Sinh code + verify| I["/mcv3:verify"]
+    I -->|Kiểm tra toàn diện| J["/mcv3:deploy-ops"]
+    J --> K["Sẵn sàng triển khai"]
 
     style A fill:#4CAF50,color:#fff
     style K fill:#4CAF50,color:#fff
@@ -139,21 +139,21 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[📋 Dự án đang phát triển] --> B[/mcv3:assess/]
-    B -->|Đánh giá + tìm gaps| C{Cần import docs cũ?}
-    C -->|Có| D[/mcv3:migrate/]
+    A["Dự án đang phát triển"] --> B["/mcv3:assess"]
+    B -->|Đánh giá + tìm gaps| C{"Cần import docs cũ?"}
+    C -->|Có| D["/mcv3:migrate"]
     C -->|Không| E[Remediation Plan]
     D --> E
-    E --> F{Thiếu gì?}
+    E --> F{"Thiếu gì?"}
     F -->|Thiếu docs| G[Chạy skill tương ứng]
-    F -->|Code lệch docs| H[/mcv3:change-manager/]
-    F -->|Thiếu code| I[/mcv3:code-gen/]
-    G --> J[/mcv3:verify/]
+    F -->|Code lệch docs| H["/mcv3:change-manager"]
+    F -->|Thiếu code| I["/mcv3:code-gen"]
+    G --> J["/mcv3:verify"]
     H --> J
     I --> J
-    J -->|Health Score OK?| K{Đạt mục tiêu?}
+    J -->|Health Score OK?| K{"Đạt mục tiêu?"}
     K -->|Chưa| E
-    K -->|Rồi| L[✅ Tiếp tục phát triển]
+    K -->|Rồi| L["Tiếp tục phát triển"]
 
     style A fill:#FF9800,color:#fff
     style L fill:#4CAF50,color:#fff
