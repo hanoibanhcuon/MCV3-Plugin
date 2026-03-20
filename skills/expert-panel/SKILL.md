@@ -328,6 +328,40 @@ Content Quality:
 
 ---
 
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+> **Phân biệt với Pre-Completion Verification:** Section này kiểm tra nhanh GIỮA các internal phases (phòng tránh lỗi lan sang bước tiếp). Pre-Completion Verification chạy SAU KHI hoàn thành toàn bộ để chuẩn bị Completion Report.
+
+### Sau Phase 1 → trước Phase 2 (Expert Analysis):
+- ✓ PROJECT-OVERVIEW.md đã load đủ context: PROB-IDs, GL-IDs, SC-IN-IDs, ngành nghề
+- ✓ Nếu PROJECT-OVERVIEW thiếu thông tin → ghi nhận gaps, tiếp tục với những gì có (không block)
+- ✓ **Large project (3+ systems):** Đã lập danh sách tất cả systems từ SC-IN để domain expert phân tích theo từng system
+
+### Sau Phase 2 → trước Phase 3 (Synthesis):
+- ✓ Đã nhận output từ ≥ 2/3 expert agents (nếu 1 agent fail → đã áp dụng fallback trực tiếp)
+- ✓ Không có expert output nào hoàn toàn rỗng hoặc chỉ có placeholder
+- ✓ Mỗi expert output có ít nhất 3 điểm cụ thể (không phải generic như "cần tối ưu hóa quy trình")
+- ✓ **Large project:** Domain expert đã cover tất cả systems/domains được liệt kê — không bỏ sót system nào
+
+### Sau Phase 3 → trước Phase 4 (Generate EXPERT-LOG):
+- ✓ CONSENSUS section không rỗng (≥ 1 điểm được tất cả experts đồng thuận)
+- ✓ OPEN DEBATES ghi rõ điểm bất đồng giữa experts — không tự chọn bên mà bỏ bên kia
+- ✓ Không có mâu thuẫn nội tại trong CONSENSUS (2 điểm consensus không contradicts nhau)
+- ✓ OPEN ISSUES mỗi item có "Sẽ giải quyết tại Phase X" cụ thể (không để floating)
+
+### Sau Phase 4 → trước Phase 6 (Save):
+- ✓ EXPERT-LOG có SESSION-001 với đủ 3 expert analyses (hoặc note về fallback nếu agent fail)
+- ✓ Tất cả RISKS được phân loại mức độ: Critical/High/Medium/Low (không có risk thiếu mức độ)
+- ✓ Recommendations không contradicts với PROB-IDs/GL-IDs từ PROJECT-OVERVIEW
+
+### Output Readiness → `/mcv3:biz-docs`:
+- ✓ CONSENSUS recommendations actionable: mỗi điểm có thể translate thành business rule hoặc quy trình
+- ✓ Risks identified có mitigation direction — biz-docs cần để biết cần BR phòng ngừa gì
+- ✓ Domain analysis đã identify đủ domains — biz-docs biết cần tạo BIZ-POLICY cho domain nào
+- ✓ **Large project:** CONSENSUS coverage đủ cho tất cả systems (không phải chỉ system chính) — Phase 3 cần BIZ-POLICY cho tất cả systems
+
+---
+
 ## Quy tắc orchestration
 
 ```

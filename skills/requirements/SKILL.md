@@ -397,6 +397,39 @@ Content (chi tiết tại Phase 4 AC Quality Validation Checklist):
 
 ---
 
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+> **Phân biệt với Pre-Completion Verification:** Section này kiểm tra nhanh GIỮA các internal phases (phòng tránh lỗi lan sang bước tiếp). Pre-Completion Verification chạy SAU KHI hoàn thành toàn bộ để chuẩn bị Completion Report.
+
+### Sau Phase 1 → trước Phase 2 (Context Loading):
+- ✓ Module list đầy đủ: không thiếu module nào có BIZ-POLICY tương ứng
+- ✓ Dependency order hợp lý: Auth/Master data trước, Business modules sau, Integration modules cuối
+- ✓ **Large project (5+ modules):** Checkpoint trước Phase 2 — sau đó process từng module riêng biệt, không load tất cả BIZ-POLICY cùng lúc
+
+### Sau Phase 2 → trước Phase 3 (Draft URS):
+- ✓ Đã extract đủ BR-IDs từ BIZ-POLICY (không bỏ sót BR nào)
+- ✓ Đã identify Use Cases từ TO-BE flows trong PROCESS-{MOD}.md (nếu PROCESS có)
+- ✓ Không có BR nào "orphan" (không map được sang US nào) — nếu có: ghi DECISION giải thích lý do
+
+### Sau Phase 3 → trước Phase 4 (Completeness Validation):
+- ✓ Traceability matrix draft đã có: BR → US → FT mapping (dù chưa hoàn chỉnh)
+- ✓ Tất cả US có ít nhất 1 AC draft (không có US không có AC)
+- ✓ NFR section không rỗng (≥ 1 NFR với số liệu cụ thể, không chỉ "đáp ứng yêu cầu")
+
+### Sau Phase 4 → trước Phase 5 (Save):
+- ✓ AC Quality Validation Checklist PASS (xem Phase 4) — không có AC mơ hồ còn sót
+- ✓ Tất cả BR-IDs có ≥ 1 US tương ứng (100% BR coverage)
+- ✓ Tất cả US có ≥ 1 FT tương ứng (100% US → FT)
+- ✓ **Large project:** Nếu module này có dependency với module khác → ghi INT-REQ note trong URS: "FT-X-001 yêu cầu dữ liệu/API từ Module Y"
+
+### Output Readiness → `/mcv3:tech-design`:
+- ✓ Mỗi BR-ID từ BIZ-POLICY có ≥ 1 US implement nó — không có BR "mồ côi" không được implement
+- ✓ AC đủ cụ thể để tech-design biết cần API nào (AC phải rõ hành động: create/update/delete/query)
+- ✓ NFR có số liệu cụ thể: performance target, security requirements — tech-design cần để chọn architecture phù hợp
+- ✓ **Large project (5+ modules):** Traceability chain intact — kiểm tra trước khi chuyển phase: mỗi module có đủ URS, không có module nào chỉ có BIZ-POLICY mà thiếu URS
+
+---
+
 ## Quy tắc viết Requirements
 
 ```

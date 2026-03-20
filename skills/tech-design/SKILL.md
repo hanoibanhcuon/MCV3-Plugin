@@ -567,6 +567,47 @@ Content Quality:
 
 ---
 
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+> **Phân biệt với Pre-Completion Verification:** Section này kiểm tra nhanh GIỮA các internal phases (phòng tránh lỗi lan sang bước tiếp). Pre-Completion Verification chạy SAU KHI hoàn thành toàn bộ để chuẩn bị Completion Report.
+
+### Sau Phase 1 → trước Phase 2 (API Design):
+- ✓ Tech stack đã xác định (hoặc DECISION ghi rõ default + confidence level)
+- ✓ Đã load đủ URS: FT-IDs list sẵn sàng để map sang API endpoints
+- ✓ Đã load DATA-DICTIONARY (layer: 2) để biết entity names và field types
+- ✓ **Large project (3+ modules, multi-system):** Đã đọc multi-system-design.md — biết build layer order trước khi design API (Layer 0 = Auth, Layer 1 = Master data, ...)
+
+### Sau Phase 2 → trước Phase 3 (Database Design):
+- ✓ Tất cả FT-IDs từ URS đã có ≥ 1 API-ID mapping (không có orphan FT)
+- ✓ API paths unique: không có 2 API cùng Method + Path
+- ✓ Auth requirement đã ghi cho tất cả endpoints (không để trống "Auth: ?")
+- ✓ **Multi-system:** Cross-system API calls đã identify với INT-{SYS}-NNN — ghi rõ system nào gọi system nào
+
+### Sau Phase 3 → trước Phase 4 (Component Design):
+- ✓ Tất cả Entities từ DATA-DICTIONARY đã có TBL-ID tương ứng (không thiếu bảng)
+- ✓ FK references valid: mỗi FK column trỏ tới table.column tồn tại trong MODSPEC hiện tại hoặc module khác (ghi rõ module nào)
+- ✓ Không có circular FK dependencies không có lý do (nếu có: ghi ADR giải thích)
+- ✓ **Large project:** Tables của shared services (Auth, Notification, File) không bị duplicate trong multiple MODSPECs — chỉ define 1 lần ở SHARED-SERVICES hoặc module Auth
+
+### Sau Phase 4 → trước Phase 5 (ADR):
+- ✓ Mỗi component có trách nhiệm duy nhất (không có component "làm tất cả")
+- ✓ Dependencies giữa components là one-way (không có circular dependency)
+- ✓ Business Logic trong components consistent với BR-IDs từ BIZ-POLICY (không mâu thuẫn rule)
+
+### Sau Phase 5 → trước Phase 6 (Save):
+- ✓ Ít nhất 1 ADR cho major design decision (tech stack, DB engine, auth strategy, ...)
+- ✓ ADR status ghi rõ "Accepted" hoặc "Proposed" (không để trống status)
+- ✓ Không có design decision quan trọng "ẩn" trong spec mà không có ADR giải thích
+
+### Output Readiness → `/mcv3:qa-docs` + `/mcv3:code-gen`:
+- ✓ Tất cả FT-IDs đã có API-ID hoặc TBL-ID — qa-docs cần để viết test cases
+- ✓ API spec đủ chi tiết: Request/Response schema rõ ràng — code-gen cần để sinh code chính xác
+- ✓ TBL schema có đủ constraints và indexes — code-gen cần để sinh migration đúng
+- ✓ **Large project (multi-system):** Cross-system APIs nhất quán: nếu System A gọi API System B, response schema phải khớp — kiểm tra ít nhất 1 cross-system call trước khi kết thúc
+- ✓ **Large project:** Shared services (Auth, Notification, File) đã defined hoặc referenced — không để mỗi module tự implement riêng, gây duplicate
+
+---
+
 ## Quy tắc thiết kế
 
 ```

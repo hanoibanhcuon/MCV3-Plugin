@@ -338,6 +338,38 @@ Content Quality:
 
 ---
 
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+> **Phân biệt với Pre-Completion Verification:** Section này kiểm tra nhanh GIỮA các internal phases (phòng tránh lỗi lan sang bước tiếp). Pre-Completion Verification chạy SAU KHI hoàn thành toàn bộ để chuẩn bị Completion Report.
+
+### Sau Phase 1 → trước Phase 2 (Auto-Generate per domain):
+- ✓ Domain list không thiếu domain nào từ SC-IN trong PROJECT-OVERVIEW
+- ✓ Mỗi domain có skeleton/industry reference phù hợp (nếu thiếu: dùng general skeleton, ghi DECISION)
+- ✓ **Large project (5+ domains):** Checkpoint sau Phase 1 trước khi bắt đầu generate — đảm bảo resume được nếu session bị interrupt
+
+### Sau Phase 2 (per domain) → trước Phase 3 (PROCESS per domain):
+- ✓ BIZ-POLICY-{DOM}.md có ≥ 3 BR-IDs (ít hơn → likely incomplete coverage)
+- ✓ BR-IDs unique trong toàn bộ domain namespace (không trùng số giữa các modules cùng dự án)
+- ✓ Không có BR nào chỉ có tiêu đề mà thiếu nội dung (Quy tắc + Áp dụng cho + Ngoại lệ bắt buộc)
+
+### Sau Phase 3 (per domain) → trước Phase 4 (DATA-DICTIONARY):
+- ✓ PROCESS-{DOM}.md có cả AS-IS và TO-BE sections (không phải chỉ 1 trong 2)
+- ✓ TO-BE references đúng BR-IDs từ BIZ-POLICY cùng domain (không có orphan BR refs)
+- ✓ Mỗi Pain point trong AS-IS đã được giải quyết trong TO-BE (không để pain point không có giải pháp)
+
+### Sau Phase 4 → trước Phase 5 (Save):
+- ✓ DATA-DICTIONARY cover tất cả Entities được mention trong BIZ-POLICY và PROCESS
+- ✓ Không có entity chính (VD: "Đơn hàng", "Khách hàng") bị thiếu khỏi DATA-DICTIONARY
+- ✓ ENUM-IDs định nghĩa đủ các giá trị cố định được dùng trong BRs
+
+### Output Readiness → `/mcv3:requirements`:
+- ✓ BR-IDs unique TOÀN PROJECT (không có BR-WH-001 ở domain này và BR-WH-001 ở domain khác)
+- ✓ Policies và Processes nhất quán: Entities dùng cùng tên trong BIZ-POLICY và PROCESS (không vừa "đơn hàng" vừa "order")
+- ✓ DATA-DICTIONARY có ENT-IDs cho tất cả entities quan trọng — requirements sẽ reference các ENT-IDs này
+- ✓ **Large project (5+ systems):** Mỗi system có BIZ-POLICY riêng (không gộp chung) + có ít nhất 1 BR về shared services nếu systems dùng chung auth/notification
+
+---
+
 ## Quy tắc Guided Generation
 
 ```
