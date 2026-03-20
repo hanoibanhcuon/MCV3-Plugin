@@ -119,16 +119,19 @@ Partial verify steps:
 
 ```
 1. mc_status() → xác nhận project, systems đã có
-2. mc_list({ subPath: "{SYSTEM}/P1-REQUIREMENTS" }) → liệt kê URS files
-3. mc_list({ subPath: "{SYSTEM}/P2-DESIGN" }) → liệt kê MODSPEC files
-4. mc_list({ subPath: "{SYSTEM}/P3-QA-DOCS" }) → liệt kê TEST files
-5. Kiểm tra code: ls src/{sys}/ → liệt kê modules đã code
 
-6. Tự động bắt đầu verification — không chờ confirm:
+2. Parallel: mc_list({ subPath: "{SYSTEM}/P1-REQUIREMENTS" })
+          ∥ mc_list({ subPath: "{SYSTEM}/P2-DESIGN" })
+          ∥ mc_list({ subPath: "{SYSTEM}/P3-QA-DOCS" })
+   → Gọi đồng thời để tiết kiệm thời gian
+
+3. Kiểm tra code: ls src/{sys}/ → liệt kê modules đã code
+
+4. Tự động bắt đầu verification — không chờ confirm:
    Ghi nhận scope: {N} URS modules → cần {N} MODSPEC + {N} TEST + code
    → Chuyển ngay sang Phase 1
 
-7. **RISK-006 — Large Project Detection (≥ 5 systems):**
+5. **RISK-006 — Large Project Detection (≥ 5 systems):**
    Nếu mc_status trả về ≥ 5 systems:
    → BẮT BUỘC: `mc_checkpoint({ label: "pre-verify-large-project" })` trước khi bắt đầu
    → Xử lý **từng system riêng biệt** (per-system): verify system A xong → checkpoint → verify system B
@@ -159,10 +162,19 @@ mc_checkpoint({
 
 ### 1a. Load và kiểm tra từng URS
 
-Với mỗi `URS-{MOD}.md`:
+Với mỗi module, parallel load tất cả documents cần thiết cho cả 3 verify phases:
 
 ```
-mc_load({ filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md", layer: 3 })
+// Parallel load per module — tiết kiệm round-trips:
+Parallel:
+  mc_load({ filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md", layer: 3 })   // Phase 1
+  ∥ mc_load({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md", layer: 3 })   // Phase 2
+  ∥ mc_load({ filePath: "{SYSTEM}/P3-QA-DOCS/TEST-{MOD}.md", layer: 3 })     // Phase 3
+
+// Xử lý kết quả:
+→ URS NOT FOUND → ❌ BLOCKING (xem Error Recovery)
+→ MODSPEC NOT FOUND → ❌ BLOCKING (xem Error Recovery)
+→ TEST NOT FOUND → ❌ BLOCKING (xem Error Recovery)
 ```
 
 **Completeness checks:**
@@ -216,7 +228,7 @@ mc_checkpoint({
 ### 2a. Load và verify MODSPEC vs URS
 
 ```
-mc_load({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md", layer: 3 })
+// MODSPEC đã load trong Phase 1a (parallel) — dùng lại, không load lại
 mc_compare({
   source: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md",
   target: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md"
@@ -243,7 +255,7 @@ mc_compare({
 ### 3a. Load và verify TEST vs MODSPEC + URS
 
 ```
-mc_load({ filePath: "{SYSTEM}/P3-QA-DOCS/TEST-{MOD}.md", layer: 3 })
+// TEST-{MOD}.md đã load trong Phase 1a (parallel) — dùng lại, không load lại
 ```
 
 **Coverage checks:**
@@ -479,54 +491,40 @@ Tầng 3 — Quality Gate (5 items):
 ## Phase 7 — Save & Update Traceability
 
 ```
-1. mc_save({
-     filePath: "_VERIFY-CROSS/VERIFY-{SYS}-P1-{MOD}.md",
-     documentType: "verify"
-   })
+// Bước 1: Parallel save các per-module verify docs (độc lập nhau)
+Parallel:
+  mc_save({ filePath: "_VERIFY-CROSS/VERIFY-{SYS}-P1-{MOD}.md", documentType: "verify" })
+  ∥ mc_save({ filePath: "_VERIFY-CROSS/VERIFY-{SYS}-P2-{MOD}.md", documentType: "verify" })
+  ∥ mc_save({ filePath: "_VERIFY-CROSS/VERIFY-{SYS}-P3-{MOD}.md", documentType: "verify" })
 
-2. mc_save({
-     filePath: "_VERIFY-CROSS/VERIFY-{SYS}-P2-{MOD}.md",
-     documentType: "verify"
-   })
+// Bước 2: Parallel save 2 tổng hợp docs
+Parallel:
+  mc_save({ filePath: "_VERIFY-CROSS/traceability-matrix.md", documentType: "verify" })
+  ∥ mc_save({ filePath: "_VERIFY-CROSS/verification-report.md", documentType: "verify" })
 
-3. mc_save({
-     filePath: "_VERIFY-CROSS/VERIFY-{SYS}-P3-{MOD}.md",
-     documentType: "verify"
-   })
+// Bước 3: Parallel validate + traceability validate (BẮT BUỘC — RISK-002, RISK-005)
+Parallel:
+  mc_validate({ filePath: "_VERIFY-CROSS/verification-report.md" })
+  ∥ mc_validate({ filePath: "_VERIFY-CROSS/traceability-matrix.md" })
+  ∥ mc_traceability({
+       action: "validate",
+       idTypes: ["BR", "US", "UC", "AC", "FT", "API", "TBL", "TC"]  // TẤT CẢ ID types
+     })
 
-4. mc_save({
-     filePath: "_VERIFY-CROSS/traceability-matrix.md",
-     documentType: "verify"
-   })
+// Phân loại kết quả mc_validate (RISK-007):
+// → ERROR   = ❌ BLOCKING — DỪNG, sửa document trước khi tiếp tục
+// → WARNING = ⚠️ WARNING — Ghi nhận trong report, không blocking
+// → INFO    = ✅ Thông tin thêm, không cần action
 
-5. mc_save({
-     filePath: "_VERIFY-CROSS/verification-report.md",
-     documentType: "verify"
-   })
-
-// BẮT BUỘC (RISK-002): Validate tất cả verify docs trước khi kết thúc
-6. mc_validate({ filePath: "_VERIFY-CROSS/verification-report.md" })
-   mc_validate({ filePath: "_VERIFY-CROSS/traceability-matrix.md" })
-   // Phân loại kết quả mc_validate (RISK-007):
-   // → ERROR   = ❌ BLOCKING — DỪNG, sửa document trước khi tiếp tục
-   // → WARNING = ⚠️ WARNING — Ghi nhận trong report, không blocking
-   // → INFO    = ✅ Thông tin thêm, không cần action
-
-// BẮT BUỘC (RISK-002, RISK-005): Validate TẤT CẢ ID types trong traceability
-7. mc_traceability({
-     action: "validate",
-     idTypes: ["BR", "US", "UC", "AC", "FT", "API", "TBL", "TC"]  // TẤT CẢ ID types
-   })
-
-// BẮT BUỘC (RISK-002): Checkpoint sau verification hoàn thành
-8. mc_checkpoint({
-     label: "verify-complete",
-     sessionSummary: "Verification: {N} FTs traced, {M} gaps, {G} critical",
-     nextActions: [
-       "Fix critical gaps nếu có",
-       "Chạy /mcv3:deploy-ops khi READY"
-     ]
-   })
+// Bước 4: Checkpoint sau verification hoàn thành (BẮT BUỘC — RISK-002)
+mc_checkpoint({
+  label: "verify-complete",
+  sessionSummary: "Verification: {N} FTs traced, {M} gaps, {G} critical",
+  nextActions: [
+    "Fix critical gaps nếu có",
+    "Chạy /mcv3:deploy-ops khi READY"
+  ]
+})
 ```
 
 ---
