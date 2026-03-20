@@ -106,22 +106,28 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 ## Phase 0 — Pre-Gate
 
 ```
-1. mc_status() → xác nhận project
-2. mc_load({ filePath: "_VERIFY-CROSS/verification-report.md", layer: 2 })
-   → Nếu NOT FOUND → ❌ BLOCKING: "Chưa có verification-report.md → Chạy /mcv3:verify trước."
+// Parallel init — mc_status và verification-report độc lập nhau:
+1. Parallel: mc_status()
+          ∥ mc_load({ filePath: "_VERIFY-CROSS/verification-report.md", layer: 2 })
+   → Sau khi cả 2 xong: kiểm tra verification-report trước
+   → verification-report NOT FOUND → ❌ BLOCKING: "Chưa có verification-report.md → Chạy /mcv3:verify trước."
    → Kiểm tra Overall status
 
-3. Nếu status = "NOT READY":
+2. Nếu status = "NOT READY":
    ❌ BLOCKING: "Verification report có critical gaps — dự án chưa sẵn sàng deploy.
    Hãy fix gaps và chạy /mcv3:verify lại trước khi tạo Deploy-Ops."
    → DỪNG (trừ khi user tường minh confirm muốn tiếp tục — xem Error Recovery)
 
-4. Nếu status = "READY" hoặc "NEEDS ATTENTION":
-   mc_load({ filePath: "_PROJECT/PROJECT-ARCHITECTURE.md", layer: 2 })
-   → Nếu NOT FOUND → ⚠️ WARNING: ghi DECISION "Thiếu ARCHITECTURE.md, dùng defaults cho infra"
+3. Nếu status = "READY" hoặc "NEEDS ATTENTION":
+   // Parallel load — tất cả độc lập nhau:
+   Parallel:
+     mc_load({ filePath: "_PROJECT/PROJECT-ARCHITECTURE.md", layer: 2 })
+     ∥ mc_list({ documentType: "test" })
+     ∥ mc_list({ subPath: "_VERIFY-CROSS" })
+   → PROJECT-ARCHITECTURE NOT FOUND → ⚠️ WARNING: ghi DECISION "Thiếu ARCHITECTURE.md, dùng defaults cho infra"
    → Extract: tech stack, infrastructure, environment info
 
-5. [MANDATORY] Scale Detection — Đếm số systems từ _config.json:
+4. [MANDATORY] Scale Detection — Đếm số systems từ _config.json:
    - Nếu ≥ 3 systems → CHẾ ĐỘ LARGE PROJECT (xem Phase 0 Safety Checkpoint — Batch Mode)
      → Ghi log: "Large project: {N} systems detected — kích hoạt per-system checkpointing"
    - Nếu < 3 systems → Chế độ Standard, tiếp tục bình thường
@@ -170,10 +176,12 @@ mc_checkpoint({
 ### 1a. Load thông tin cần thiết
 
 ```
-mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 2 })
-mc_load({ filePath: "_PROJECT/PROJECT-ARCHITECTURE.md", layer: 3 })
-mc_list({ documentType: "test" })  → liệt kê tất cả TEST files
-mc_list({ subPath: "_VERIFY-CROSS" })  → liệt kê verify documents
+// Parallel load — tất cả độc lập nhau:
+Parallel:
+  mc_load({ filePath: "_PROJECT/PROJECT-OVERVIEW.md", layer: 2 })
+  ∥ mc_load({ filePath: "_PROJECT/PROJECT-ARCHITECTURE.md", layer: 3 })
+
+// mc_list (test files, verify docs) đã gọi trong Phase 0 — dùng lại, không gọi lại
 ```
 
 ### 1b. Auto-detect thông tin deployment
@@ -491,44 +499,41 @@ On-call → Tech Lead → CTO (nếu RTO > 2h)
 ## Phase 7 — Final Snapshot & Save
 
 ```
-1. mc_save({
-     filePath: "_PROJECT/DEPLOY-OPS.md",
-     documentType: "deploy-ops"
-   })
+// Bước 1: Parallel save cả 2 docs (độc lập nhau)
+Parallel:
+  mc_save({ filePath: "_PROJECT/DEPLOY-OPS.md", documentType: "deploy-ops" })
+  ∥ mc_save({ filePath: "_VERIFY-CROSS/deploy-readiness-checklist.md", documentType: "verify" })
 
-2. mc_save({
-     filePath: "_VERIFY-CROSS/deploy-readiness-checklist.md",
-     documentType: "verify"
-   })
+// Bước 2: Parallel validate + checkpoint trung gian
+Parallel:
+  [BẮT BUỘC] mc_validate({ filePath: "_PROJECT/DEPLOY-OPS.md" })
+  → Nếu có ERRORs → ❌ BLOCKING: sửa ngay (rollback plan thiếu, SLA thiếu số liệu, ...)
+  → Nếu chỉ có WARNINGs → ghi DECISION, tiếp tục
 
-3. [BẮT BUỘC] mc_validate({ filePath: "_PROJECT/DEPLOY-OPS.md" })
-   → Nếu có ERRORs → ❌ BLOCKING: sửa ngay (rollback plan thiếu, SLA thiếu số liệu, ...)
-   → Nếu chỉ có WARNINGs → ghi DECISION, tiếp tục
+  ∥ [BẮT BUỘC nếu large project ≥3 systems] mc_checkpoint({
+       label: "deploy-ops-systems-verified",
+       sessionSummary: "Đã verify deploy section cho tất cả {N} systems",
+       nextActions: ["Tạo snapshot pre-production"]
+     })
+   // Lặp qua từng system → kiểm tra deploy section có đủ commands + rollback commands
 
-4. [BẮT BUỘC] Per-system checkpoint nếu large project (≥3 systems):
-   Lặp qua từng system → kiểm tra deploy section có đủ commands + rollback commands
-   mc_checkpoint({
-     label: "deploy-ops-systems-verified",
-     sessionSummary: "Đã verify deploy section cho tất cả {N} systems",
-     nextActions: ["Tạo snapshot pre-production"]
-   })
+// Bước 3: Pre-production snapshot (sau khi validate PASS)
+mc_snapshot({
+  label: "pre-production-{version}",
+  description: "Full project snapshot trước go-live",
+  includeAll: true
+})
 
-5. mc_snapshot({
-     label: "pre-production-{version}",
-     description: "Full project snapshot trước go-live",
-     includeAll: true
-   })
-
-6. [BẮT BUỘC] Final checkpoint:
-   mc_checkpoint({
-     label: "deploy-ops-complete",
-     sessionSummary: "Deploy-Ops docs created. Project ready for go-live.",
-     nextActions: [
-       "Execute go-live checklist",
-       "Deploy to production",
-       "Monitor post-deployment"
-     ]
-   })
+// Bước 4: Final checkpoint
+[BẮT BUỘC] mc_checkpoint({
+  label: "deploy-ops-complete",
+  sessionSummary: "Deploy-Ops docs created. Project ready for go-live.",
+  nextActions: [
+    "Execute go-live checklist",
+    "Deploy to production",
+    "Monitor post-deployment"
+  ]
+})
 ```
 
 ---

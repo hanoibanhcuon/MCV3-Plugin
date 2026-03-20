@@ -134,15 +134,18 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 
 ```
 1. mc_status() → xác nhận project, tech stack từ _config.json
-2. mc_list({ subPath: "{SYSTEM}/P2-DESIGN" }) → liệt kê MODSPECs
-3. mc_list({ subPath: "{SYSTEM}/P3-QA-DOCS" }) → kiểm tra TEST files
-4. Kiểm tra project structure hiện tại (src/ đã có gì)
-5. Tự xác định module order:
+
+2. Parallel: mc_list({ subPath: "{SYSTEM}/P2-DESIGN" })
+          ∥ mc_list({ subPath: "{SYSTEM}/P3-QA-DOCS" })
+   → Gọi đồng thời để tiết kiệm thời gian
+
+3. Kiểm tra project structure hiện tại (src/ đã có gì)
+4. Tự xác định module order:
    - MODSPEC available → dependency order (shared/auth trước, business logic sau)
    - mc_checkpoint trước khi bắt đầu generate (pre-codegen checkpoint)
    - Tự bắt đầu generate — không hỏi user confirm
 
-6. [MANDATORY] Scale Detection — Đếm tổng số MODSPEC files:
+5. [MANDATORY] Scale Detection — Đếm tổng số MODSPEC files:
    - Nếu ≥ 5 modules → CHẾ ĐỘ LARGE PROJECT (xem Batch Mode ở Phase 0 Safety Checkpoint)
      → Ghi log: "Large project: {N} modules detected — kích hoạt Batch Mode"
    - Nếu < 5 modules → Chế độ Standard, tiếp tục bình thường
@@ -227,16 +230,16 @@ mc_checkpoint({
 ### 1a. Load MODSPEC đầy đủ
 
 ```
-// BLOCKING — nếu MODSPEC load fail: ❌ DỪNG ngay, báo user chạy /mcv3:tech-design trước
-mc_load({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md", layer: 3 })
-→ Nếu NOT FOUND / ERROR → ❌ DỪNG: "Chưa tìm thấy MODSPEC-{MOD}.md. Chạy /mcv3:tech-design trước."
+// Parallel load tất cả 3 files cùng lúc để tiết kiệm thời gian:
+Parallel:
+  mc_load({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md", layer: 3 })   // BLOCKING
+  ∥ mc_load({ filePath: "{SYSTEM}/P3-QA-DOCS/TEST-{MOD}.md", layer: 2 })    // BLOCKING
+  ∥ mc_load({ filePath: "_PROJECT/PROJECT-ARCHITECTURE.md", layer: 2 })       // WARNING
 
-// BLOCKING — nếu TEST file load fail: ❌ DỪNG, báo user chạy /mcv3:qa-docs trước
-mc_load({ filePath: "{SYSTEM}/P3-QA-DOCS/TEST-{MOD}.md", layer: 2 })
-→ Nếu NOT FOUND / ERROR → ❌ DỪNG: "Chưa tìm thấy TEST-{MOD}.md. Chạy /mcv3:qa-docs trước."
-
-mc_load({ filePath: "_PROJECT/PROJECT-ARCHITECTURE.md", layer: 2 })
-→ Nếu NOT FOUND → ⚠️ WARNING (không dừng): "Thiếu PROJECT-ARCHITECTURE.md, dùng convention defaults"
+// Sau khi có kết quả — check theo thứ tự ưu tiên:
+→ MODSPEC NOT FOUND / ERROR → ❌ DỪNG: "Chưa tìm thấy MODSPEC-{MOD}.md. Chạy /mcv3:tech-design trước."
+→ TEST NOT FOUND / ERROR   → ❌ DỪNG: "Chưa tìm thấy TEST-{MOD}.md. Chạy /mcv3:qa-docs trước."
+→ PROJECT-ARCHITECTURE NOT FOUND → ⚠️ WARNING (không dừng): "Thiếu PROJECT-ARCHITECTURE.md, dùng convention defaults"
 ```
 
 ### 1b. Parse từ MODSPEC
@@ -262,18 +265,24 @@ Với mỗi BR/API/TBL — phân loại:
 ### 1c. Load references
 
 ```
-code-patterns.md + tech stack guide phù hợp (luôn load)
-implementation-patterns.md  ← BR→Code transpiler rules
-query-patterns.md           ← Real database queries
-validation-codegen.md       ← TBL schema → Zod schemas
-test-codegen.md             ← TC specs → real tests
+// Cache: Tech stack đã biết từ 1a → parallel load TẤT CẢ references cần thiết 1 lần:
+Parallel:
+  code-patterns.md
+  ∥ implementation-patterns.md  ← BR→Code transpiler rules
+  ∥ query-patterns.md           ← Real database queries
+  ∥ validation-codegen.md       ← TBL schema → Zod schemas
+  ∥ test-codegen.md             ← TC specs → real tests
+  ∥ [tech stack guide phù hợp — chỉ 1 trong các options bên dưới]
+
+// CACHE: Chỉ load tech stack guide 1 lần cho cả session (không load lại cho mỗi module):
 ```
 
-**Load reference phù hợp với tech stack:**
+**Load reference phù hợp với tech stack (cache 1 lần):**
 - Next.js → `references/tech-stack-nextjs.md` (App Router, Server Actions, Prisma)
 - React Native / Expo → `references/tech-stack-mobile.md` (Zustand, TanStack Query, EAS)
 - Flutter → `references/tech-stack-mobile.md` (Riverpod, go_router, Dio)
 - MongoDB / Firebase / Supabase / Redis → `references/database-nosql-guide.md`
+- Standard backend (Node.js/Python) → không cần load thêm tech-stack guide riêng
 
 ### 1d. Auto-notify (không chờ xác nhận — bắt đầu generate ngay)
 
@@ -743,33 +752,36 @@ Không được bỏ qua hoặc rút ngắn dù specs đơn giản.
 > **Security checklist:** `references/security-checklist.md`
 > **Rollback khi cần:** `references/rollback-mechanism.md`
 
-### 9.1 Compile Check
+### 9.1 + 9.2 Compile Check ∥ Lint Check (Parallel)
+
+Chạy song song — độc lập nhau, không cần sequential:
 
 ```bash
-# TypeScript
-npx tsc --noEmit
+# Parallel:
+# [Compile Check]                        ∥  [Lint Check]
+npx tsc --noEmit                         ∥  npx eslint src/ --max-warnings 0
+# (TypeScript)                               (TypeScript/JavaScript)
 
-# Python
-python -m py_compile src/**/*.py
+python -m py_compile src/**/*.py         ∥  ruff check src/
+# (Python)                                   (Python)
 
-# Go
-go build ./...
+go build ./...                           ∥  golangci-lint run
+# (Go)
 ```
 
-- PASS → tiếp tục 9.2
+**Xử lý kết quả (sau khi cả 2 xong):**
+
+Compile:
+- PASS → ✅
 - FAIL → đọc error → tự fix (type mismatch, missing import, syntax) → retry (max 3 lần)
 - Vẫn fail sau 3 lần → ❌ DỪNG module này: đánh dấu `// COMPILE-ERROR: [error]`, ghi vào Final Report, KHÔNG save code, báo user fix thủ công
 
-### 9.2 Lint Check
-
-```bash
-npx eslint src/ --max-warnings 0   # TypeScript/JavaScript
-ruff check src/                    # Python
-```
-
-- PASS → tiếp tục 9.3
+Lint:
+- PASS → ✅
 - FAIL auto-fixable → chạy `--fix` flag → verify lại
 - Remaining errors → đánh dấu `// LINT-WARNING: [rule]`
+
+→ Cả 2 PASS (hoặc lint chỉ có LINT-WARNING) → tiếp tục 9.3
 
 ### 9.3 Unit Test Run
 

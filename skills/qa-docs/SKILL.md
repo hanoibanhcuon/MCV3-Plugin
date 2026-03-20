@@ -132,17 +132,26 @@ Báo cáo sau khi tạo xong:
 
 ```
 1. mc_status() → xác nhận project, phase hiện tại
-2. mc_list({ subPath: "{SYSTEM}/P2-DESIGN" }) → liệt kê MODSPEC files có sẵn
-3. mc_list({ subPath: "{SYSTEM}/P3-QA-DOCS" }) → kiểm tra files đã có
-4. Tự xác định module order từ MODSPEC files:
+
+2. Parallel: mc_list({ subPath: "{SYSTEM}/P2-DESIGN" })
+          ∥ mc_list({ subPath: "{SYSTEM}/P3-QA-DOCS" })
+   → Gọi đồng thời để tiết kiệm thời gian
+
+3. Tự xác định module order từ MODSPEC files:
    - Ưu tiên modules chưa có TEST file
    - Dependency order: Core → Business → Integration
    - Xử lý tất cả modules, không hỏi user chọn
 
-5. [MANDATORY] Scale Detection — Đếm tổng số MODSPEC files:
+4. [MANDATORY] Scale Detection — Đếm tổng số MODSPEC files:
    - Nếu ≥ 5 modules → CHẾ ĐỘ LARGE PROJECT (xem Batch Mode ở Phase 0 Safety Checkpoint)
      → Ghi log: "Large project: {N} modules detected — kích hoạt Batch Mode"
    - Nếu < 5 modules → Chế độ Standard, tiếp tục bình thường
+
+5. [OPTIONAL — Large/Multi-module] Pre-assign TC ID ranges per module:
+   MOD1: TC-{MOD1}-001 → TC-{MOD1}-099
+   MOD2: TC-{MOD2}-001 → TC-{MOD2}-099
+   ...
+   → Ghi vào DECISION-LOG để tránh conflict khi parallel gen test cases
 ```
 
 **Nếu không có MODSPEC:**
@@ -201,15 +210,16 @@ mc_checkpoint({
 ### 1a. Load MODSPEC đầy đủ
 
 ```
-// BLOCKING — nếu MODSPEC load fail: ❌ DỪNG ngay, báo user chạy /mcv3:tech-design trước
-mc_load({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md", layer: 3 })
-→ Nếu NOT FOUND / ERROR → ❌ DỪNG: "Chưa tìm thấy MODSPEC-{MOD}.md. Chạy /mcv3:tech-design trước."
+// Parallel load tất cả 3 files cùng lúc để tiết kiệm thời gian:
+Parallel:
+  mc_load({ filePath: "{SYSTEM}/P2-DESIGN/MODSPEC-{MOD}.md", layer: 3 })   // BLOCKING
+  ∥ mc_load({ filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md", layer: 2 }) // WARNING
+  ∥ mc_load({ filePath: "_PROJECT/DATA-DICTIONARY.md", layer: 1 })            // WARNING
 
-mc_load({ filePath: "{SYSTEM}/P1-REQUIREMENTS/URS-{MOD}.md", layer: 2 })
-→ Nếu NOT FOUND → ⚠️ WARNING (không dừng): "Thiếu URS-{MOD}.md, TC sẽ tạo từ FT specs — không có AC traceability đầy đủ"
-
-mc_load({ filePath: "_PROJECT/DATA-DICTIONARY.md", layer: 1 })
-→ Nếu NOT FOUND → ⚠️ WARNING (không dừng): "Thiếu DATA-DICTIONARY.md, bỏ qua entity cross-check"
+// Sau khi có kết quả — check theo thứ tự ưu tiên:
+→ MODSPEC NOT FOUND / ERROR → ❌ DỪNG: "Chưa tìm thấy MODSPEC-{MOD}.md. Chạy /mcv3:tech-design trước."
+→ URS NOT FOUND → ⚠️ WARNING (không dừng): "Thiếu URS-{MOD}.md, TC sẽ tạo từ FT specs — không có AC traceability đầy đủ"
+→ DATA-DICTIONARY NOT FOUND → ⚠️ WARNING (không dừng): "Thiếu DATA-DICTIONARY.md, bỏ qua entity cross-check"
 ```
 
 ### 1b. Extract traceability links
@@ -467,48 +477,49 @@ A: {Câu trả lời ngắn gọn}
 ## Phase 7 — Save & Traceability
 
 ```
+// Bước 1: Save TEST file (BLOCKING GATE trước)
 1. mc_save({
      filePath: "{SYSTEM}/P3-QA-DOCS/TEST-{MOD}.md",
      documentType: "test"
    })
 
-2. mc_save({
-     filePath: "_PROJECT/USER-GUIDE.md",
-     documentType: "user-guide"
-   })
+// Bước 2: Parallel — Save USER-GUIDE + ADMIN-GUIDE đồng thời
+   Parallel:
+     mc_save({ filePath: "_PROJECT/USER-GUIDE.md", documentType: "user-guide" })
+     ∥ mc_save({ filePath: "_PROJECT/ADMIN-GUIDE.md", documentType: "admin-guide" })
 
-3. mc_save({
-     filePath: "_PROJECT/ADMIN-GUIDE.md",
-     documentType: "admin-guide"
-   })
+// Bước 3: Parallel — Validate TEST + Link traceability đồng thời (sau khi TEST đã saved)
+   Parallel:
+     [BẮT BUỘC — BLOCKING GATE] mc_validate({ filePath: "{SYSTEM}/P3-QA-DOCS/TEST-{MOD}.md" })
+     // RISK-001: BLOCKING GATE — phân loại kết quả (RISK-007):
+     → ERROR   → ❌ DỪNG ngay. Fix lỗi → mc_save lại → mc_validate lại (tối đa 3 lần retry)
+                Nếu vẫn ERROR sau 3 lần → báo user, không tiếp tục module này
+     → WARNING → Phân loại:
+         - Format warning (TC ID format sai, thiếu required section) → FIX trước khi tiếp tục
+         - Content warning (thiếu pass criteria, AC coverage chưa đủ) → Ghi DECISION + tiếp tục
+     → PASS    → ✅
 
-4. [BẮT BUỘC — BLOCKING GATE] mc_validate({ filePath: "{SYSTEM}/P3-QA-DOCS/TEST-{MOD}.md" })
-   // RISK-001: BLOCKING GATE — phân loại kết quả (RISK-007):
-   → ERROR   → ❌ DỪNG ngay. Fix lỗi → mc_save lại → mc_validate lại (tối đa 3 lần retry)
-              Nếu vẫn ERROR sau 3 lần → báo user, không tiếp tục module này
-   → WARNING → Phân loại:
-       - Format warning (TC ID format sai, thiếu required section) → FIX trước khi tiếp tục
-       - Content warning (thiếu pass criteria, AC coverage chưa đủ) → Ghi DECISION + tiếp tục
-   → PASS    → ✅ Tiếp tục bước 5
+     ∥ [BẮT BUỘC] mc_traceability({
+          action: "link",
+          items: [
+            { from: "AC-{MOD}-001-01", to: "TC-{MOD}-001" },
+            { from: "FT-{MOD}-001", to: "TC-{MOD}-001" },
+            { from: "US-{MOD}-001", to: "UAT-{MOD}-001" },
+            // RISK-005: đăng ký TẤT CẢ TC, UAT IDs — không bỏ sót
+            ...
+          ]
+        })
 
-5. [BẮT BUỘC] mc_traceability({
-     action: "link",
-     items: [
-       { from: "AC-{MOD}-001-01", to: "TC-{MOD}-001" },
-       { from: "FT-{MOD}-001", to: "TC-{MOD}-001" },
-       { from: "US-{MOD}-001", to: "UAT-{MOD}-001" },
-       // RISK-005: đăng ký TẤT CẢ TC, UAT IDs — không bỏ sót
-       ...
-     ]
-   })
+   // Sau khi parallel xong: nếu mc_validate trả về ERROR → DỪNG (discard traceability result)
 
-6. mc_dependency({
+// Bước 4: Dependency + Checkpoint (sau parallel)
+4. mc_dependency({
      action: "register",
      source: "TEST-{MOD}.md",
      dependsOn: ["MODSPEC-{MOD}.md", "URS-{MOD}.md"]
    })
 
-7. [BẮT BUỘC — per-module checkpoint] mc_checkpoint({
+5. [BẮT BUỘC — per-module checkpoint] mc_checkpoint({
      // RISK-003: checkpoint riêng cho mỗi module — BẮT BUỘC
      label: "sau-qa-docs-{mod}",
      sessionSummary: "QA Docs {MOD}: {N} TCs, {M} UAT, user/admin guide updated",
