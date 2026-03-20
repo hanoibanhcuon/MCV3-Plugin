@@ -7,7 +7,7 @@
   },
   "skills": "./skills/",
   "commands": "./.claude/commands/mcv3",
-  "hooks": "./hooks/hooks.json",
+  "hooks": "./.claude-plugin/hooks.json",
   "mcpServers": "./.mcp.json",
   "permissions": {
     "allow": [

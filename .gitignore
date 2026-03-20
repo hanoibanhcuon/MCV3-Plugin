@@ -3,7 +3,7 @@ node_modules/
 mcp-servers/*/node_modules/
 
 # ── Build outputs ─────────────────────────────────────────────────────────────
-mcp-servers/*/dist/
+# mcp-servers/*/dist/ — intentionally tracked so plugin installs without build step
 
 # ── Environment ───────────────────────────────────────────────────────────────
 .env
@@ -33,6 +33,7 @@ Desktop.ini
 
 # ── Package outputs ───────────────────────────────────────────────────────────
 dist/
+!mcp-servers/*/dist/
 *.tar.gz
 *.plugin
 *.zip
