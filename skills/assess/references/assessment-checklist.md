@@ -204,6 +204,59 @@ grep -r "TODO\|FIXME\|business rule\|requirement" src/ --include="*.py"
 
 ---
 
+---
+
+## Inter-Phase Verification Checklist
+
+Dùng sau khi hoàn thành mỗi phase của `/mcv3:assess` — TRƯỚC KHI sang phase tiếp:
+
+### Sau Phase 0 (Type Detection) → trước Phase 1:
+- [ ] Project type được ghi rõ: A / B / C / D
+- [ ] DECISION-LOG có entry: "Type Detection: Type {X} | code dir={path} | docs dir={path}"
+- [ ] Confidence level ghi rõ: HIGH / MEDIUM / LOW
+- [ ] Nếu LOW → ghi "📋 CẦN USER REVIEW" vào Completion Report
+
+### Sau Phase 1 (Project Manifest) → trước Phase 2:
+- [ ] PROJECT-MANIFEST.md đã được mc_save
+- [ ] Ít nhất 1 system được detect (nếu 0 → flag "non-standard structure")
+- [ ] Mỗi system có: system code, tên, tech stack (hoặc "unknown"), modules list
+- [ ] Modules list KHÔNG rỗng — ít nhất "[]" hoặc "modules: [module1]"
+- [ ] Không detect nhầm test fixtures / sample data folders là production modules
+- [ ] Nếu 5+ systems: mc_checkpoint trước khi sang Phase 2
+
+### Sau Phase 2 (Assessment Matrix) → trước Phase 3:
+- [ ] ASSESSMENT-MATRIX.md đã được mc_save
+- [ ] Mỗi system có currentPhase rõ ràng (phase0 → phase8)
+- [ ] System có source code → currentPhase KHÔNG thấp hơn phase5 (hoặc có DECISION "code-first")
+- [ ] Không có conflict về shared DB / shared service giữa systems (hoặc đã ghi DECISION)
+- [ ] Summary statistics ghi rõ: "X systems ở phase7+, Y systems ở phase3-4, ..."
+
+### Sau Phase 3 (Gap Analysis) → trước Phase 4:
+- [ ] GAP-REPORT.md đã được mc_save
+- [ ] Mỗi gap có severity: 🔴 CRITICAL / ⚠️ WARNING / ℹ️ INFO
+- [ ] Mỗi gap có lý do tại sao classify severity đó
+- [ ] Không duplicate gaps: cùng issue ở nhiều systems → 1 entry với danh sách systems
+- [ ] Mỗi gap có thể map vào ≥1 MCV3 skill (không có gap "không biết fix bằng gì")
+- [ ] Nếu > 20 gaps: có Executive Summary với top 5 critical
+
+### Sau Phase 4 (Sync Check) → trước Phase 5:
+- [ ] SYNC-REPORT.md đã được mc_save (chỉ với Type C/D)
+- [ ] Mỗi sync item có evidence: source file path + docs path
+- [ ] False positives đã loại: test files không nằm trong API detected list
+- [ ] ORM usage detected → raw SQL check đánh dấu "N/A (ORM project)"
+- [ ] Kết quả consistent với Phase 2 (VD: "no API docs" → không thể có "aligned APIs")
+- [ ] Confidence level ghi cho từng drift: HIGH / MEDIUM / LOW
+
+### Sau Phase 5 (Remediation Plan) → trước Phase 6:
+- [ ] REMEDIATION-PLAN.md đã được mc_save
+- [ ] Dependency order rõ ràng (URS trước MODSPEC, migrate trước assign IDs)
+- [ ] Mỗi action có skill MCV3 cụ thể (không có action "TBD")
+- [ ] Effort estimates hợp lý (full URS 5+ modules ≠ "1 session")
+- [ ] Parallel opportunities được identify (ít nhất nêu 1 nếu có)
+- [ ] Nếu > 10 actions: chia P0/P1/P2 priority lanes
+
+---
+
 ## Scoring Guide
 
 Sau khi assess tất cả phases, tính điểm:

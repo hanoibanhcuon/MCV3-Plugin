@@ -829,9 +829,59 @@ SNAPSHOT-BEFORE-CHANGES: Luôn snapshot trước khi bắt đầu remediation
 
 ---
 
-## Token Optimization — Dự án lớn
+## Inter-Phase Verification
 
-Khi project có nhiều systems/modules (> 3), dùng Smart Context Layering để tránh quá tải context window:
+Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển phase:
+
+### Sau Phase 0 → trước Phase 1:
+- ✓ Project type (A/B/C/D) detected có lý do rõ ràng
+- ✓ Nếu type mơ hồ → ghi DECISION với confidence level (HIGH/MEDIUM/LOW)
+- ✓ Nếu confidence LOW → note vào Completion Report "📋 CẦN USER REVIEW: Verify project type"
+
+### Sau Phase 1 → trước Phase 2:
+- ✓ PROJECT-MANIFEST: ≥1 system detected
+- ✓ Mỗi system có: tên, tech stack (hoặc "unknown"), modules list (không để trống)
+- ✓ Scan results: không có false positives rõ ràng (folder test data bị detect là module thật)
+- ✓ Nếu dự án lớn (5+ systems): checkpoint trước Phase 2
+
+### Sau Phase 2 → trước Phase 3:
+- ✓ ASSESSMENT-MATRIX: mỗi system có phase assignment (phase1 → phase8)
+- ✓ Phase logic nhất quán: system có code (Phase 7) PHẢI có currentPhase ≥ phase5-design hoặc có DECISION giải thích "code-first project"
+- ✓ Không có 2 systems conflict về shared resources (VD: System A nói PostgreSQL, System B nói MySQL — nhưng thực tế chung 1 DB)
+- ✓ Nếu dự án lớn: ghi summary statistics (bao nhiêu systems ở mỗi phase level)
+
+### Sau Phase 3 → trước Phase 4:
+- ✓ GAP-REPORT: mỗi gap có classification (🔴 CRITICAL / ⚠️ WARNING / ℹ️ INFO) + lý do cụ thể
+- ✓ Không duplicate gaps: cùng issue ở 2 systems → gộp thành 1 cross-system gap với danh sách systems
+- ✓ Mỗi gap actionable: có thể map vào ≥1 MCV3 skill (xem 5b. Map actions → skills)
+- ✓ Gap count summary rõ ràng: "X critical, Y warning, Z info"
+
+### Sau Phase 4 → trước Phase 5:
+- ✓ SYNC-REPORT: mỗi item có status (aligned/drifted/missing) + evidence (source file/docs path)
+- ✓ False positive filter áp dụng: code dùng ORM → raw SQL check không applicable; test files loại ra khỏi API detection
+- ✓ Kết quả sync consistent với Phase 2 assessment (VD: nếu Phase 2 nói "no API docs" → sync check không thể report "aligned APIs")
+
+### Sau Phase 5 → trước Phase 6:
+- ✓ REMEDIATION-PLAN: actions có dependency order rõ ràng (URS trước MODSPEC, migrate trước assign IDs)
+- ✓ Mỗi action → skill MCV3 hợp lệ (verify skill name tồn tại trong pipeline)
+- ✓ Effort estimates reasonable (không có "1 hour" cho full URS của 5+ modules)
+- ✓ Parallel opportunities identified: actions nào có thể chạy song song
+
+---
+
+## Token Optimization — Dự án lớn (5+ systems, 20+ modules)
+
+Khi project có nhiều systems/modules, dùng các chiến lược sau để tránh quá tải context window:
+
+### Batch Processing:
+
+```
+- Assess 3 systems → mc_checkpoint → tiếp 3 systems sau
+- Mỗi batch: tóm tắt interim results trước khi sang batch tiếp
+- Không load tất cả files cùng lúc — load tuần tự per system
+```
+
+### Smart Context Layering (tránh load thừa):
 
 ```
 Bước đầu (orientation):
@@ -842,15 +892,40 @@ Khi assess từng system:
   mc_load({ layer: 2 })  → Sections chính (~10KB) — đủ để review phase gaps
   mc_load({ layer: 3 })  → Full doc — chỉ khi cần full detail để sync check
 
-Chiến lược load tuần tự (tránh load nhiều files cùng lúc):
+Chiến lược load tuần tự:
   1. MASTER-INDEX (layer 1) → lấy danh sách systems
   2. Với mỗi system: load MODSPEC (layer 2) → xác định tech stack + phase
   3. Assess xong system A → lưu vào ASSESSMENT-MATRIX → sang system B
   4. Chỉ load full (layer 3) khi detect drift hoặc cần sync check chi tiết
 
-Chia nhỏ assessment theo session:
-  - Session 1: Phase 1 (scan) + Phase 2 (assess systems 1-2)
-  - Session 2: Phase 2 tiếp (assess systems 3+) + Phase 3 (gap analysis)
-  - Session 3: Phase 4 (sync check) + Phase 5 (remediation plan)
-  Dùng mc_checkpoint giữa các sessions để resume.
+Phase 1 scan: chỉ load manifest (tên files + paths), không load full file contents
+Phase 2: assess per-system summary (không load full docs trừ khi cần verify chi tiết)
+Phase 3: group gaps by system → process từng group, không load tất cả cùng lúc
+```
+
+### Summary Layer cho reports lớn:
+
+```
+GAP-REPORT > 20 gaps:
+  → Thêm Executive Summary đầu file: top 5 critical + statistics per cluster
+  → Chi tiết gaps xuống phần "Chi tiết" phía sau
+
+SYNC-REPORT > 30 items:
+  → Group by status: aligned (count only), drifted (list), missing (list)
+  → Không liệt kê từng aligned item — chỉ count
+
+REMEDIATION-PLAN > 10 actions:
+  → Chia thành priority lanes:
+     P0 Immediate — làm trong session này (block pipeline)
+     P1 This Sprint — làm trong 1-2 sessions tới
+     P2 Backlog — lên kế hoạch cho tương lai
+```
+
+### Chia nhỏ assessment theo session:
+
+```
+- Session 1: Phase 1 (scan) + Phase 2 (assess systems 1-2)
+- Session 2: Phase 2 tiếp (assess systems 3+) + Phase 3 (gap analysis)
+- Session 3: Phase 4 (sync check) + Phase 5 (remediation plan)
+Dùng mc_checkpoint giữa các sessions để resume.
 ```
