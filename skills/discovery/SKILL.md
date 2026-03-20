@@ -353,6 +353,35 @@ Kiểm tra trước khi thông báo hoàn thành:
 
 ---
 
+## Inter-Phase Verification — Per-Transition Pre-Checks
+
+> **Phân biệt với Pre-Completion Verification:** Section này kiểm tra nhanh GIỮA các internal phases (phòng tránh lỗi lan sang bước tiếp). Pre-Completion Verification chạy SAU KHI hoàn thành toàn bộ để chuẩn bị Completion Report.
+
+### Sau Block Interview → trước Phase 2 (Phân tích):
+- ✓ Có đủ thông tin để assign ít nhất 1 PROB-ID (không phải thông tin quá mơ hồ)
+- ✓ Ngành nghề đã detect rõ (nếu mơ hồ: ghi DECISION, chọn "General", tiếp tục)
+- ✓ Nếu Block 1 chưa đủ → chạy Block 2 trước khi chuyển Phase 2
+
+### Sau Phase 2 → trước Phase 3 (Generate):
+- ✓ PROB-IDs mô tả **vấn đề** thực tế (không phải giải pháp — ví dụ xấu: "Cần phần mềm X")
+- ✓ GL-IDs có thể đo lường: số liệu hoặc trạng thái cụ thể (không phải "nhanh hơn", "tốt hơn")
+- ✓ SC-IN và SC-OUT không overlap (cùng 1 feature không vừa IN vừa OUT)
+- ✓ Nếu có mâu thuẫn trong user input → đã clarify hoặc ghi [CẦN XÁC NHẬN] với context cụ thể
+
+### Sau Phase 3 → trước Phase 4 (Save):
+- ✓ Tất cả sections bắt buộc có nội dung (Bối cảnh, Vấn đề, Mục tiêu, Phạm vi, Stakeholders, Ràng buộc)
+- ✓ Pipeline variant đã ghi với lý do cụ thể (Micro/Small/Medium/Large/Enterprise)
+- ✓ **Large project (3+ systems):** Systems list trong SC-IN có đủ tất cả systems user đề cập — không thiếu system nào, mỗi system có mô tả riêng (không gộp chung)
+- ✓ **Large project:** Ít nhất 1 ST-ID per key stakeholder group — không chỉ 1 ST-ID chung cho dự án nhiều bên liên quan
+
+### Output Readiness → `/mcv3:expert-panel`:
+- ✓ Đủ thông tin để 3 expert agents phân tích (PROB + GL + SC-IN + ST đã có, không rỗng)
+- ✓ Ngành nghề ghi rõ trong document (expert agents cần để load đúng industry knowledge)
+- ✓ Không có mâu thuẫn chưa được giải quyết giữa PROB-IDs và SC-IN-IDs
+- ✓ **Large project:** Mỗi system được mô tả đủ để expert agents có thể assess từng system độc lập
+
+---
+
 ## Quy tắc phỏng vấn
 
 ```
