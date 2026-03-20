@@ -79,6 +79,18 @@ Phase 1 dùng **Block-based interview** — hỏi theo nhóm, không hỏi từn
 **mc_init_project chưa chạy:**
 - Báo user: "Cần khởi tạo project trước. Hãy cho tôi biết tên và slug của dự án để tôi gọi mc_init_project."
 
+**Prerequisites thiếu (RISK-008 — BLOCKING vs WARNING):**
+
+| Prerequisite thiếu | Phân loại | Hành động bắt buộc |
+|---------------------|-----------|---------------------|
+| mc_init_project chưa chạy (project chưa tồn tại) | ❌ BLOCKING | DỪNG — không có `.mc-data/` để lưu. Gọi `mc_init_project` trước |
+| Project slug không hợp lệ / mc_status lỗi | ❌ BLOCKING | DỪNG — xác nhận project slug với user |
+| PROJECT-OVERVIEW.md đã tồn tại (chạy lại) | ⚠️ WARNING | Chuyển sang chế độ update — bổ sung thông tin vào docs hiện tại |
+
+**Nguyên tắc phân loại:**
+- **BLOCKING** = project chưa khởi tạo → không thể lưu bất kỳ output nào → DỪNG ngay
+- **WARNING** = trạng thái cần chú ý nhưng có thể tiếp tục với điều chỉnh
+
 ---
 
 ## Phase 0a — Pre-Gate Check
@@ -86,6 +98,7 @@ Phase 1 dùng **Block-based interview** — hỏi theo nhóm, không hỏi từn
 ```
 TRƯỚC KHI BẮT ĐẦU:
 1. Gọi mc_status() để xác nhận project slug
+   → Nếu project không tồn tại / mc_status lỗi → ❌ BLOCKING: gọi mc_init_project trước
 2. Kiểm tra _PROJECT/PROJECT-OVERVIEW.md đã có chưa
    → Nếu có: tự chọn chế độ update (bổ sung thông tin vào docs hiện tại)
    → Nếu chưa: tiến hành phỏng vấn
@@ -93,6 +106,11 @@ TRƯỚC KHI BẮT ĐẦU:
 4. Sau bước phỏng vấn Block 1, đọc references/scale-decision-matrix.md
    → Tự recommend pipeline variant phù hợp (Micro/Small/Medium/Large/Enterprise)
    → Ghi vào PROJECT-OVERVIEW: "Pipeline variant: [X], skip phases: [Y, Z]"
+
+5. [MANDATORY] Scale Detection — Đếm số systems/modules từ user input:
+   - Nếu user đề cập ≥ 3 systems rõ ràng → CHẾ ĐỘ LARGE PROJECT
+     → Ghi log: "Large project detected: {N} systems — áp dụng per-system stakeholder analysis"
+   - Nếu < 3 systems → Chế độ Standard, tiếp tục bình thường
 ```
 
 ---
@@ -240,16 +258,20 @@ Tạo tài liệu dựa trên template `PROJECT-OVERVIEW-TEMPLATE.md`:
      documentType: "project-overview"
    })
 
-2. Validate:
+2. [BẮT BUỘC] Validate:
    mc_validate({
      projectSlug: "...",
      filePath: "_PROJECT/PROJECT-OVERVIEW.md"
    })
+   → Nếu có ERRORs → ❌ BLOCKING: sửa ngay trước khi tiếp tục
+   → Nếu chỉ có WARNINGs → ghi vào DECISION-LOG, tiếp tục
 
-3. Nếu có ERRORs → sửa ngay
-4. Nếu chỉ có WARNINGs → tự quyết tiếp tục, ghi vào DECISION-LOG để user review sau
+3. [BẮT BUỘC] Kiểm tra Post-Gate required sections (RISK-001):
+   → Nếu thiếu PROB-ID hoặc GL-ID hoặc SC-IN-ID → ❌ BLOCKING:
+     "PROJECT-OVERVIEW thiếu [X] — không thể chuyển sang Expert Panel.
+     Bổ sung thông tin và lưu lại."
 
-5. Lưu checkpoint:
+4. [BẮT BUỘC] Lưu checkpoint:
    mc_checkpoint({
      projectSlug: "...",
      label: "sau-discovery",
@@ -305,6 +327,8 @@ Kiểm tra bổ sung:
 ## Phase 5 — Post-Gate
 
 ```
+[BẮT BUỘC RISK-004] Chạy Pre-Completion Verification (section ở trên) TRƯỚC khi show Completion Report.
+
 Kiểm tra trước khi thông báo hoàn thành:
 ✅ PROJECT-OVERVIEW.md đã saved
 ✅ Có ít nhất 1 PROB-ID

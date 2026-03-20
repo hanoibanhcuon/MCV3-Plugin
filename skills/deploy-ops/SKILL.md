@@ -82,6 +82,20 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 - Nếu status = NOT READY: "Verification report có critical gaps. Hãy fix và chạy /mcv3:verify lại."
 - Exception: Nếu user confirm "tạo deploy-ops dù chưa verify" → tiếp tục nhưng ghi rõ warning trong DEPLOY-OPS.md: "⚠️ CẢNH BÁO: Deploy-Ops tạo trước khi Verification hoàn thành."
 
+**Documents input thiếu (RISK-008 — BLOCKING vs WARNING):**
+
+| Loại file thiếu | Phân loại | Hành động bắt buộc |
+|-----------------|-----------|---------------------|
+| verification-report.md (NOT READY) | ❌ BLOCKING | DỪNG — không deploy khi có critical gaps. Chạy `/mcv3:verify` |
+| verification-report.md (chưa có) | ❌ BLOCKING | DỪNG — verification chưa chạy. Chạy `/mcv3:verify` trước |
+| PROJECT-ARCHITECTURE.md | ⚠️ WARNING | Tiếp tục, tự fill infrastructure defaults — ghi DECISION Confidence: MEDIUM |
+| USER-GUIDE.md / ADMIN-GUIDE.md | ⚠️ WARNING | Tiếp tục, ghi chú trong deploy-readiness-checklist |
+| TEST-{MOD}.md files | ⚠️ WARNING | Tiếp tục, bỏ qua P0 test cross-check — ghi chú trong report |
+
+**Nguyên tắc phân loại:**
+- **BLOCKING** = điều kiện tiên quyết để deploy an toàn → DỪNG ngay, báo user skill nào để fix
+- **WARNING** = thông tin bổ trợ → tiếp tục nhưng ghi rõ DECISION và gaps trong report
+
 **Infrastructure info không đủ:**
 - Tự điền defaults rõ ràng dựa trên project scale + PROJECT-ARCHITECTURE — ghi DECISION (Confidence: MEDIUM)
   Ví dụ: không có info → "AWS EC2 + RDS + Docker Compose" hoặc "VPS + Docker Compose" cho dự án nhỏ
@@ -94,15 +108,23 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 ```
 1. mc_status() → xác nhận project
 2. mc_load({ filePath: "_VERIFY-CROSS/verification-report.md", layer: 2 })
+   → Nếu NOT FOUND → ❌ BLOCKING: "Chưa có verification-report.md → Chạy /mcv3:verify trước."
    → Kiểm tra Overall status
 
 3. Nếu status = "NOT READY":
-   ⚠️ Verification report cho thấy dự án chưa sẵn sàng deploy.
-      Critical gaps còn tồn tại. Hãy fix và chạy /mcv3:verify lại.
+   ❌ BLOCKING: "Verification report có critical gaps — dự án chưa sẵn sàng deploy.
+   Hãy fix gaps và chạy /mcv3:verify lại trước khi tạo Deploy-Ops."
+   → DỪNG (trừ khi user tường minh confirm muốn tiếp tục — xem Error Recovery)
 
 4. Nếu status = "READY" hoặc "NEEDS ATTENTION":
    mc_load({ filePath: "_PROJECT/PROJECT-ARCHITECTURE.md", layer: 2 })
+   → Nếu NOT FOUND → ⚠️ WARNING: ghi DECISION "Thiếu ARCHITECTURE.md, dùng defaults cho infra"
    → Extract: tech stack, infrastructure, environment info
+
+5. [MANDATORY] Scale Detection — Đếm số systems từ _config.json:
+   - Nếu ≥ 3 systems → CHẾ ĐỘ LARGE PROJECT (xem Phase 0 Safety Checkpoint — Batch Mode)
+     → Ghi log: "Large project: {N} systems detected — kích hoạt per-system checkpointing"
+   - Nếu < 3 systems → Chế độ Standard, tiếp tục bình thường
 ```
 
 ---
@@ -121,6 +143,25 @@ mc_checkpoint({
 ```
 
 → "✅ Safety checkpoint đã lưu. Bắt đầu tạo Deploy docs..."
+
+**Large project per-system checkpointing (RISK-006) — áp dụng khi ≥3 systems:**
+```
+// Phát hiện large project: đếm systems từ Phase 0 Scale Detection
+// Nếu ≥3 systems → kích hoạt per-system checkpoint mode:
+
+1. Lưu checkpoint trước mỗi system's deploy section:
+   mc_checkpoint({
+     label: "deploy-ops-{SYS}-start",
+     sessionSummary: "Bắt đầu tạo deploy section cho system {SYS}",
+     nextActions: ["Tiếp tục deploy-ops — {SYS}: Deploy commands + Rollback"]
+   })
+
+2. Per-system deployment order rõ ràng:
+   System 1 (Layer 0: Auth/Shared) → System 2 (Layer 1-2: Business) → System 3+ (Layer 3-4: Integration/Frontend)
+
+3. Checkpoint sau khi hoàn thành per-system section:
+   mc_checkpoint({ label: "deploy-ops-{SYS}-complete", ... })
+```
 
 ---
 
@@ -460,15 +501,26 @@ On-call → Tech Lead → CTO (nếu RTO > 2h)
      documentType: "verify"
    })
 
-3. mc_validate({ filePath: "_PROJECT/DEPLOY-OPS.md" })
+3. [BẮT BUỘC] mc_validate({ filePath: "_PROJECT/DEPLOY-OPS.md" })
+   → Nếu có ERRORs → ❌ BLOCKING: sửa ngay (rollback plan thiếu, SLA thiếu số liệu, ...)
+   → Nếu chỉ có WARNINGs → ghi DECISION, tiếp tục
 
-4. mc_snapshot({
+4. [BẮT BUỘC] Per-system checkpoint nếu large project (≥3 systems):
+   Lặp qua từng system → kiểm tra deploy section có đủ commands + rollback commands
+   mc_checkpoint({
+     label: "deploy-ops-systems-verified",
+     sessionSummary: "Đã verify deploy section cho tất cả {N} systems",
+     nextActions: ["Tạo snapshot pre-production"]
+   })
+
+5. mc_snapshot({
      label: "pre-production-{version}",
      description: "Full project snapshot trước go-live",
      includeAll: true
    })
 
-5. mc_checkpoint({
+6. [BẮT BUỘC] Final checkpoint:
+   mc_checkpoint({
      label: "deploy-ops-complete",
      sessionSummary: "Deploy-Ops docs created. Project ready for go-live.",
      nextActions: [
@@ -567,6 +619,8 @@ Mỗi phase output là input cho phase sau. Verify TRƯỚC KHI chuyển sang ph
 ## Post-Gate
 
 ```
+[BẮT BUỘC RISK-004] Chạy Pre-Completion Verification (section ở trên) TRƯỚC khi show Completion Report.
+
 ✅ DEPLOY-OPS.md đã saved
 ✅ Go-live checklist đã tạo
 ✅ Rollback plan đã documented

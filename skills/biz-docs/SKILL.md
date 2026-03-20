@@ -63,6 +63,17 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 **PROJECT-OVERVIEW.md chưa có:**
 - Báo user: "Thiếu PROJECT-OVERVIEW.md → Chạy /mcv3:discovery trước."
 
+**Documents input thiếu (RISK-008 — BLOCKING vs WARNING):**
+
+| Loại file thiếu | Phân loại | Hành động bắt buộc |
+|-----------------|-----------|---------------------|
+| PROJECT-OVERVIEW.md | ❌ BLOCKING | DỪNG — không có context để generate BizDocs. Chạy `/mcv3:discovery` |
+| EXPERT-LOG.md | ⚠️ WARNING | Tiếp tục với PROJECT-OVERVIEW, ghi DECISION "Thiếu Expert recommendations" — Confidence: LOW |
+
+**Nguyên tắc phân loại:**
+- **BLOCKING** = file bắt buộc để tạo tài liệu nghiệp vụ → DỪNG ngay, báo user skill nào để tạo
+- **WARNING** = file tham khảo bổ sung → tiếp tục nhưng ghi rõ DECISION với Confidence: LOW
+
 **Industry references không có cho ngành này:**
 - Tiếp tục với `references/skeleton/` skeleton templates (general)
 - Hỏi user nhiều hơn về business rules của ngành đó
@@ -80,9 +91,57 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 ```
 1. mc_status() → xác nhận project
 2. Kiểm tra PROJECT-OVERVIEW.md đã có
-3. Kiểm tra EXPERT-LOG.md — nếu có: load để lấy recommendations
+   → Nếu KHÔNG CÓ → ❌ BLOCKING: "Thiếu PROJECT-OVERVIEW.md → Chạy /mcv3:discovery trước."
+3. Kiểm tra EXPERT-LOG.md
+   → Nếu có: load để lấy recommendations
+   → Nếu không có: ⚠️ WARNING — ghi DECISION "Thiếu EXPERT-LOG, tiếp tục với PROJECT-OVERVIEW only" — Confidence: LOW
 4. Tự xác định domain list từ SC-IN IDs trong PROJECT-OVERVIEW + EXPERT-LOG
    → Không hỏi user — tự detect tất cả domains cần làm
+
+5. [MANDATORY] Scale Detection — Đếm số domains:
+   - Nếu ≥ 5 domains → CHẾ ĐỘ LARGE PROJECT (xem Phase 0 Safety Checkpoint — Batch Mode)
+     → Ghi log: "Large project: {N} domains detected — kích hoạt Batch Mode"
+   - Nếu < 5 domains → Chế độ Standard, tiếp tục bình thường
+```
+
+---
+
+## Phase 0 — Safety Checkpoint
+
+Trước khi bắt đầu generate, tự động lưu checkpoint để có thể resume nếu bị interrupt:
+
+```
+mc_checkpoint({
+  projectSlug: "<slug>",
+  label: "pre-biz-docs",
+  sessionSummary: "Chuẩn bị chạy /mcv3:biz-docs — tạo BIZ-POLICY, PROCESS, DATA-DICTIONARY",
+  nextActions: ["Tiếp tục /mcv3:biz-docs — Phase 1: Domain List Auto-Detection"]
+})
+```
+
+→ "✅ Safety checkpoint đã lưu. Bắt đầu tạo BizDocs..."
+
+**Large project batch processing (RISK-006) — áp dụng khi ≥5 domains:**
+```
+// Phát hiện large project: đếm domains từ Phase 0 Scale Detection
+// Nếu ≥5 domains → kích hoạt Batch Mode:
+
+1. Lưu BATCH CHECKPOINT trước Phase 2:
+   mc_checkpoint({
+     label: "pre-biz-docs-batch",
+     sessionSummary: "Large project: {N} domains cần BizDocs. Batch mode ON.",
+     nextActions: ["Batch 1: {DOM1}, {DOM2}, {DOM3} — BIZ-POLICY + PROCESS"]
+   })
+
+2. Chia domains thành batches (tối đa 3 domains / batch):
+   Batch 1: Core domains (Sales, Warehouse, ...)
+   Batch 2: Support domains (HR, Finance, ...)
+   Batch 3+: Integration/Reporting domains
+
+3. Checkpoint sau mỗi batch (ngoài per-domain checkpoint):
+   mc_checkpoint({ label: "biz-docs-batch-{N}-complete", ... })
+
+4. KHÔNG load toàn bộ contexts cùng lúc — chỉ load docs của domain đang làm
 ```
 
 ---
@@ -236,23 +295,47 @@ Nếu không chắc chắn → ghi DECISION với Confidence: MEDIUM
 ## Phase 5 — Save & Validate All
 
 ```
-Với mỗi document (KHÔNG hiển thị nội dung lên chat — chỉ show tóm tắt sau mc_save):
+Với mỗi domain (KHÔNG hiển thị nội dung lên chat — chỉ show tóm tắt sau mc_save):
+
+--- Per-domain loop ---
 
 1. mc_save({ filePath: "_PROJECT/BIZ-POLICY/BIZ-POLICY-{DOM}.md", documentType: "biz-policy" })
    → 📄 Đã lưu: BIZ-POLICY-{DOM}.md — {N} Business Rules (BR-{DOM}-001 → BR-{DOM}-{NNN})
 
-2. mc_save({ filePath: "_PROJECT/PROCESS/PROCESS-{DOM}.md", documentType: "process" })
+2. [BẮT BUỘC] mc_validate({ filePath: "_PROJECT/BIZ-POLICY/BIZ-POLICY-{DOM}.md" })
+   → Nếu có ERRORs → ❌ BLOCKING: sửa ngay trước khi tiếp tục domain tiếp theo
+   → Nếu chỉ có WARNINGs → ghi DECISION, tiếp tục
+
+3. [BẮT BUỘC] mc_traceability({ projectSlug: "...", action: "register",
+     sourceId: "BR-{DOM}-NNN", targetId: "BIZ-POLICY-{DOM}.md" })
+   → Đăng ký tất cả BR-IDs từ BIZ-POLICY vào traceability matrix
+
+4. mc_save({ filePath: "_PROJECT/PROCESS/PROCESS-{DOM}.md", documentType: "process" })
    → 📄 Đã lưu: PROCESS-{DOM}.md — {M} quy trình (AS-IS + TO-BE)
 
-Cuối cùng:
-3. mc_save({ filePath: "_PROJECT/DATA-DICTIONARY.md", documentType: "data-dictionary" })
+5. [BẮT BUỘC] mc_validate({ filePath: "_PROJECT/PROCESS/PROCESS-{DOM}.md" })
+   → Nếu có ERRORs → ❌ BLOCKING: sửa ngay trước khi tiếp tục
+
+6. [BẮT BUỘC] Per-domain checkpoint (RISK-003):
+   mc_checkpoint({
+     label: "biz-docs-{DOM}-complete",
+     sessionSummary: "Hoàn thành BIZ-POLICY + PROCESS cho domain {DOM}",
+     nextActions: ["Tiếp tục biz-docs — domain tiếp theo hoặc DATA-DICTIONARY"]
+   })
+
+--- Kết thúc per-domain loop ---
+
+Sau tất cả domains:
+7. mc_save({ filePath: "_PROJECT/DATA-DICTIONARY.md", documentType: "data-dictionary" })
    → 📄 Đã lưu: DATA-DICTIONARY.md — {K} TERM, {J} ENT, {L} ENUM
 
-4. mc_validate({ filePath: ... }) cho mỗi file
+8. [BẮT BUỘC] mc_validate({ filePath: "_PROJECT/DATA-DICTIONARY.md" })
+   → Nếu có ERRORs → ❌ BLOCKING: sửa ngay
 
-5. mc_checkpoint({
+9. [BẮT BUỘC] Final checkpoint:
+   mc_checkpoint({
      label: "sau-biz-docs",
-     sessionSummary: "Tạo {N} BIZ-POLICY + {N} PROCESS + DATA-DICTIONARY",
+     sessionSummary: "Tạo {N} BIZ-POLICY + {N} PROCESS + DATA-DICTIONARY — tất cả validated",
      nextActions: ["Chạy /mcv3:requirements để viết URS cho từng module"]
    })
 ```
@@ -304,6 +387,8 @@ Content Quality:
 ## Post-Gate
 
 ```
+[BẮT BUỘC RISK-004] Chạy Pre-Completion Verification (section ở trên) TRƯỚC khi show Completion Report.
+
 ✅ Ít nhất 1 BIZ-POLICY đã saved
 ✅ Ít nhất 1 PROCESS đã saved
 ✅ DATA-DICTIONARY đã saved
