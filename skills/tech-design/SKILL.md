@@ -123,6 +123,11 @@ Multi-system với auth  → Load thêm AUTH-SPEC-TEMPLATE.md
    - Core/Foundation modules trước (Auth, Master data)
    - Business logic modules theo dependency
    - Xử lý tất cả modules, không hỏi user chọn
+
+5. [MANDATORY] Scale Detection — Đếm tổng số URS files:
+   - Nếu ≥ 5 modules → CHẾ ĐỘ LARGE PROJECT (xem Batch Mode ở Phase 0 Safety Checkpoint)
+     → Ghi log: "Large project: {N} modules detected — kích hoạt Batch Mode"
+   - Nếu < 5 modules → Chế độ Standard, tiếp tục bình thường
 ```
 
 **Nếu không có URS:**
