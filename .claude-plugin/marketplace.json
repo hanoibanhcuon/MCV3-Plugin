@@ -1,0 +1,41 @@
+{
+  "name": "mcv3-devkit",
+  "description": "MasterCraft DevKit v3 — 8-phase software development pipeline for Claude Code",
+  "owner": {
+    "name": "hanoibanhcuon"
+  },
+  "plugins": [
+    {
+      "name": "mcv3-devkit",
+      "description": "MasterCraft DevKit v3 (MCV3) — Transform ideas into complete software through a standardized 8-phase pipeline: Discovery → Expert → BizDocs → Requirements → Tech Design → QA → CodeGen → Verify → Deploy. Includes 15 skills, multi-industry support (12 industries), and MCP project memory server.",
+      "version": "3.12.0",
+      "source": "./",
+      "strict": false,
+      "author": {
+        "name": "hanoibanhcuon"
+      },
+      "homepage": "https://github.com/hanoibanhcuon/MCV3-Plugin",
+      "repository": "https://github.com/hanoibanhcuon/MCV3-Plugin",
+      "license": "MIT",
+      "category": "development",
+      "tags": ["software-development", "documentation", "requirements", "code-generation", "project-management"],
+      "skills": [
+        "./skills/assess",
+        "./skills/biz-docs",
+        "./skills/change-manager",
+        "./skills/code-gen",
+        "./skills/deploy-ops",
+        "./skills/discovery",
+        "./skills/evolve",
+        "./skills/expert-panel",
+        "./skills/migrate",
+        "./skills/navigator",
+        "./skills/onboard",
+        "./skills/qa-docs",
+        "./skills/requirements",
+        "./skills/tech-design",
+        "./skills/verify"
+      ]
+    }
+  ]
+}
