@@ -258,6 +258,76 @@ URS-SALES.md:
 
 ---
 
+## Rule 6: False Positive Filtering
+
+Tránh báo false positives làm SYNC-REPORT noisy và mất ý nghĩa.
+
+### 6a. API Detection False Positives
+
+```
+Loại ra khỏi API detected list:
+  ✗ Files trong thư mục test/ hoặc __tests__/ hoặc spec/
+  ✗ Files có suffix .test.ts / .spec.ts / .test.py / _test.go
+  ✗ Mock route files (tên có "mock", "stub", "fake")
+  ✗ Internal admin/debug routes không expose ra ngoài
+    (VD: /internal/health, /_debug/metrics — không phải public API)
+  ✗ Third-party SDK wrapper files (không phải code của project)
+
+Ghi chú khi loại:
+  → Nếu loại > 5 files: ghi vào SYNC-REPORT "Excluded {N} test/mock files from API detection"
+```
+
+### 6b. Database Detection False Positives
+
+```
+Loại ra khỏi table detected list:
+  ✗ Migration rollback tables (tên có "_bak", "_backup", "_old", "_archive")
+  ✗ Test fixture tables (prefix "test_", suffix "_test")
+  ✗ Temporary tables (prefix "tmp_", "temp_")
+  ✗ Migration history tables (schema_migrations, flyway_schema_history, etc.)
+
+ORM projects — điều chỉnh raw SQL check:
+  Nếu detect Prisma / TypeORM / SQLAlchemy / Hibernate:
+    → Raw SQL check: đánh dấu "N/A — ORM project, schema từ entity definitions"
+    → Extract tables từ entity class definitions thay vì SQL files
+    → Không báo "missing migration" nếu dùng schema sync / auto-migrate
+```
+
+### 6c. Business Rules False Positives
+
+```
+Không flag là business rule conflict khi:
+  ✗ Giá trị trong test files khác với production (VD: test dùng min=1, prod dùng min=100k)
+  ✗ Constants chỉ dùng trong seeder / fixture data
+  ✗ Feature flags / environment-specific values (VD: DEV_MIN_ORDER=0)
+
+Ghi chú khi skip:
+  → "Skipped {N} test/config values — not production business rules"
+```
+
+### 6d. Confidence Level Rules
+
+Gán confidence level cho mỗi sync item:
+
+```
+HIGH — exact match/mismatch:
+  - String/path/value so sánh trực tiếp được (identical hoặc clearly different)
+  - VD: Code path "/api/v2/orders" vs Docs path "/api/v1/orders" → HIGH confidence drift
+
+MEDIUM — normalized match:
+  - Khác nhau về case, whitespace, path prefix
+  - VD: Code "GET /orders" vs Docs "GET /api/v1/orders" → có thể match nếu có base path
+  → Ghi chú "(normalized match — verify prefix config)"
+
+LOW — semantic inference:
+  - Chỉ suy luận từ naming conventions, không có exact evidence
+  - VD: file `order.service.ts` → assume có `orders` table nhưng chưa tìm thấy entity file
+  → Ghi chú "(inferred — cần verify thủ công)"
+  → LOW confidence items KHÔNG tạo CRITICAL gaps — chỉ tạo INFO gaps
+```
+
+---
+
 ## Severity Summary
 
 | Code | Meaning | Action |
