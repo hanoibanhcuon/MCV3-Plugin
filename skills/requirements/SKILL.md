@@ -73,6 +73,61 @@ References:
 
 ---
 
+### Parallel Module Mode (2-4 modules, STANDARD MODE chỉ)
+
+Khi có 2-4 modules ĐỘC LẬP nhau (mỗi module chỉ dùng BIZ-POLICY riêng của mình), có thể
+chạy **Phase 2-4 song song** để giảm ~50-70% thời gian gen content.
+
+**Phân tích safety (dựa trên MCP server code):**
+
+| Bước | Parallel Safe? | Lý do |
+|------|---------------|-------|
+| Phase 2-4: load BIZ-POLICY + gen draft + in-memory validate | ✅ YES | Thuần READ + computation, không ghi shared files |
+| `mc_validate` | ✅ YES | Read-only, không write |
+| `mc_save` (mỗi module) | ✅ YES | Ghi file riêng (`URS-{MOD}.md`) |
+| `mc_traceability` register | ❌ NO | `_traceability.json` dùng read-modify-write — không có file lock → race condition nếu parallel |
+| `mc_checkpoint` | ❌ NO | `_checkpoint.md` là single file, parallel overwrite mất data |
+
+**Protocol áp dụng khi Parallel Module Mode:**
+
+```
+Phase 0: Xác định tất cả modules, assign NFR ranges:
+  - Module 1 (WH):    NFR-001 → NFR-00X  (ước tính ~3-5 NFRs mỗi module)
+  - Module 2 (SALES): NFR-00X → NFR-0YY
+  - Module 3 (INV):   NFR-0YY → ...
+  → Ghi range vào in-memory map trước khi parallel gen
+
+Phase 2-4 (PARALLEL — tất cả modules cùng lúc):
+  → Load BIZ-POLICY-{MOD} + PROCESS-{MOD} song song (đã cache DATA-DICTIONARY)
+  → Gen draft URS-{MOD} in-memory
+  → Dùng NFR-NNN theo range đã assign (không conflict)
+  → Chạy AC Quality Validation Checklist in-memory
+
+Phase 5 (SEQUENTIAL — từng module một):
+  → mc_save(URS-{MOD}) → [mc_validate ∥ mc_traceability] → mc_checkpoint
+  → KHÔNG gộp song song bước này — race condition trên _traceability.json và _checkpoint.md
+```
+
+**Điều kiện BẮT BUỘC để dùng Parallel Module Mode:**
+
+```
+✅ STANDARD MODE chỉ (< 5 modules) — LARGE PROJECT MODE BẮT BUỘC sequential
+✅ Modules KHÔNG có dependency: không có module nào cần output của module khác
+✅ NFR ranges đã assign trước khi gen (không để 2 modules tự đặt NFR-001 cùng lúc)
+❌ KHÔNG dùng khi có INT-REQ dependency giữa modules
+❌ KHÔNG dùng khi ≥ 5 modules (context window + LARGE PROJECT MODE rules)
+```
+
+**Ước tính tiết kiệm:**
+
+| Số modules | Sequential | Parallel Mode | Tiết kiệm |
+|-----------|-----------|---------------|-----------|
+| 2 modules | 2× gen time | 1× gen time + sequential save | ~45% |
+| 3 modules | 3× gen time | 1× gen time + sequential save | ~60% |
+| 4 modules | 4× gen time | 1× gen time + sequential save | ~70% |
+
+---
+
 ## CHẾ ĐỘ VẬN HÀNH — Auto-Mode
 
 Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
