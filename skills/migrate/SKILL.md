@@ -103,6 +103,26 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 
 ## Phase 0 — Auto-Detect Migration Source
 
+> **⚠️ ENTRY GUARD — Chạy TRƯỚC KHI detect scope (bắt buộc):**
+>
+> ```
+> // Kiểm tra xem project đã migrate chưa — TRƯỚC KHI làm bất cứ điều gì
+> mc_list({ projectSlug: "<slug>", subPath: "_mcv3-work/migration" })
+>
+> → Nếu tìm thấy MIGRATION-REPORT.md:
+>     → DỪNG auto-detect scope — KHÔNG chạy lại migration
+>     → Hỏi 1 câu duy nhất:
+>       "Phát hiện migration đã hoàn thành (MIGRATION-REPORT.md tồn tại).
+>        Bạn muốn làm gì?
+>        [1] BA Review — bắt đầu/tiếp tục review {G} GENERATED items
+>        [2] Migrate thêm — import documents mới vào project (không ghi đè docs cũ)"
+>     → User chọn [1] → Nhảy thẳng vào BA Review Mode (bỏ qua toàn bộ Phase 0-8)
+>     → User chọn [2] → Tiếp tục Phase 0 auto-detect bình thường bên dưới
+>     → User mô tả files/docs mới cụ thể → tự chọn [2], bắt đầu Phase 0
+>
+> → Nếu KHÔNG có MIGRATION-REPORT.md → Tiếp tục Phase 0 auto-detect bình thường
+> ```
+
 Tự detect source từ context — không hỏi:
 
 ```
@@ -454,9 +474,8 @@ mc_validate({
 
 ### 6b. Detect gaps sau migration
 
-> **⚠️ BLOCKING CHECK:** Trước khi sang Phase 7, phải check: Có US nào không có AC không?
-> - Nếu có → **DỪNG**, generate min 2 ACs cho mỗi US thiếu, rồi mới tiếp tục.
-> - Không được để US trống AC vào traceability registration.
+> **Lưu ý:** Việc đảm bảo mỗi US có ≥ 2 ACs được xử lý **inline tại Phase 4b** (khi tạo từng US).
+> Phase 6b chỉ TỔNG HỢP và REPORT từ data đã có trong memory — KHÔNG load lại files.
 
 ```
 "🔍 GAP ANALYSIS sau migration:
@@ -465,10 +484,6 @@ mc_validate({
   - {N} Business Rules (BIZ-POLICY)
   - {M} User Stories (URS) — {G} ACs generated (⚠️ cần BA verify)
   - {K} API endpoints (MODSPEC) [nếu có]
-
-🚫 [BLOCKING — tự fix trước khi tiếp tục]:
-  - US không có AC (0 ACs): {X} US → generate min 2 ACs ngay
-  - US có ít hơn 2 ACs: {Y} US → generate thêm để đủ 2
 
 ⚠️ Gaps cần bổ sung sau migration:
   - NFR: Chưa tìm thấy performance/security requirements
@@ -480,16 +495,6 @@ mc_validate({
   1. {US-xxx}: Priority là Must hay Should?
   2. {BR-xxx}: Áp dụng cho channel nào?
   3. {AC-xxx}: Business rule có đúng không? (được infer từ context)"
-```
-
-**[BLOCKING] Tự fix trước khi sang Phase 7:**
-```
-Nếu phát hiện US không có AC hoặc < 2 ACs:
-  1. List ra tất cả US bị thiếu
-  2. Generate 2 ACs tối thiểu từ context cho mỗi US
-  3. mc_save() để cập nhật file URS
-  4. Ghi vào MIGRATION-REPORT: "Auto-generated ACs cho {N} US — cần BA review"
-  5. Tiếp tục sang Phase 7 sau khi tất cả US đã có ≥ 2 ACs
 ```
 
 ### 6c. Tạo Migration Report
@@ -884,12 +889,19 @@ Tầng 3 — Quality Gate [🚫 BLOCKING GATE]:
 Condition 1 — User chọn [1] từ Completion Report:
   → Enter Review Mode ngay trong session hiện tại
 
-Condition 2 — Resume từ session trước (PAUSE):
+Condition 2a — Resume BA Review đang dở (PAUSE):
   → User gọi lại `/mcv3:migrate` (bất kỳ lệnh nào)
   → mc_resume() detect checkpoint label chứa "ba-review-paused"
   → Hỏi 1 câu: "Phát hiện BA Review đang dở ({X}/{TOTAL} modules đã review).
      Tiếp tục? [1] Có  [2] Không, bỏ qua"
   → User chọn [1] → load REVIEW-PROGRESS.md, resume đúng vị trí
+
+Condition 2b — Bắt đầu BA Review sau migration complete (session mới):
+  → User gọi lại `/mcv3:migrate` (bất kỳ lệnh nào)
+  → Phase 0 Entry Guard phát hiện MIGRATION-REPORT.md
+  → mc_resume() detect checkpoint label "migration-complete"
+  → Phase 0 Entry Guard hỏi: "[1] BA Review  [2] Migrate thêm"
+  → User chọn [1] → Enter BA Review Mode (bắt đầu từ module đầu tiên)
 
 Condition 3 — User yêu cầu trực tiếp:
   → Detect keywords: "ba review", "review generated", "tiếp tục review",
@@ -1240,6 +1252,7 @@ File tracking review state — lưu tại `_mcv3-work/migration/REVIEW-PROGRESS.
 
 ```
 TRIGGER-AUTO:    Detect checkpoint "ba-review-paused" khi resume → tự động hỏi tiếp tục
+                 Detect checkpoint "migration-complete" + MIGRATION-REPORT.md → Entry Guard hỏi [1] BA Review
 MODULE-FIRST:    Luôn review theo module — không show từng AC lẻ nếu chưa load module
 BATCH-APPLY:     Gộp tất cả changes của 1 module → 1 mc_save duy nhất (tránh save nhiều lần)
 MINIMUM-ACS:     BỎ AC làm US < 2 ACs → auto-generate replacement + flag GENERATED
