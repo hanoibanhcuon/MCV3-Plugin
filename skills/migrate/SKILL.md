@@ -579,6 +579,37 @@ mc_checkpoint({
 })
 ```
 
+**Pre-Completion Verification:**
+
+Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5):
+
+```
+Tầng 1 — Self-Verification:
+  ✓ Converted docs có đầy đủ MCV3 sections theo templates tương ứng
+  ✓ Formal IDs đúng format và sequential (không gap, không duplicate)
+  ✓ "Generated" tag có trên mọi AI-generated content (ACs, actors, NFRs)
+  ✓ "[AMBIGUOUS]" / "[NEEDS REVIEW]" tags rõ ràng trên uncertain items
+  ✓ Không có duplicate IDs trong namespace
+
+MIGRATION-REPORT:
+  ✓ Source documents list đầy đủ (không bỏ sót source nào)
+  ✓ Coverage: % content extracted ghi rõ
+  ✓ Gaps categorized (critical/warning/info)
+
+Tầng 2 — Cross-Document:
+  ✓ IDs assigned không conflict với existing IDs (nếu project đã có docs)
+  ✓ Business domain từ source docs match với project domain trong mc_status
+  ✓ Entities mention trong source có ENT-ID trong DATA-DICTIONARY (hoặc gap flagged)
+  ✓ Tất cả content significant từ source đã được extract (không bỏ sót)
+
+Tầng 3 — Quality Gate:
+  ✅ Tất cả source documents đã process (không skip)
+  ✅ IDs sequential và không conflict
+  ✅ MIGRATION-REPORT có đầy đủ gaps list
+  ✅ Ambiguous items được flag rõ ràng (không im lặng bỏ qua)
+  ✅ mc_validate PASS cho tất cả migrated documents
+```
+
 **Post-Gate checklist:**
 ```
 ✅ Tất cả source documents đã được analyze

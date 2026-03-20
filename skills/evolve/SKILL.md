@@ -460,6 +460,33 @@ mc_checkpoint({
 })
 ```
 
+**Pre-Completion Verification:**
+
+Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5):
+
+```
+Tầng 1 — Self-Verification:
+  ✓ IDs mới không conflict với existing IDs (check namespace — dùng mc_traceability)
+  ✓ Version increment đúng semantic versioning (MAJOR.MINOR.PATCH)
+  ✓ "v{N+1} ADDITIONS" sections được mark rõ ràng trong updated docs
+  ✓ Không có placeholder trong features mới
+  ✓ EVOL-ID format: EVOL-NNN, scope classify đúng (Sub-feature/Module/System/MVP→Full)
+
+Tầng 2 — Cross-Document:
+  ✓ Features mới không vi phạm existing business rules (BR check)
+  ✓ New APIs không conflict với existing API paths
+  ✓ New TBL columns không conflict với existing schema
+  ✓ Backward compatibility: existing IDs không bị remove hoặc break
+  ✓ Dependencies của features mới đã được identify và document
+
+Tầng 3 — Quality Gate:
+  ✅ Snapshot trước evolution đã tạo (trước khi evolve)
+  ✅ Không có ID conflicts
+  ✅ Existing traceability links không bị broken bởi evolution
+  ✅ EVOLUTION-LOG.md đã cập nhật với EVOL-{ID}
+  ✅ mc_validate PASS cho tất cả updated/new documents
+```
+
 **Post-Gate checklist:**
 ```
 ✅ Snapshot trước evolution đã tạo

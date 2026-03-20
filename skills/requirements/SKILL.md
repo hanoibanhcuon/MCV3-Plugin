@@ -320,6 +320,49 @@ mc_checkpoint({ label: "sau-urs-{mod}", ... })
 
 ---
 
+## Pre-Completion Verification
+
+Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5).
+Lưu ý: Phase 4 "AC Quality Validation Checklist" đã cover Tầng 1 nội bộ. Section này bổ sung Cross-Document verification.
+
+### Tầng 1 — Self-Verification (tham chiếu Phase 4 — AC Quality Validation Checklist)
+
+```
+Format & IDs:
+  ✓ US IDs: US-{MOD}-NNN format, sequential
+  ✓ FT IDs: FT-{MOD}-NNN format
+  ✓ AC IDs: AC-{MOD}-NNN-XX format (XX = 01, 02, ...)
+  ✓ NFR IDs: NFR-NNN format (shared namespace cross-modules)
+  ✓ Không có placeholder: "TBD", "TODO", "[fill]" → reject
+
+Content (chi tiết tại Phase 4 AC Quality Validation Checklist):
+  ✓ Mỗi US có ≥ 2 ACs (Happy Path + Error Case tối thiểu)
+  ✓ Mỗi AC có đủ Given/When/Then với kết quả đo lường được
+  ✓ NFR có số liệu cụ thể (<Xs, 99.X% uptime)
+  ✓ Traceability Matrix đầy đủ (BR → US → FT → AC)
+```
+
+### Tầng 2 — Cross-Document
+
+```
+  ✓ BR-IDs referenced trong URS có trong BIZ-POLICY (không có "orphan BR refs")
+  ✓ Tất cả BR-IDs từ BIZ-POLICY-{MOD} đã được cover bởi ≥ 1 US
+  ✓ ENT-IDs trong US/FT match với DATA-DICTIONARY
+  ✓ Actors trong US match với Stakeholders từ PROJECT-OVERVIEW
+```
+
+### Tầng 3 — Quality Gate
+
+```
+✅ Tất cả BR-IDs từ BIZ-POLICY có ≥ 1 US tương ứng
+✅ Tất cả US có ≥ 1 FT tương ứng
+✅ AC Coverage 100%: không có US nào thiếu AC
+✅ mc_validate PASS
+✅ mc_traceability registered (US, FT, AC, NFR đã đăng ký)
+```
+
+---
+
 ## Post-Gate
 
 ```

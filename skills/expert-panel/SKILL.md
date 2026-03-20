@@ -254,6 +254,45 @@ Nếu sau khi nhận báo cáo, user cung cấp thêm thông tin → tự update
 
 ---
 
+## Pre-Completion Verification
+
+Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5):
+
+### Tầng 1 — Self-Verification
+
+```
+Format & Structure:
+  ✓ Có SESSION-001 với ngày tháng rõ ràng
+  ✓ Đủ 3 expert analyses: Strategy + Finance + Domain
+  ✓ Có sections: CONSENSUS (không rỗng), RISKS, OPEN ISSUES
+  ✓ Không có placeholder trong expert analysis output
+
+Content Quality:
+  ✓ Mỗi expert analysis có ≥ 3 điểm cụ thể (không generic)
+  ✓ CONSENSUS chứa điểm được tất cả experts đồng ý (không phải 1 expert)
+  ✓ RISKS được phân loại theo mức độ (Critical/High/Medium/Low)
+  ✓ OPEN ISSUES mỗi item chỉ rõ "Sẽ giải quyết tại Phase X"
+```
+
+### Tầng 2 — Cross-Document
+
+```
+  ✓ Recommendations không contradicts với PROB/GL/SC từ PROJECT-OVERVIEW
+  ✓ Domain analysis consistent với ngành được xác định trong Phase 1 (discovery)
+  ✓ OPEN ISSUES routing đúng Phase (Phase 3 = biz-docs, Phase 4 = requirements, ...)
+```
+
+### Tầng 3 — Quality Gate
+
+```
+✅ Đủ 3 expert analyses (không thiếu expert nào)
+✅ CONSENSUS ≥ 3 điểm đồng thuận
+✅ Không có mâu thuẫn nội tại trong CONSENSUS (2 điểm contradicts nhau)
+✅ mc_validate PASS
+```
+
+---
+
 ## Post-Gate
 
 ```

@@ -483,6 +483,51 @@ Với mỗi quyết định kỹ thuật quan trọng:
 
 ---
 
+## Pre-Completion Verification
+
+Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5):
+
+### Tầng 1 — Self-Verification
+
+```
+Format & IDs:
+  ✓ API IDs: API-{SYS}-NNN format, sequential (không gap)
+  ✓ TBL IDs: TBL-{SYS}-NNN format
+  ✓ COMP IDs: COMP-{SYS}-NNN format
+  ✓ Không có placeholder: "[fill in]", "TBD", "TODO" trong specs
+  ✓ Mỗi API có: Method + Path + Auth + Request + Response (kể cả error responses)
+
+Content Quality:
+  ✓ API paths không trùng nhau (unique path + method combination)
+  ✓ Response schemas nhất quán (tất cả dùng cùng 1 pattern: { success, data, meta })
+  ✓ Tất cả FK columns trong TBL có cascade behavior ghi rõ
+  ✓ Không có TBL thiếu created_at/updated_at
+  ✓ Business Logic trong API spec không mâu thuẫn với BR từ BIZ-POLICY
+```
+
+### Tầng 2 — Cross-Document
+
+```
+  ✓ Tất cả FT-IDs từ URS có ≥ 1 API-ID hoặc COMP-ID tương ứng
+  ✓ Không có API-ID nào thiếu "Origin FT" (orphan APIs)
+  ✓ Entities từ DATA-DICTIONARY đã được map sang TBL-IDs
+  ✓ Tất cả AC error cases từ URS có error response trong API spec tương ứng
+  ✓ Tech stack trong MODSPEC khớp với tech stack trong PROJECT-OVERVIEW
+```
+
+### Tầng 3 — Quality Gate
+
+```
+✅ Tất cả FT-IDs đã có API hoặc TBL coverage
+✅ Tất cả Entities từ DATA-DICTIONARY đã có TBL tương ứng
+✅ Không có duplicate API paths
+✅ ADR có ≥ 1 record (ít nhất 1 major design decision đã ghi)
+✅ mc_validate PASS
+✅ mc_traceability link FT → API đã register
+```
+
+---
+
 ## Post-Gate
 
 ```
