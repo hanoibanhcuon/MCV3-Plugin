@@ -259,6 +259,48 @@ Cuối cùng:
 
 ---
 
+## Pre-Completion Verification
+
+Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5):
+
+### Tầng 1 — Self-Verification
+
+```
+Format & IDs:
+  ✓ BIZ-POLICY: BR IDs format đúng (BR-{DOM}-NNN), sequential, không có gaps
+  ✓ PROCESS: PROC IDs format (PROC-{DOM}-NNN), có cả AS-IS và TO-BE sections
+  ✓ DATA-DICTIONARY: TERM-NNN, ENT-NNN, ENUM-NNN format đúng
+  ✓ Không có placeholder: "[tên công ty]", "[fill in]", "TBD" → reject
+  ✓ Mỗi BR có: Quy tắc + Áp dụng cho + Ngoại lệ (hoặc "Không có ngoại lệ")
+
+Content Quality:
+  ✓ BR-IDs unique trong toàn bộ project (không trùng với modules khác)
+  ✓ Mỗi BR có thể enforce/kiểm tra (không phải "làm việc chăm chỉ")
+  ✓ AS-IS và TO-BE trong PROCESS không mô tả cùng 1 quy trình giống nhau
+  ✓ Thuật ngữ nhất quán giữa BIZ-POLICY và PROCESS (cùng 1 tên cho cùng 1 thứ)
+```
+
+### Tầng 2 — Cross-Document
+
+```
+  ✓ PROC-IDs trong PROCESS reference đúng BR-IDs từ BIZ-POLICY cùng domain
+  ✓ ENT-IDs trong DATA-DICTIONARY match với Entities được mention trong BIZ-POLICY
+  ✓ Domains được identify có đủ BIZ-POLICY + PROCESS files (không thiếu cặp)
+  ✓ Số domains match với SC-IN modules trong PROJECT-OVERVIEW
+```
+
+### Tầng 3 — Quality Gate
+
+```
+✅ Mỗi domain có cả BIZ-POLICY + PROCESS (không thiếu 1 trong 2)
+✅ DATA-DICTIONARY đã tạo (dù project có 1 domain)
+✅ BR count ≥ 3 per domain (ít hơn → có thể chưa đủ coverage)
+✅ Không có BR duplicate (cùng rule, khác ID)
+✅ mc_validate PASS cho tất cả files
+```
+
+---
+
 ## Post-Gate
 
 ```

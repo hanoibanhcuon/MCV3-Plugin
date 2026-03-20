@@ -348,6 +348,46 @@ Sau khi sửa code, chạy /mcv3:verify để kiểm tra lại.
 
 ---
 
+## Pre-Completion Verification
+
+Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5):
+
+### Tầng 1 — Self-Verification
+
+```
+CHG Record:
+  ✓ CHG-ID format: CHG-NNN (sequential)
+  ✓ Changed element ID tồn tại trong project (không reference phantom IDs)
+  ✓ Before/After content rõ ràng trong changelog entry
+  ✓ Impact scope đã liệt kê đầy đủ documents bị ảnh hưởng
+
+Updated Documents:
+  ✓ Mỗi document đã update không bị broken format
+  ✓ Không còn stale references đến old content (tên cũ, IDs cũ đã bị remove)
+  ✓ Updated IDs vẫn valid format sau thay đổi
+```
+
+### Tầng 2 — Cross-Document
+
+```
+  ✓ Traceability chain sau thay đổi vẫn intact (không bị đứt giữa các phases)
+  ✓ Không có circular dependencies trong impact chain
+  ✓ Tất cả documents trong impact list đã được update (không skip)
+  ✓ IDs được reference trong updated docs vẫn tồn tại (không orphan refs)
+```
+
+### Tầng 3 — Quality Gate
+
+```
+✅ Safety snapshot đã tạo (mc_snapshot trước thay đổi)
+✅ Tất cả documents trong impact list đã update hoặc có lý do skip ghi rõ
+✅ Changelog entry CHG-{ID} đã ghi đầy đủ
+✅ Traceability vẫn valid sau thay đổi
+✅ mc_validate PASS cho tất cả updated documents
+```
+
+---
+
 ## Phase 8 — Post-Gate & Summary
 
 ```

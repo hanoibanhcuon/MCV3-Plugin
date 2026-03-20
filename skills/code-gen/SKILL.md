@@ -834,6 +834,43 @@ Nếu có FAIL không tự fix được → liệt kê rõ ràng + đề xuất 
 
 ---
 
+## Pre-Completion Verification
+
+Code-Gen có **Phase 9 — Verification & Auto-Fix Loop** tích hợp sẵn (xem `skills/code-gen/references/verification-loop.md`). Section này tóm tắt gates bắt buộc trước Completion Report.
+
+### Tầng 1 — Self-Verification (Verification Loop Steps 1-4)
+
+```
+✓ Compile Check PASS (tsc --noEmit / go build / py_compile — zero errors)
+✓ Lint Check PASS (ESLint / Ruff — sau khi auto-fix)
+✓ Test Run PASS (Jest / pytest — tất cả TCs từ TEST-{MOD}.md)
+✓ Security Scan: zero CRITICAL findings (SQL injection, missing auth, hardcoded secrets)
+```
+
+### Tầng 2 — Cross-Document (Verification Loop Steps 5-7)
+
+```
+✓ Integration consistency: controller → service → repository không có missing methods
+✓ Migration: Up + Down scripts hoạt động, có rollback script
+✓ Coverage ≥ thresholds: Lines ≥ 80%, Branches ≥ 70%
+✓ Mỗi code file có REQ-ID header comment trỏ về MODSPEC IDs
+✓ Tất cả API-IDs từ MODSPEC có route handler tương ứng
+✓ Tất cả TBL-IDs từ MODSPEC có migration file tương ứng
+```
+
+### Tầng 3 — Quality Gate
+
+```
+✅ Phase 9 Verification Loop đã chạy đủ 8 bước
+✅ Compile: PASS | Lint: PASS | Tests: PASS | Security: 0 CRITICAL
+✅ Coverage đạt threshold (Lines ≥ 80%, Branches ≥ 70%)
+✅ REVIEW markers ghi rõ câu hỏi cụ thể (không vague như "check this")
+✅ PENDING markers ghi rõ "Cần bổ sung tại Phase X"
+✅ Không còn TODO/FIXME markers (dùng REVIEW/PENDING thay thế)
+```
+
+---
+
 ## Post-Gate — Quality Assurance
 
 ```

@@ -481,6 +481,48 @@ On-call → Tech Lead → CTO (nếu RTO > 2h)
 
 ---
 
+## Pre-Completion Verification
+
+Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5):
+
+### Tầng 1 — Self-Verification
+
+```
+Format & Completeness:
+  ✓ DEPLOY-OPS.md có đủ 5 sections: Infrastructure, Deploy Plan, Rollback Plan, Monitoring, SLA
+  ✓ Deployment commands có thực tế (không phải "{command here}" placeholder)
+  ✓ Rollback triggers có ngưỡng cụ thể (% error rate, response time threshold)
+  ✓ Go-Live Checklist có đầy đủ T-7 → T+7 steps
+  ✓ SLA values có số liệu cụ thể (uptime %, response time ms, RTO hours, RPO hours)
+
+Content Quality:
+  ✓ Deployment strategy phù hợp với project scale (không dùng Kubernetes cho dự án nhỏ)
+  ✓ Rollback time estimate realistic (ghi rõ "< N phút")
+  ✓ Alerting thresholds có ngưỡng cụ thể (không "khi cần")
+  ✓ Monitoring dashboards có tool name cụ thể hoặc URL placeholder
+```
+
+### Tầng 2 — Cross-Document
+
+```
+  ✓ Deployment order consistent với Multi-System Build Layers (Layer 0 trước Layer 4)
+  ✓ SLA Performance target không contradict NFR trong URS (ví dụ: NFR response <2s, SLA không ghi <5s)
+  ✓ Infrastructure specs đủ để đáp ứng capacity requirements từ NFR
+  ✓ Go-Live checklist covers tất cả P0 test requirements từ TEST-{MOD}.md files
+```
+
+### Tầng 3 — Quality Gate
+
+```
+✅ DEPLOY-OPS.md có Rollback Plan với commands thực tế (không placeholder)
+✅ Monitoring setup với ≥ 3 critical metrics có alert thresholds
+✅ SLA có ít nhất: Uptime, Response time p95, RTO, RPO
+✅ Pre-production snapshot đã tạo (mc_snapshot)
+✅ mc_validate PASS
+```
+
+---
+
 ## Post-Gate
 
 ```

@@ -594,6 +594,39 @@ mc_checkpoint({
 })
 ```
 
+### 6e-verify. Pre-Completion Verification
+
+Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5):
+
+```
+PROJECT-MANIFEST.md:
+  ✓ Tất cả systems phát hiện đã được list với code và tên đầy đủ
+  ✓ Modules per system không rỗng (ít nhất 1 module per system)
+  ✓ Existing assets có classification đúng (code/docs/both/none)
+
+ASSESSMENT-MATRIX.md:
+  ✓ Phase per system được classify đúng (phase0 → phase8)
+  ✓ Không có system nào thiếu row trong matrix
+  ✓ Gap severity có phân loại rõ ràng (Critical/Warning/Info)
+
+REMEDIATION-PLAN.md:
+  ✓ Mỗi gap có action với skill cụ thể (/mcv3:skill)
+  ✓ Priority order logic (Critical gaps trước Warning trước Info)
+  ✓ Không có "TBD" trong action items
+
+Cross-check:
+  ✓ Gaps trong GAP-REPORT match với assessment findings trong ASSESSMENT-MATRIX
+  ✓ Skills routing đúng (không route "thiếu URS" đến /mcv3:tech-design)
+  ✓ Phase per system logic nhất quán (có code nhưng không có docs → tối đa phase3)
+
+Quality Gate:
+  ✅ REMEDIATION-PLAN có ≥ 1 actionable item
+  ✅ Critical gaps được list rõ ràng (nếu có)
+  ✅ mc_validate PASS cho assessment docs
+```
+
+---
+
 ### 6f. Post-Gate
 
 ```

@@ -461,6 +461,47 @@ grep -rn "VERIFICATION REPORT\|COMPILE-ERROR\|TEST-FAIL\|SECURITY-WARNING" src/{
 
 ---
 
+## Pre-Completion Verification
+
+Verify skill bản thân là verification — nhưng cần kiểm tra chất lượng output verification documents trước khi báo cáo (xem auto-mode-protocol.md Phase 2.5):
+
+### Tầng 1 — Self-Verification (kiểm tra output docs)
+
+```
+verification-report.md:
+  ✓ Có Executive Summary với đầy đủ metrics (FT traced %, AC coverage %, API code %)
+  ✓ Có System Breakdown table đầy đủ tất cả modules
+  ✓ Overall status rõ ràng: READY / NEEDS ATTENTION / NOT READY
+  ✓ Critical gaps được liệt kê cụ thể (không "một số gaps tồn tại")
+  ✓ Sign-off checklist có đủ roles (Tech Lead, QA Lead, Product Owner)
+
+traceability-matrix.md:
+  ✓ Tất cả FT-IDs từ URS xuất hiện trong matrix
+  ✓ Không có row nào thiếu status (✅/⚠️/❌)
+  ✓ Không có chain đứt không có lý do ghi rõ
+```
+
+### Tầng 2 — Cross-Document
+
+```
+  ✓ Critical gaps trong report match với actual gaps tìm thấy trong Phase 1-4
+  ✓ Traceability coverage % trong Executive Summary khớp với số đếm thực tế trong matrix
+  ✓ VERIFY-{SYS}-P{N}-{MOD}.md files có cho tất cả modules đã verify
+  ✓ Recommendations actionable: chỉ rõ skill nào để fix gap
+```
+
+### Tầng 3 — Quality Gate
+
+```
+✅ verification-report.md có Overall status rõ ràng
+✅ Traceability coverage % chính xác (không estimate)
+✅ Số Critical gaps trong report = số actual critical gaps đếm được trong matrix
+✅ mc_traceability validate đã chạy (action: "validate")
+✅ mc_validate PASS cho tất cả verify docs
+```
+
+---
+
 ## Post-Gate
 
 ```

@@ -460,6 +460,51 @@ A: {Câu trả lời ngắn gọn}
 
 ---
 
+## Pre-Completion Verification
+
+Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5).
+Lưu ý: Phase 3e "Auto-Coverage Report" đã cover phần coverage. Section này bổ sung cross-document và format checks.
+
+### Tầng 1 — Self-Verification
+
+```
+Format & IDs:
+  ✓ TC IDs: TC-{MOD}-NNN format, sequential
+  ✓ UAT IDs: UAT-{MOD}-NNN format
+  ✓ Mỗi TC có: Preconditions + Steps (Action/Input/Expected) + Pass criteria
+  ✓ [VERIFIED-BY: AC-{MOD}-NNN-XX] tag có trong mỗi TC
+  ✓ Không có TC nào thiếu Priority (P0/P1/P2)
+
+Content Quality:
+  ✓ Pass criteria cụ thể và đo lường được (không "hoạt động đúng")
+  ✓ Error TCs có expected HTTP status code cụ thể (400/401/403/404/409)
+  ✓ UAT scenarios viết bằng ngôn ngữ business (không technical jargon)
+  ✓ Không có TC chỉ test 1 điều nhưng có 10+ steps (cần split)
+```
+
+### Tầng 2 — Cross-Document
+
+```
+  ✓ AC-IDs trong [VERIFIED-BY] tag có trong URS-{MOD}.md (không orphan refs)
+  ✓ API-IDs trong API test cases có trong MODSPEC-{MOD}.md
+  ✓ Tất cả AC-IDs từ URS đã có ≥ 1 TC (coverage 100%)
+  ✓ Tất cả User Stories có ≥ 1 UAT scenario
+  ✓ BR-IDs được test trong TC có trong BIZ-POLICY (không phantom BRs)
+```
+
+### Tầng 3 — Quality Gate
+
+```
+✅ AC Coverage 100% (xem Auto-Coverage Report từ Phase 3e)
+✅ FT Coverage 100%
+✅ ≥ 1 UAT scenario per User Story
+✅ P0 TCs cover tất cả Must-priority FTs
+✅ mc_validate PASS
+✅ mc_traceability AC → TC đã link
+```
+
+---
+
 ## Post-Gate
 
 ```

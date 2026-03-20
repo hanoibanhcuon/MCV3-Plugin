@@ -122,6 +122,69 @@ Nếu thiếu thông tin NON-BLOCKING:
 
 ---
 
+## Phase 2.5 — Pre-Completion Verification Protocol
+
+**BẮT BUỘC** chạy TRƯỚC Phase 3 (Completion Report). Mục đích: đảm bảo output chất lượng cao trước khi thông báo hoàn thành — tránh lỗi cascade qua pipeline.
+
+Mỗi skill có danh sách checks cụ thể trong `SKILL.md` section "**Pre-Completion Verification**".
+
+### Tầng 1 — Self-Verification (trong từng document, TRƯỚC mc_save)
+
+```
+a. Format Check:
+   ✓ Tất cả sections required có đầy đủ
+   ✓ Formal IDs đúng format (PREFIX-DOMAIN-NNN hoặc PREFIX-NNN)
+   ✓ Không có placeholder còn sót: TBD, TODO, [fill in], ___, [Chờ xác nhận]
+   ✓ Markdown syntax đúng (bảng, headers, code blocks không bị broken)
+
+b. Content Quality:
+   ✓ Không có nội dung mâu thuẫn trong cùng 1 document
+   ✓ Không có thông tin mơ hồ không thể đo lường
+   ✓ Không duplicate content (2 sections nói cùng 1 thứ)
+   ✓ Thuật ngữ nhất quán (không gọi cùng 1 thứ bằng nhiều tên)
+
+c. ID Check:
+   ✓ Tất cả IDs mới tạo đúng format theo Formal ID System
+   ✓ Không có duplicate IDs trong cùng document
+   ✓ Mỗi ID có nội dung — không có ID rỗng (ID không có body)
+```
+
+### Tầng 2 — Cross-Document Verification (sau mc_save, trước Completion Report)
+
+```
+a. Input-Output Alignment:
+   ✓ Tất cả IDs quan trọng từ input docs được address trong output docs
+   ✓ Không có IDs bị "drop" (có trong input nhưng mất trong output)
+   ✓ Coverage tối thiểu: BR → ≥1 US | US → ≥1 FT | FT → ≥1 API | AC → ≥1 TC
+
+b. Information Consistency:
+   ✓ System/module names match giữa docs (không có typos)
+   ✓ Business rules trong output docs không mâu thuẫn với docs cũ
+   ✓ Số liệu nhất quán (module count, BR count, v.v.)
+
+c. Scope Completeness:
+   ✓ Tất cả systems/modules trong scope đã được cover
+   ✓ Không thiếu module nào so với PROJECT-OVERVIEW
+```
+
+### Tầng 3 — Quality Gate (TRƯỚC Completion Report)
+
+```
+Chỉ PASS khi:
+✅ Tầng 1 Self-Verification: 0 errors
+✅ Tầng 2 Cross-Document: 0 critical mismatches
+✅ mc_validate: PASS (không có ERRORs)
+✅ Formal IDs: unique trong namespace + format đúng
+
+Nếu FAIL:
+→ Tự fix errors → re-verify → retry (max 2 lần)
+→ Nếu sau 2 lần vẫn fail → ghi vào Completion Report:
+  ⚠️ VERIFICATION WARNINGS: [danh sách issues còn tồn tại]
+→ Không block Completion Report, nhưng user biết cần review
+```
+
+---
+
 ## Phase 3 — Completion Report
 
 Format báo cáo chuẩn sau khi hoàn thành toàn bộ công việc:

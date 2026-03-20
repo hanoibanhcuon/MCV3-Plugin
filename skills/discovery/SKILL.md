@@ -260,6 +260,48 @@ Tạo tài liệu dựa trên template `PROJECT-OVERVIEW-TEMPLATE.md`:
 
 ---
 
+## Pre-Completion Verification
+
+Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5):
+
+### Tầng 1 — Self-Verification
+
+```
+Format & IDs:
+  ✓ Sections bắt buộc: Bối cảnh, Vấn đề, Mục tiêu, Phạm vi, Stakeholders, Ràng buộc, DEPENDENCY MAP
+  ✓ ID format: PROB-NNN, GL-NNN, SC-IN-NNN, SC-OUT-NNN, ST-NNN, CON-NNN, BG-BUS-NNN, BG-TECH-NNN
+  ✓ Không có placeholder: [CẦN XÁC NHẬN] phải có nội dung cụ thể thay thế
+  ✓ Mỗi PROB-ID có: Hiện trạng + Tác động + Mức độ (Critical/High/Medium)
+
+Content Quality:
+  ✓ PROB-IDs mô tả vấn đề cụ thể, không chung chung ("vấn đề quản lý" → reject)
+  ✓ GL-IDs có thể đo lường (có số liệu cụ thể, không phải "nhanh hơn")
+  ✓ SC-IN và SC-OUT không overlap (cùng 1 feature không vừa IN vừa OUT)
+  ✓ Pipeline variant đã ghi với lý do chọn
+```
+
+### Tầng 2 — Cross-Document
+
+```
+Discovery là skill đầu tiên — không có input docs để cross-verify.
+
+Kiểm tra bổ sung:
+  ✓ Project slug trong document khớp với slug trong mc_status
+  ✓ Ngành nghề detect đúng (nếu có keyword rõ ràng trong user input)
+```
+
+### Tầng 3 — Quality Gate
+
+```
+✅ PROB ≥ 1, GL ≥ 1, SC-IN ≥ 1, ST ≥ 1
+✅ Không có PROB-ID mô tả giải pháp thay vì vấn đề
+   (ví dụ xấu: "PROB-001: Cần phần mềm quản lý" — đây là giải pháp, không phải vấn đề)
+✅ mc_validate PASS (không có ERRORs)
+✅ Pipeline variant đã ghi trong PROJECT-OVERVIEW
+```
+
+---
+
 ## Phase 5 — Post-Gate
 
 ```
