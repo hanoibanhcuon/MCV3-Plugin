@@ -1,4 +1,4 @@
-# ============================================================
+﻿﻿﻿# ============================================================
 # install.ps1 — MCV3-Plugin Installer (Windows PowerShell)
 # MasterCraft DevKit v3.x
 # ============================================================
@@ -193,12 +193,14 @@ function Install-Commands {
 
     New-Item -ItemType Directory -Path $dstDir -Force | Out-Null
 
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
     $count = 0
-    Get-ChildItem -Path $srcDir -Filter "*.md" | ForEach-Object {
-        $content = Get-Content $_.FullName -Raw
+    foreach ($file in (Get-ChildItem -Path $srcDir -Filter "*.md")) {
+        $content = Get-Content $file.FullName -Raw -Encoding UTF8
         # Cập nhật paths: skills/{name}/SKILL.md → mcv3-devkit/skills/{name}/SKILL.md
         $content = $content -replace 'skills/([a-z-]+)/SKILL\.md', "$PLUGIN_DIR_NAME/skills/`$1/SKILL.md"
-        Set-Content (Join-Path $dstDir $_.Name) $content -Encoding UTF8 -NoNewline
+        # Ghi UTF-8 không BOM
+        [System.IO.File]::WriteAllText((Join-Path $dstDir $file.Name), $content, $utf8NoBom)
         $count++
     }
 
@@ -326,11 +328,13 @@ mc_dependency     mc_compare     mc_merge       mc_changelog   mc_summary
 Tài liệu đầy đủ: ``$PLUGIN_DIR_NAME/CLAUDE.md``
 "@
 
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
     if (Test-Path $claudeMd) {
-        Add-Content $claudeMd $claudeContent -Encoding UTF8
+        $existing = [System.IO.File]::ReadAllText($claudeMd, $utf8NoBom)
+        [System.IO.File]::WriteAllText($claudeMd, $existing + $claudeContent, $utf8NoBom)
         OK ".claude\CLAUDE.md đã cập nhật với MCV3 instructions"
     } else {
-        Set-Content $claudeMd "# CLAUDE.md — Project Configuration$claudeContent" -Encoding UTF8
+        [System.IO.File]::WriteAllText($claudeMd, "# CLAUDE.md — Project Configuration$claudeContent", $utf8NoBom)
         OK ".claude\CLAUDE.md đã tạo với MCV3 instructions"
     }
 }
@@ -358,10 +362,7 @@ const fs = require('fs');
 const settingsFile = process.argv[2];
 const pluginDir = process.argv[3];
 let json = {};
-if (fs.existsSync(settingsFile)) {
-  try { json = JSON.parse(fs.readFileSync(settingsFile, 'utf8')); }
-  catch(e) {}
-}
+try { json = JSON.parse(fs.readFileSync(settingsFile, 'utf8')); } catch(e) {}
 if (!json.hooks) json.hooks = {};
 if (!json.hooks.Stop) json.hooks.Stop = [];
 const has = json.hooks.Stop.some(

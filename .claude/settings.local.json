@@ -20,7 +20,13 @@
       "Bash(git commit:*)",
       "Bash(git -C \"Z:/Working/MCV3-Plugin\" worktree list)",
       "Bash(git -C Z:/Working/MCV3-Plugin/.claude/worktrees/adoring-hermann diff .claude/rules/mc-data.md .claude/settings.local.json)",
-      "Bash(git -C \"Z:/Working/MCV3-Plugin/.claude/worktrees/adoring-hermann\" diff HEAD -- .claude/rules/mc-data.md)"
+      "Bash(git -C \"Z:/Working/MCV3-Plugin/.claude/worktrees/adoring-hermann\" diff HEAD -- .claude/rules/mc-data.md)",
+      "Read(//z/Working/EUREKA-2026/.claude/**)",
+      "Read(//z/Working/EUREKA-2026/**)",
+      "Read(//z/Working/EUREKA-2026/.claude/commands/mcv3//**)",
+      "Read(//z/Working/MCV3-Plugin/**)",
+      "Read(//z/Working/MCV3-Plugin/mcp-servers/project-memory/dist/**)",
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"Z:/Working/MCV3-Plugin/scripts/install.ps1\" -TargetDir \"Z:/Working/EUREKA-2026\")"
     ]
   },
   "hooks": {

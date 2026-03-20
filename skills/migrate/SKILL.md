@@ -67,9 +67,11 @@ References:
 
 ---
 
-## CHẾ ĐỘ VẬN HÀNH — Type C (Hybrid)
+## CHẾ ĐỘ VẬN HÀNH — Type C (Hybrid) / Type A (Auto cho Scope 6)
 
-Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`) — **Type C: Hybrid**:
+Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`):
+
+**Scope 1-5 (Documents, Confluence, Codebase, Informal, Mixed) — Type C: Hybrid:**
 1. **Nhận input ban đầu** — cần nội dung tài liệu cần migrate (paste hoặc mô tả codebase) từ user; nếu đã paste trong message → bắt đầu ngay
 2. **Tự động sau khi có input** — auto-detect migration source từ content, tự convert và save; không hỏi format hay scope
 3. **Tự giải quyết vấn đề** — tự classify content vào đúng MCV3 phases, ghi DECISION khi ambiguous
@@ -77,7 +79,15 @@ Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`
 5. **User review** — user review MIGRATION-REPORT, confirm generated ACs
 6. **Gợi ý bước tiếp** — `/mcv3:requirements` hoặc `/mcv3:tech-design`
 
-**Input bắt buộc từ user:** Nội dung tài liệu cần migrate (paste hoặc mô tả codebase)
+**Scope 6 (Ongoing/In-Progress Project) — Type A: Fully Auto:**
+1. **Không cần user paste gì** — Tự dùng `mc_list` để inventory assets đã có trong project
+2. **Auto-detect từ context** — Nếu có ASSESSMENT-MATRIX từ `/mcv3:assess` → dùng làm guide; nếu không có → tự scan
+3. **Tự assign phases** — Phân loại assets theo phase tự động, ghi DECISION khi ambiguous
+4. **Báo cáo và gợi ý** — Import summary + gaps + next steps
+
+**Input bắt buộc từ user:**
+- Scope 1-5: Nội dung tài liệu cần migrate (paste hoặc mô tả codebase)
+- **Scope 6: KHÔNG cần input** — skill tự detect assets từ project memory và context
 
 ---
 
@@ -102,7 +112,13 @@ Auto-detect logic từ user message và attachments:
   - User mô tả "codebase/src/" hoặc paste code → Scope 3
   - User có requirements nhưng không có IDs → Scope 4
   - User đề cập nhiều nguồn → Scope 5
-  - User đề cập "dự án đang chạy/in-progress" → Scope 6
+  - User đề cập "dự án đang chạy/in-progress/làm dở/phát triển dở" → Scope 6
+  - User vừa chạy /mcv3:assess trước đó (ASSESSMENT-MATRIX tồn tại) → Scope 6
+  - Project đang ở phase > phase0-init nhưng không có docs đầy đủ → Scope 6
+
+[SCOPE 6 BYPASS] Nếu detect Scope 6 → BỎ QUA Phase 2a content-paste check
+  → Nhảy thẳng vào Scope 6 Workflow (không hỏi user paste gì)
+  → Dùng mc_list để tự inventory assets
 
 Nếu không rõ → ghi DECISION + dùng Scope phù hợp nhất từ context
 → Tự chuyển sang Phase 1 ngay
@@ -179,7 +195,12 @@ mc_snapshot({
 ### 2a. Nhận và analyze input documents
 
 ```
-Auto-detect format từ content — không hỏi:
+[SCOPE 6 FAST PATH] Nếu đã detect Scope 6 ở Phase 0:
+  → BỎ QUA toàn bộ Phase 2a
+  → Chuyển thẳng sang Scope 6 Workflow (Bước 0 của Scope 6)
+  → KHÔNG hỏi user paste gì
+
+[SCOPE 1-5] Auto-detect format từ content — không hỏi:
   - Có "Business Rule" / "BR-" patterns → BRD / BIZ-POLICY
   - Có "As a ... I want ... So that" → User Stories
   - Có "Use Case" / actor / flow → Use Case Specification
@@ -189,7 +210,7 @@ Auto-detect format từ content — không hỏi:
   - Không rõ → classify là "General Requirements", ghi DECISION
 
 Nếu user đã paste nội dung vào message → phân tích ngay, không hỏi thêm.
-Nếu chưa có content → hỏi 1 câu duy nhất: "Paste nội dung tài liệu hoặc mô tả codebase cần migrate."
+Nếu chưa có content (và KHÔNG phải Scope 6) → hỏi 1 câu duy nhất: "Paste nội dung tài liệu hoặc mô tả codebase cần migrate."
 ```
 
 ### 2b. Analyze existing content
@@ -285,6 +306,11 @@ Với mỗi business rule tìm thấy:
 
 Với informal user stories hoặc use cases:
 
+> **QUY TẮC BẮT BUỘC:** Mỗi User Story PHẢI có **tối thiểu 2 ACs**.
+> - Nếu source đã có ACs → convert nguyên vẹn
+> - Nếu source KHÔNG có ACs → **tự generate tối thiểu 2 ACs** từ context (Want + So that + domain knowledge)
+> - Không được để User Story trống AC — nếu không generate được 2 ACs → đánh dấu `[NEEDS-REVIEW]` và ghi vào MIGRATION-REPORT
+
 ```markdown
 ### US-{MOD}-001: {Tiêu đề (derived từ source)}
 **Role:** Là {actor — infer từ context nếu không explicit}
@@ -295,16 +321,22 @@ Với informal user stories hoặc use cases:
 **Migration note:** "Derived from: '{source text}'"
 
 #### Acceptance Criteria
-> ⚠️ **GENERATED:** AC được generate từ context — cần user verify
+> ⚠️ **GENERATED:** AC được generate từ context — cần BA verify trước khi dùng làm basis cho MODSPEC
 
-- AC-{MOD}-001-01: Given {inferred condition}
+- **AC-{MOD}-001-01:** Given {inferred condition}
   When {inferred action}
   Then {inferred result}
   **Review needed:** Yes
 
+- **AC-{MOD}-001-02:** Given {inferred edge condition}
+  When {inferred action}
+  Then {inferred error/alternate result}
+  **Review needed:** Yes
+
 #### Incomplete/TBD
 - Priority chưa được set → mặc định Should, cần confirm
-- {Other TBD items}
+- ACs trên được generate từ context — BA cần xác nhận hoặc sửa trước Phase 5
+- {Other TBD items nếu có}
 ```
 
 ### 4c. Convert sang MODSPEC
@@ -422,24 +454,42 @@ mc_validate({
 
 ### 6b. Detect gaps sau migration
 
+> **⚠️ BLOCKING CHECK:** Trước khi sang Phase 7, phải check: Có US nào không có AC không?
+> - Nếu có → **DỪNG**, generate min 2 ACs cho mỗi US thiếu, rồi mới tiếp tục.
+> - Không được để US trống AC vào traceability registration.
+
 ```
 "🔍 GAP ANALYSIS sau migration:
 
 ✅ Đã migrate:
   - {N} Business Rules (BIZ-POLICY)
-  - {M} User Stories (URS)
-  - {K} API endpoints (MODSPEC)
+  - {M} User Stories (URS) — {G} ACs generated (⚠️ cần BA verify)
+  - {K} API endpoints (MODSPEC) [nếu có]
 
-⚠️ Gaps cần bổ sung:
-  - Acceptance Criteria: {X} US chưa có đủ AC
+🚫 [BLOCKING — tự fix trước khi tiếp tục]:
+  - US không có AC (0 ACs): {X} US → generate min 2 ACs ngay
+  - US có ít hơn 2 ACs: {Y} US → generate thêm để đủ 2
+
+⚠️ Gaps cần bổ sung sau migration:
   - NFR: Chưa tìm thấy performance/security requirements
-  - Actors: {Y} US chưa xác định được Role rõ ràng
-  - {Z} requirements trong source chưa được map
+  - Actors: {Z} US chưa xác định được Role rõ ràng
+  - {W} requirements trong source chưa được map rõ
+  - ACs được generate (⚠️ GENERATED): {G} ACs — cần BA confirm trước Phase 5
 
 ❓ Items cần confirm:
-  1. US-WH-003: Priority là Must hay Should?
-  2. BR-SALES-007: Applies to online channel hay all channels?
-  3. API-ERP-005: Authentication required?"
+  1. {US-xxx}: Priority là Must hay Should?
+  2. {BR-xxx}: Áp dụng cho channel nào?
+  3. {AC-xxx}: Business rule có đúng không? (được infer từ context)"
+```
+
+**[BLOCKING] Tự fix trước khi sang Phase 7:**
+```
+Nếu phát hiện US không có AC hoặc < 2 ACs:
+  1. List ra tất cả US bị thiếu
+  2. Generate 2 ACs tối thiểu từ context cho mỗi US
+  3. mc_save() để cập nhật file URS
+  4. Ghi vào MIGRATION-REPORT: "Auto-generated ACs cho {N} US — cần BA review"
+  5. Tiếp tục sang Phase 7 sau khi tất cả US đã có ≥ 2 ACs
 ```
 
 ### 6c. Tạo Migration Report
@@ -456,6 +506,7 @@ Migration report format:
 # MIGRATION REPORT — {Project}
 **Ngày:** {date}
 **Source:** {source description}
+**Scope:** {Scope 1-6}
 
 ## Summary
 | Metric | Count |
@@ -467,16 +518,48 @@ Migration report format:
 | APIs migrated | {P} |
 | IDs assigned | {Q} |
 
+## GENERATED Items — Cần BA Review
+| Module | URS File | US Count | Generated ACs | Status |
+|--------|----------|----------|---------------|--------|
+| WMS | ERP/P1-REQUIREMENTS/URS-WMS.md | {N} | {G} | ⏳ PENDING |
+| TMS | ERP/P1-REQUIREMENTS/URS-TMS.md | {N} | {G} | ⏳ PENDING |
+| ... | ... | ... | ... | ... |
+| **TOTAL** | | {total_US} | **{total_G}** | |
+
+> Status values: ⏳ PENDING | 🔄 IN-PROGRESS | ✅ REVIEWED | ⏭️ DEFERRED
+
+## REVIEW-STATUS
+*(Được cập nhật tự động sau mỗi BA Review session)*
+
+| Metric | Value |
+|--------|-------|
+| Review started | — |
+| Last updated | — |
+| ACs confirmed | 0 / {total_G} |
+| ACs modified | 0 |
+| ACs removed | 0 |
+| ACs added | 0 |
+| Modules reviewed | 0 / {total_modules} |
+
+> Xem chi tiết: `_mcv3-work/migration/REVIEW-PROGRESS.md`
+
 ## Review Required
-[List items cần manual review]
+[List items cần manual review ngoài ACs — priorities, actors, ambiguous requirements]
 
 ## Gaps
-[List gaps cần bổ sung]
+| Gap | Severity | Actionable Next Step |
+|-----|----------|---------------------|
+| {gap description} | CRITICAL / WARNING / INFO | {skill hoặc action} |
 
-## Next Steps
-1. Review và confirm generated ACs
-2. Fill gaps: NFR, priority, actors
-3. Continue pipeline: /mcv3:tech-design
+## Next Steps (theo thứ tự)
+1. **BA Review** — Chọn [1] từ completion report để vào Review Mode
+   → Review {total_G} GENERATED ACs trên {total_modules} modules
+   → Hoặc resume nếu đã bắt đầu: gọi /mcv3:migrate → chọn [1]
+2. **Fill gaps** — /mcv3:requirements: bổ sung NFRs, xác nhận priorities, enrich deferred items
+3. **Tech design** — /mcv3:tech-design (sau khi URS đầy đủ và BA đã review)
+4. **Verify** — /mcv3:verify (chỉ sau khi có URS + MODSPEC + TEST — Phase 5+6)
+
+⚠️ Không chạy /mcv3:verify ngay — sẽ fail vì thiếu MODSPEC và TEST docs
 ```
 
 ---
@@ -497,10 +580,10 @@ LINK_WITH_ASSESS: Nên có ASSESSMENT-MATRIX từ /mcv3:assess trước khi làm
 
 ### Workflow Mixed-Phase
 
-**Bước 0: Safety snapshot (tự động)**
+**Bước 0: Safety snapshot + Load Assessment Data (tự động)**
 
 ```
-// LUÔN tạo snapshot trước khi bắt đầu mixed-phase import
+// Step 1: Safety snapshot TRƯỚC KHI làm bất cứ điều gì
 mc_snapshot({
   projectSlug: "<slug>",
   label: "before-mixed-phase-import-{date}",
@@ -508,25 +591,52 @@ mc_snapshot({
 })
 → "✅ Safety snapshot đã tạo."
 
-// Tự kiểm tra ASSESSMENT-MATRIX (không hỏi user):
-mc_list({ subPath: "_mcv3-work/assessment" })
-→ Nếu có ASSESSMENT-MATRIX → dùng làm guide
-→ Nếu chưa có → ghi DECISION: "Proceed without assess — user có thể chạy /mcv3:assess sau"
-→ Tiếp tục import ngay
+// Step 2: Detect + LOAD assessment files (không hỏi user)
+mc_list({ projectSlug: "<slug>", subPath: "_mcv3-work/assessment" })
+→ Nếu có files trong _mcv3-work/assessment/:
+    // PARALLEL: Load cả 2 files quan trọng nhất cùng lúc
+    PARALLEL:
+      mc_load({ projectSlug: "<slug>",
+                filePath: "_mcv3-work/assessment/ASSESSMENT-MATRIX.md",
+                layer: 2 })    // per-system phase status + gaps
+      mc_load({ projectSlug: "<slug>",
+                filePath: "_mcv3-work/assessment/REMEDIATION-PLAN.md",
+                layer: 2 })    // action plan + skill routing
+    → Đọc và cache nội dung: systems list, phases hiện tại, gaps per system
+    → Dùng REMEDIATION-PLAN làm thứ tự ưu tiên import
+
+→ Nếu không có files assessment:
+    → ghi DECISION: "Proceed without assess data — user có thể chạy /mcv3:assess sau"
+→ Tiếp tục import ngay (không dừng hỏi)
 ```
 
-**Bước 1: Inventory tất cả assets**
+**Bước 1: Inventory tất cả assets — TỰ ĐỘNG**
 
 ```
-"Liệt kê tất cả assets bạn có, không cần theo thứ tự:
-VD:
-  - API_Spec_v3.xlsx → Phase 5 (MODSPEC candidate)
-  - BRD_2023.docx → Phase 3/4 (BIZ-POLICY + URS candidate)
-  - src/ (codebase) → Phase 7 (Code)
-  - swagger.json → Phase 5 (MODSPEC)
-  - test_cases.xlsx → Phase 6 (TEST candidate)
+// Tự scan project — không hỏi user
+// Nếu đã load ASSESSMENT-MATRIX ở Bước 0:
+→ Dùng systems + assets từ ASSESSMENT-MATRIX làm inventory chính
+→ Bổ sung bằng mc_list để lấy paths chính xác trong .mc-data/
 
-Paste danh sách của bạn:"
+// Nếu KHÔNG có assessment data:
+// PARALLEL (đồng thời):
+PARALLEL:
+  mc_list({ projectSlug: "<slug>" })              // Tất cả docs đã có trong project memory
+  mc_list({ projectSlug: "<slug>", subPath: "_mcv3-work" })  // Working files
+
+→ Build asset list từ kết quả mc_list
+
+// Sau khi scan xong — show kết quả cho user:
+"📋 Tự động detect {N} assets từ project:
+  - {path1} → Phase {X} candidate
+  - {path2} → Phase {Y} candidate
+  ...
+
+⚠️ Nếu bạn có file bên ngoài project (Word, Excel, PDF) cần import thêm,
+   paste tên/đường dẫn vào. Nếu không → trả lời 'OK' để tiếp tục."
+
+→ Nếu user trả lời 'OK' hoặc không có gì thêm → chuyển ngay sang Bước 2
+→ Nếu user cung cấp thêm files → bổ sung vào asset list, chuyển sang Bước 2
 ```
 
 **Bước 2: Phase assignment**
@@ -632,11 +742,11 @@ PARALLEL (2 calls đồng thời):
   })
   mc_checkpoint({
     label: "migration-complete",
-    sessionSummary: "Migration từ {source}: {N} docs, {M} IDs",
+    sessionSummary: "Migration từ {source}: {N} docs, {M} IDs, {G} GENERATED ACs cần BA review",
     nextActions: [
-      "Review MIGRATION-REPORT.md và confirm gaps",
-      "Fill missing ACs, NFRs, priorities",
-      "Continue: /mcv3:tech-design hoặc /mcv3:requirements (nếu cần)"
+      "BA Review: chọn [1] từ completion report hoặc gọi lại /mcv3:migrate",
+      "Fill missing NFRs, priorities sau BA Review",
+      "Continue pipeline: /mcv3:requirements → /mcv3:tech-design (sau BA review)"
     ]
   })
 → Nếu có orphan IDs (registered nhưng chưa có document) → ghi vào MIGRATION-REPORT gaps
@@ -673,19 +783,24 @@ Chạy TRƯỚC Completion Report (xem auto-mode-protocol.md Phase 2.5):
 Tầng 1 — Self-Verification:
   ✓ Converted docs có đầy đủ MCV3 sections theo templates tương ứng
   ✓ Formal IDs đúng format và sequential (không gap, không duplicate)
-  ✓ "Generated" tag có trên mọi AI-generated content (ACs, actors, NFRs)
+  ✓ "⚠️ GENERATED" tag có trên mọi AI-generated content (ACs, actors, NFRs)
+  ✓ Mỗi generated AC có "**Review needed:** Yes" marker
+  ✓ Mỗi US có section "#### Incomplete/TBD" nếu còn items chưa confirm
   ✓ "[AMBIGUOUS]" / "[NEEDS REVIEW]" tags rõ ràng trên uncertain items
   ✓ Không có duplicate IDs trong namespace
+  ✓ [COMPLETENESS] Mỗi US có ít nhất 2 ACs — nếu phát hiện US < 2 ACs → DỪNG, generate thêm
 
 MIGRATION-REPORT:
   ✓ Source documents list đầy đủ (không bỏ sót source nào)
   ✓ Coverage: % content extracted ghi rõ
   ✓ Gaps categorized (critical/warning/info)
+  ✓ Số lượng GENERATED items ghi rõ — BA biết bao nhiêu items cần review
 
 Tầng 2 — Cross-Document:
   ✓ IDs assigned không conflict với existing IDs (nếu project đã có docs)
   ✓ Business domain từ source docs match với project domain trong mc_status
-  ✓ Entities mention trong source có ENT-ID trong DATA-DICTIONARY (hoặc gap flagged)
+  ✓ "Origin BR:" trong mỗi US có BR-ID thực sự tồn tại trong BIZ-POLICY (hoặc gap flagged)
+  ✓ Entities mention trong source có ENT-ID trong DATA-DICTIONARY (hoặc gap flagged nếu chưa có DATA-DICTIONARY)
   ✓ Tất cả content significant từ source đã được extract (không bỏ sót)
 
 Tầng 3 — Quality Gate [🚫 BLOCKING GATE]:
@@ -698,6 +813,9 @@ Tầng 3 — Quality Gate [🚫 BLOCKING GATE]:
   ✅ MIGRATION-REPORT có đầy đủ gaps list
   ✅ Ambiguous items được flag rõ ràng (không im lặng bỏ qua)
   ✅ mc_validate PASS cho tất cả migrated documents
+  ✅ [COMPLETENESS] Mỗi US có ít nhất 2 ACs (kể cả GENERATED) — KHÔNG chấp nhận US không có AC
+  ✅ [GENERATED MARKERS] Tất cả generated ACs có "⚠️ GENERATED" tag VÀ "**Review needed:** Yes"
+  ✅ MIGRATION-REPORT ghi rõ tổng số GENERATED items để BA biết scope review
 ```
 
 **Post-Gate checklist:**
@@ -726,17 +844,412 @@ Tầng 3 — Quality Gate [🚫 BLOCKING GATE]:
    Generated items: {G} (cần human verify)
    Ambiguous items: {A} (đánh dấu trong docs)
 
-🔜 Bước tiếp theo:
-   → Review MIGRATION-REPORT.md để biết gaps
-   → /mcv3:requirements (nếu cần fill URS gaps)
-   → /mcv3:tech-design (nếu đã có URS đầy đủ)
+🔜 Bước tiếp theo (THEO THỨ TỰ):
+
+   ① NGAY BÂY — BA Review (bắt buộc trước khi tiếp tục pipeline):
+      → Xem MIGRATION-REPORT.md: _mcv3-work/migration/MIGRATION-REPORT.md
+      → Review và confirm/sửa {G} items được đánh dấu ⚠️ GENERATED
+      → Đặc biệt: Acceptance Criteria generated cần BA xác nhận trước khi dùng làm basis cho MODSPEC
+
+   ② SAU BA REVIEW — Fill gaps trong URS:
+      → /mcv3:requirements — Enrich URS: bổ sung ACs đã confirm, NFRs, xác nhận priorities
+
+   ③ SAU KHI URS ĐẦY ĐỦ — Thiết kế kỹ thuật:
+      → /mcv3:tech-design — Tạo MODSPEC cho tất cả modules
+
+   ⚠️ /mcv3:verify chỉ chạy sau khi có đầy đủ URS + MODSPEC + TEST (Phase 5+6)
+      → KHÔNG chạy /mcv3:verify ngay sau migrate — sẽ fail vì thiếu MODSPEC và TEST docs
 
 ═══════════════════════════════════════════════
 💬 BẠN MUỐN:
-   [1] Xem MIGRATION-REPORT để biết gaps?
-   [2] Xem file đã convert nào?
-   [3] OK, tiếp tục → /mcv3:requirements
+   [1] BA Review ngay — xem và confirm GENERATED items theo module
+   [2] Xem nội dung file đã convert (chỉ đọc)
+   [3] OK, tiếp tục → /mcv3:requirements (enrich URS)
 ═══════════════════════════════════════════════
+```
+
+---
+
+## BA Review Mode (Post-Migration Continuation)
+
+> **Tích hợp trong migrate skill — KHÔNG cần skill riêng.**
+> Trigger khi user chọn [1], hoặc `/mcv3:migrate` detect pending review từ checkpoint.
+> Review theo **module** — không từng AC riêng lẻ — để scalable với dự án lớn.
+
+---
+
+### BR-0: Trigger Conditions — Khi nào Enter Review Mode
+
+```
+Condition 1 — User chọn [1] từ Completion Report:
+  → Enter Review Mode ngay trong session hiện tại
+
+Condition 2 — Resume từ session trước (PAUSE):
+  → User gọi lại `/mcv3:migrate` (bất kỳ lệnh nào)
+  → mc_resume() detect checkpoint label chứa "ba-review-paused"
+  → Hỏi 1 câu: "Phát hiện BA Review đang dở ({X}/{TOTAL} modules đã review).
+     Tiếp tục? [1] Có  [2] Không, bỏ qua"
+  → User chọn [1] → load REVIEW-PROGRESS.md, resume đúng vị trí
+
+Condition 3 — User yêu cầu trực tiếp:
+  → Detect keywords: "ba review", "review generated", "tiếp tục review",
+    "confirm ac", "review urs" → enter Review Mode
+```
+
+---
+
+### BR-1: Pre-Review Bootstrap
+
+```
+// Step 1: Load state — PARALLEL (2 calls đồng thời)
+PARALLEL:
+  mc_load({ filePath: "_mcv3-work/migration/MIGRATION-REPORT.md", layer: 2 })
+  mc_load({ filePath: "_mcv3-work/migration/REVIEW-PROGRESS.md", layer: 3 })
+  // REVIEW-PROGRESS.md có thể chưa tồn tại → fresh start nếu 404
+
+// Step 2: Build review queue
+Từ MIGRATION-REPORT:
+  → Extract modules có GENERATED items (với GENERATED count per module)
+  → Sort: nhiều GENERATED ACs nhất trước (priority order)
+
+Từ REVIEW-PROGRESS.md (nếu có — resume):
+  → modules đã REVIEWED → bỏ khỏi queue
+  → modules DEFERRED → xếp cuối queue
+  → current_module → resume từ đây
+
+// Step 3: Show intro summary
+"📋 BA REVIEW MODE
+══════════════════════════════════════════════
+Tổng GENERATED items: {G} ACs | {M} modules cần review
+{nếu resume: "Tiếp tục từ: {current_module} ({X}/{TOTAL} modules đã xử lý)"}
+
+Commands (gõ bất kỳ lúc nào):
+  OK                      → Confirm toàn bộ module hiện tại
+  OK [US-xxx]             → Confirm tất cả ACs của US đó
+  OK [AC-xxx]             → Confirm 1 AC cụ thể
+  SỬA [AC-xxx]: [text]    → Sửa nội dung AC (format: Given/When/Then)
+  BỎ [AC-xxx]             → Xóa AC (US vẫn giữ ≥ 2 ACs tự động)
+  THÊM [US-xxx]: [text]   → Thêm AC mới cho US
+  NEXT                    → Bỏ qua module (deferred — review sau)
+  BACK                    → Quay lại module trước để sửa
+  REVIEW [MOD]            → Nhảy đến module cụ thể (VD: REVIEW WMS)
+  SUMMARY                 → Xem thống kê hiện tại
+  PAUSE / DỪNG            → Lưu tiến độ và dừng
+  HELP                    → Xem lại commands này
+
+Bắt đầu với module: {module-name} ({N} GENERATED ACs)
+══════════════════════════════════════════════"
+```
+
+---
+
+### BR-2: Module Review Loop
+
+**Với mỗi module trong review queue — lặp lại cho đến khi hết hoặc PAUSE:**
+
+#### Bước A — Load và hiển thị module
+
+```
+mc_load({ filePath: "{SYS}/P1-REQUIREMENTS/URS-{MOD}.md", layer: 3 })
+
+→ Extract chỉ các US có GENERATED ACs (skip US đã confirmed)
+→ Format TÓM TẮT — KHÔNG paste full markdown:
+
+"──────────────────────────────────────────────
+📦 Module {MOD} — {N} GENERATED ACs ({K} US)
+   Tiến độ tổng: {X}/{TOTAL} modules | {C} ACs confirmed hôm nay
+──────────────────────────────────────────────
+
+[US-{MOD}-001] {Tên US}  [Priority: Must]
+  AC-01 ({AC-ID}): Given {context} / When {action} / Then {result}
+  AC-02 ({AC-ID}): Given {context} / When {action} / Then {result}
+
+[US-{MOD}-002] {Tên US}  [Priority: Should]
+  AC-01 ({AC-ID}): Given {context} / When {action} / Then {result}
+  AC-02 ({AC-ID}): Given {context} / When {action} / Then {result}
+
+... (hiển thị tối đa 10 US mỗi lần; nếu module > 10 US → chia batch,
+     sau mỗi batch hỏi: 'Tiếp tục 10 US tiếp theo? [OK] hoặc [commands]')
+
+Trả lời: OK để confirm tất cả, hoặc dùng commands ở trên."
+```
+
+#### Bước B — Parse user input
+
+```
+Nhận reply từ user → parse thành danh sách actions:
+
+  "OK"
+    → action: CONFIRM_ALL_MODULE
+
+  "OK US-WMS-001"
+    → action: CONFIRM_US { us_id: "US-WMS-001" }
+
+  "OK AC-WMS-001-01"
+    → action: CONFIRM_AC { ac_id: "AC-WMS-001-01" }
+
+  "SỬA AC-WMS-001-01: Given form / When nhập / Then bắt buộc ngày"
+    → action: MODIFY_AC { ac_id: "AC-WMS-001-01", new_text: "..." }
+
+  "BỎ AC-WMS-003-02"
+    → action: REMOVE_AC { ac_id: "AC-WMS-003-02" }
+
+  "THÊM US-WMS-005: Given dashboard / When filter / Then hiển thị hôm nay"
+    → action: ADD_AC { us_id: "US-WMS-005", text: "..." }
+
+  Mixed (nhiều actions trên 1 dòng, ngăn cách bằng ";"):
+  "OK US-WMS-001; SỬA AC-WMS-002-01: ...; BỎ AC-WMS-003-02"
+    → [CONFIRM_US, MODIFY_AC, REMOVE_AC] → apply tuần tự
+
+  "NEXT"    → action: DEFER_MODULE
+  "PAUSE"   → action: PAUSE_REVIEW
+  "BACK"    → action: BACK_TO_PREVIOUS_MODULE
+  "REVIEW WMS" → action: JUMP_TO_MODULE { mod: "WMS" }
+  "SUMMARY" → action: SHOW_STATS (không thay đổi state)
+  "HELP"    → action: SHOW_HELP
+
+Nếu input không rõ → hiển thị lại commands + hỏi lại:
+  "Không nhận ra command. Gõ HELP để xem danh sách."
+  (Không tự đoán — tránh áp dụng sai action)
+```
+
+#### Bước C — Apply actions vào URS file
+
+```
+Gộp TẤT CẢ changes của module này → apply 1 lần duy nhất (BATCH-APPLY):
+
+Với CONFIRM (OK / OK US-xxx / OK AC-xxx):
+  → Xóa "⚠️ **GENERATED**" tag khỏi AC section của US được confirm
+  → Xóa "**Review needed:** Yes" khỏi mỗi AC được confirm
+  → Thêm "✅ **Reviewed:** {date}" vào dòng ngay sau "#### Acceptance Criteria"
+  → Nội dung AC KHÔNG thay đổi
+
+Với MODIFY (SỬA AC-xxx: ...):
+  → Replace toàn bộ nội dung dòng AC đó với text mới (Given/When/Then)
+  → Xóa "⚠️ **GENERATED**" tag (BA đã review và sửa = confirmed)
+  → Thêm "✏️ **BA Modified:** {date}" thay thế GENERATED tag
+
+Với REMOVE (BỎ AC-xxx):
+  → Xóa toàn bộ AC block đó
+  → [SAFETY CHECK] Đếm ACs còn lại của US đó:
+      Nếu còn ≥ 2 ACs → OK, tiếp tục
+      Nếu còn < 2 ACs → AUTO-GENERATE 1 AC replacement từ context (US Want + So that)
+        → Mark với "⚠️ **GENERATED (auto-replacement):**"
+        → Show inline warning: "⚠️ Auto-generated 1 AC thay thế cho {US-xxx} — cần review"
+
+Với ADD (THÊM US-xxx: ...):
+  → Thêm AC block mới vào cuối AC section của US đó
+  → Auto-assign ID: AC-{MOD}-{US-NNN}-{next-XX} (increment từ ID cao nhất hiện có)
+  → Mark với "✅ **BA Added:** {date}" (không cần GENERATED tag — BA tự viết)
+  → Ghi vào REVIEW-PROGRESS: "added_ac: {ID}"
+```
+
+#### Bước D — Post-Save Verification (sau mỗi module)
+
+```
+// Bước 1: Save file (1 lần duy nhất cho toàn bộ batch changes của module)
+mc_save({ filePath: "{SYS}/P1-REQUIREMENTS/URS-{MOD}.md" })
+
+// Bước 2: Self-verify integrity (inline check — không cần mc_validate full)
+Kiểm tra:
+  ✓ Mỗi US vẫn có ≥ 2 ACs (kể cả auto-generated replacement)
+  ✓ AC IDs vẫn có đúng format {MOD}-NNN-XX (không broken format sau edit)
+  ✓ Không còn orphan "**Review needed:** Yes" trên ACs đã confirmed
+  ✓ DEPENDENCY MAP của URS có "BA Reviewed: partial/complete" trong Status line
+  ✓ Không có ID duplicate sau khi ADD mới
+
+→ Nếu phát hiện lỗi → auto-fix (silent) → re-save (1 lần retry)
+→ Nếu vẫn lỗi sau retry → ghi "[VERIFY-WARN]" vào REVIEW-PROGRESS + tiếp tục
+
+// Bước 3: Update REVIEW-PROGRESS.md
+{module}: {status} | confirmed: {C} | modified: {M} | removed: {R} | added: {A} | deferred: {D}
+
+// Bước 4: mc_checkpoint per module (RISK-003 — không mất tiến độ)
+mc_checkpoint({
+  label: "ba-review-module-{MOD}-done",
+  sessionSummary: "BA Review {MOD}: {C} confirmed, {M} modified, {R} removed. Còn {X} modules.",
+  nextActions: ["Tiếp tục BA Review: module {NEXT-MOD} ({N} GENERATED ACs)"]
+})
+
+// Bước 5: Show inline progress (ngắn gọn — 1 dòng)
+"✅ {MOD} done: {C} confirmed | {M} modified | {R} removed | {A} added
+ → Tiếp theo: {NEXT-MOD} ({N} ACs)"
+```
+
+#### Bước E — PAUSE / DỪNG
+
+```
+Khi user gõ "PAUSE" hoặc "DỪNG":
+
+// 1. Save REVIEW-PROGRESS state đầy đủ
+mc_save({
+  filePath: "_mcv3-work/migration/REVIEW-PROGRESS.md",
+  content: review_progress_with_full_stats
+})
+
+// 2. Checkpoint với đủ context để resume
+mc_checkpoint({
+  label: "ba-review-paused-at-{MOD}",
+  sessionSummary: "BA Review tạm dừng: {X}/{TOTAL} modules done. Tiếp tục tại {CURRENT-MOD}.",
+  nextActions: [
+    "Resume BA Review: gọi /mcv3:migrate → chọn [1] BA Review",
+    "Modules còn lại: {list-pending-modules}"
+  ]
+})
+
+// 3. Show pause summary
+"💾 Đã lưu tiến độ BA Review.
+══════════════════════════════════════════════
+Đã review: {X}/{TOTAL} modules ({C} ACs confirmed hôm nay)
+Chưa review: {list-pending-with-AC-counts}
+Deferred: {list-deferred}
+
+Resume: gọi /mcv3:migrate → chọn [1] BA Review
+══════════════════════════════════════════════"
+```
+
+---
+
+### BR-3: Post-Review Verification (Quality Gate trước khi transition)
+
+**Chạy sau khi tất cả modules đã REVIEWED hoặc DEFERRED (không còn PENDING):**
+
+```
+// Step 1: Validate tất cả URS files đã modify — PARALLEL
+PARALLEL (foreach reviewed module):
+  mc_validate({ filePath: "{SYS}/P1-REQUIREMENTS/URS-{MOD}.md", validationType: "format" })
+
+// Step 2: Cross-module integrity checks
+Kiểm tra:
+  ✓ Không có US nào còn < 2 ACs sau tất cả removals
+  ✓ AC IDs không có duplicate cross-module (edge case: add AC với ID trùng)
+  ✓ Tất cả auto-generated replacements được flag rõ trong REVIEW-PROGRESS
+  ✓ Deferred modules không > 40% tổng: nếu vượt → warning "Nhiều modules deferred,
+    sẽ có GENERATED items vào Phase 5 — cân nhắc review thêm trước /mcv3:tech-design"
+
+// Step 3: Update MIGRATION-REPORT REVIEW-STATUS section
+mc_load({ filePath: "_mcv3-work/migration/MIGRATION-REPORT.md", layer: 3 })
+→ Cập nhật section "## REVIEW-STATUS" với final stats
+→ mc_save()
+
+// Step 4: Final checkpoint
+mc_checkpoint({
+  label: "ba-review-complete",
+  sessionSummary: "BA Review hoàn tất: {X} confirmed, {Y} modified, {Z} removed, {D} deferred.",
+  nextActions: ["Tiếp tục /mcv3:requirements để enrich URS (NFRs, priorities, deferred items)"]
+})
+
+Nếu có lỗi từ mc_validate:
+  → Auto-fix lỗi đơn giản (format, whitespace)
+  → Flag lỗi phức tạp trong completion report với "[VERIFY-WARN]"
+  → Không block transition
+```
+
+---
+
+### BR-4: Review Completion Report
+
+```
+══════════════════════════════════════════════
+✅ BA REVIEW HOÀN THÀNH
+══════════════════════════════════════════════
+
+📊 Kết quả review:
+  ✅ Confirmed (không thay đổi):     {X} ACs ({X_pct}%)
+  ✏️ Modified (BA sửa nội dung):     {Y} ACs
+  ❌ Removed (đã xóa):               {Z} ACs
+  ➕ Added (BA thêm mới):             {A} ACs
+  ⏭️ Deferred (để sau):              {D} ACs — {D_MOD} modules
+  ⚠️ Auto-replaced (safety):         {K} ACs (GENERATED — cần review thêm)
+
+📁 Modules đã review ({R}/{TOTAL}):
+  ✅ {MOD-1}: {C} confirmed | {M} modified | {R} removed
+  ✅ {MOD-2}: ...
+
+📁 Modules deferred — còn GENERATED ({D_MOD}):
+  ⏭️ {MOD-X}: {N} ACs chưa review
+  (Nếu rỗng: "Tất cả modules đã review ✅")
+
+{nếu có VERIFY-WARN}:
+⚠️ Verification Warnings:
+  - [VERIFY-WARN-001]: {mô tả issue — không block nhưng nên check}
+
+══════════════════════════════════════════════
+🔜 BƯỚC TIẾP THEO:
+   → /mcv3:requirements — Enrich URS:
+     • Bổ sung NFRs (performance, security, availability)
+     • Xác nhận priorities còn Should/Could chưa confirm
+     • Review {D} ACs deferred chưa confirm
+
+{nếu deferred > 40%}:
+   ⚠️ Lưu ý: {D_MOD} modules deferred vẫn có GENERATED items.
+      Cân nhắc review thêm trước /mcv3:tech-design.
+══════════════════════════════════════════════
+💬 BẠN MUỐN:
+   [1] Review thêm modules deferred?
+   [2] Xem chi tiết URS module nào?
+   [3] OK → /mcv3:requirements
+══════════════════════════════════════════════
+```
+
+---
+
+### BR-5: REVIEW-PROGRESS.md Format
+
+File tracking review state — lưu tại `_mcv3-work/migration/REVIEW-PROGRESS.md`:
+
+```markdown
+# REVIEW-PROGRESS
+**Project:** {slug}
+**Started:** {date}
+**Last Updated:** {date}
+
+## Summary
+| Metric | Value |
+|--------|-------|
+| Total modules | {N} |
+| Reviewed | {X} |
+| Deferred | {D} |
+| Pending | {P} |
+| ACs Confirmed | {C} |
+| ACs Modified | {M} |
+| ACs Removed | {R} |
+| ACs Added | {A} |
+| Auto-replaced | {K} |
+
+## Module Status
+| Module | Status | Confirmed | Modified | Removed | Added | Deferred ACs |
+|--------|--------|-----------|----------|---------|-------|--------------|
+| WMS | REVIEWED | 31 | 3 | 2 | 1 | 0 |
+| TMS | DEFERRED | 0 | 0 | 0 | 0 | 28 |
+| FIN | PENDING | 0 | 0 | 0 | 0 | 20 |
+
+## Verify Warnings
+- [VERIFY-WARN-001]: {module} — {mô tả issue}
+(rỗng nếu không có warning)
+
+## Change Log
+- {datetime} | WMS | 31 confirmed, 3 modified, 2 removed, 1 added
+- {datetime} | TMS | deferred — BA sẽ review sau với stakeholder
+- {datetime} | PAUSE | dừng tại FIN, resume lần sau
+```
+
+---
+
+### BR-6: Quy tắc vận hành BA Review Mode
+
+```
+TRIGGER-AUTO:    Detect checkpoint "ba-review-paused" khi resume → tự động hỏi tiếp tục
+MODULE-FIRST:    Luôn review theo module — không show từng AC lẻ nếu chưa load module
+BATCH-APPLY:     Gộp tất cả changes của 1 module → 1 mc_save duy nhất (tránh save nhiều lần)
+MINIMUM-ACS:     BỎ AC làm US < 2 ACs → auto-generate replacement + flag GENERATED
+POST-SAVE-CHECK: Verify integrity sau mỗi mc_save (không để lỗi accumulate sang module sau)
+CHECKPOINT-PER:  mc_checkpoint sau mỗi module (RISK-003) — không chờ đến PAUSE
+AUDIT-TRAIL:     Mọi action (confirm/modify/remove/add/defer) ghi vào REVIEW-PROGRESS.md
+UNKNOWN-CMD:     Input không rõ → hiển thị lại HELP, KHÔNG tự đoán action
+DEFERRED-WARN:   Deferred > 40% tổng modules → cảnh báo rõ trong completion report
+NO-BLOCK:        Deferred modules không block transition sang /mcv3:requirements
+BACK-ALLOWED:    User có thể BACK để sửa lại module vừa review (re-open và re-save)
 ```
 
 ---
