@@ -42,6 +42,39 @@ References:
 
 ---
 
+## SPEED OPTIMIZATION GUIDELINES
+
+> Áp dụng các kỹ thuật dưới đây để giảm latency mà **không hy sinh quality**.
+
+### Parallel MCP Calls
+
+| Điểm tối ưu | Trước | Sau | Tiết kiệm |
+|-------------|-------|-----|-----------|
+| Phase 0 init | mc_status → mc_list (sequential) | mc_status ∥ mc_list song song | ~1 round-trip |
+| Phase 1 scan + classify | Scan codebase → classify docs (sequential) | mc_list ∥ Glob/Read scan song song | ~1 round-trip |
+| Phase 2 per-system save | mc_save → mc_checkpoint (sequential) | mc_save → [mc_validate ∥ mc_checkpoint] | ~1 round-trip / system |
+| Phase 3-4 report saves | mc_save → sequential validate | mc_save → [mc_validate ∥ mc_checkpoint] | ~1 round-trip / report |
+| Phase 6 post-assess | mc_snapshot → mc_checkpoint (sequential) | Snapshot sau đó checkpoint | — (phụ thuộc) |
+
+### Cache Rules
+
+```
+✅ PROJECT-MANIFEST: Load 1 lần ở Phase 1, tái dùng trong Phase 2+ (không load lại)
+✅ mc_list kết quả: Phase 0 → Phase 1 dùng cùng 1 kết quả (không gọi lại)
+✅ Per-system parallel: Assess nhiều systems độc lập có thể song song → sequential save
+```
+
+### Quy tắc áp dụng
+
+```
+✅ Parallel scan: Glob/Read scan codebase + mc_list classify docs = 1 round
+✅ Post-save parallel: mc_validate và mc_checkpoint chạy song song sau mc_save
+✅ Multi-system: assess systems độc lập song song; save kết quả tuần tự (an toàn hơn)
+✅ No re-validation: Nếu validate PASS ở Phase X → Pre-Completion chỉ confirm, không re-run
+```
+
+---
+
 ## CHẾ ĐỘ VẬN HÀNH — Type C (Hybrid)
 
 Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`) — **Type C: Hybrid**:
@@ -70,7 +103,11 @@ Tự detect project type từ context — không hỏi user:
 
 ```
 Auto-detect logic:
-  1. mc_status() → nếu chưa có project MCV3 → tự init với tên/domain từ message của user
+  1. PARALLEL (nếu project đã tồn tại):
+     - mc_status()              → xác nhận project, lấy slug
+     - mc_list({ projectSlug }) → liệt kê docs hiện có trong .mc-data/
+     [Kết quả mc_list tái dùng ở Phase 1b — KHÔNG gọi lại]
+     Nếu chưa có project → mc_status() trước, rồi mc_init_project nếu cần
   2. Scan thư mục hiện tại:
      Code dirs (bất kỳ 1 trong số): src/ | app/ | lib/ | backend/ | api/ | cmd/ | internal/
      → code exists
@@ -117,9 +154,12 @@ mc_checkpoint({
 
 ## Phase 1 — Project Structure Discovery
 
-### 1a. Scan codebase (nếu có code)
+### 1a. Scan codebase (nếu có code) — song song với 1b
 
 ```
+PARALLEL với Phase 1b (classify docs):
+  Scan codebase (Glob/Read) + mc_list classify docs = 1 round duy nhất
+
 Tự động scan — không hỏi phương pháp:
 1. Chạy ./scripts/scan-codebase.sh (nếu có) → manifest.json
 2. Nếu không có script → dùng Glob/Read để detect cấu trúc
@@ -151,11 +191,12 @@ Module Detection:
   - Route prefixes → API modules
 ```
 
-### 1b. Classify docs (nếu có docs)
+### 1b. Classify docs (nếu có docs) — song song với 1a
 
 ```
 Tự động detect docs — không hỏi user:
-1. mc_list({ projectSlug }) → liệt kê docs đã có trong .mc-data/
+1. [REUSE kết quả mc_list từ Phase 0 — KHÔNG gọi mc_list lần thứ 2]
+   → liệt kê docs đã có trong .mc-data/
 2. Glob/Read các thư mục docs/ hoặc đường dẫn user đề cập trong message
 3. Classify mỗi file thuộc phase nào trong MCV3:
    VD:
@@ -200,6 +241,8 @@ mc_save({
   filePath: "_mcv3-work/assessment/PROJECT-MANIFEST.md",
   documentType: "custom"
 })
+→ Sau khi save: PARALLEL [mc_validate ∥ mc_checkpoint({ label: "assess-phase1-manifest" })]
+  [mc_validate trả về PASS → tiếp tục; FAIL → tự fix format trước khi sang Phase 2]
 ```
 
 Tự verify PROJECT-MANIFEST trước khi sang Phase 2:
@@ -316,16 +359,17 @@ mc_save({
   filePath: "_mcv3-work/assessment/ASSESSMENT-MATRIX.md",
   documentType: "custom"
 })
-```
 
-// RISK-003: Per-system checkpoint — ghi nhận sau mỗi system assessed
-mc_checkpoint({
-  projectSlug: "<slug>",
-  label: "assess-system-{SYS}-done",
-  sessionSummary: "Assess: Đã hoàn thành system {SYS} — currentPhase: {phase}, {N} gaps",
-  nextActions: ["Tiếp tục /mcv3:assess — assess system tiếp theo: {next-system} hoặc sang Phase 3 (Gap Analysis)"]
-})
-// Lặp lại per-system checkpoint này sau mỗi system được assess (trước khi sang system tiếp theo)
+// RISK-003: Sau khi save — PARALLEL [mc_validate ∥ mc_checkpoint]
+PARALLEL (2 calls đồng thời):
+  mc_validate({ projectSlug, filePath: "_mcv3-work/assessment/ASSESSMENT-MATRIX.md" })
+  mc_checkpoint({
+    projectSlug: "<slug>",
+    label: "assess-system-{SYS}-done",
+    sessionSummary: "Assess: Đã hoàn thành system {SYS} — currentPhase: {phase}, {N} gaps",
+    nextActions: ["Tiếp tục /mcv3:assess — assess system tiếp theo: {next-system} hoặc sang Phase 3 (Gap Analysis)"]
+  })
+// Lặp lại per-system parallel này sau mỗi system được assess
 
 Cross-system consistency check (sau khi assess TẤT CẢ systems):
 ```
@@ -444,6 +488,8 @@ mc_save({
   filePath: "_mcv3-work/assessment/GAP-REPORT.md",
   documentType: "custom"
 })
+→ Sau khi save: mc_validate({ filePath: "_mcv3-work/assessment/GAP-REPORT.md" })
+  [Validate PASS → sang Phase 4; FAIL → tự fix format trước]
 ```
 
 GAP-REPORT format:
@@ -543,17 +589,10 @@ mc_save({
   filePath: "_mcv3-work/assessment/SYNC-REPORT.md",
   documentType: "custom"
 })
+→ Sau khi save: PARALLEL [mc_validate ∥ mc_checkpoint({ label: "post-sync-report" })]
 ```
 
-Checkpoint sau Phase 4 (cho dự án lớn — có thể resume tại đây nếu session bị interrupt):
-```
-mc_checkpoint({
-  projectSlug: {slug},
-  label: "post-sync-report",
-  sessionSummary: "Phase 4 hoàn thành: {N} ERRORs, {M} WARNINGs, {K} INFOs trong SYNC-REPORT",
-  nextActions: ["Tiếp tục /mcv3:assess — Phase 5: Remediation Roadmap"]
-})
-```
+// Checkpoint đã được gộp vào PARALLEL [mc_validate ∥ mc_checkpoint] ở trên (tiết kiệm 1 round-trip)
 
 SYNC-REPORT format:
 ```markdown

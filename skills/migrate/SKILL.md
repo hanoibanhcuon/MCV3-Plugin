@@ -34,6 +34,39 @@ References:
 
 ---
 
+## SPEED OPTIMIZATION GUIDELINES
+
+> Áp dụng các kỹ thuật dưới đây để giảm latency mà **không hy sinh quality**.
+
+### Parallel MCP Calls
+
+| Điểm tối ưu | Trước | Sau | Tiết kiệm |
+|-------------|-------|-----|-----------|
+| Phase 1b (project đã có) | mc_status → mc_list (sequential) | mc_status ∥ mc_list song song | ~1 round-trip |
+| Multi-source analysis | Analyze doc1 → doc2 → ... (sequential) | Analyze tất cả sources song song | ~N−1 lượt xử lý |
+| Phase 4e per-doc | mc_save → mc_validate → mc_checkpoint | mc_save → [mc_validate ∥ mc_checkpoint] | ~1 round-trip / doc |
+| Phase 7 traceability | mc_traceability(register) → mc_traceability(validate) + mc_checkpoint | register → [validate ∥ mc_checkpoint] | ~1 round-trip |
+
+### Cache Rules
+
+```
+✅ mc_list kết quả: Dùng ở Phase 1b, tái sử dụng ở Phase 2 để tránh ID conflicts (không gọi lại)
+✅ Format detection rules: Cache 1 lần khi detect source format, dùng lại cho các documents sau
+✅ ID namespace: Track assigned IDs in-memory để tránh conflicts khi xử lý batches
+```
+
+### Quy tắc áp dụng
+
+```
+✅ Phase 1b: mc_status ∥ mc_list = 1 round để xác nhận project + list existing docs
+✅ Multi-source: Khi có nhiều source documents → analyze song song, convert sequential
+✅ Post-save parallel: mc_validate và mc_checkpoint sau mc_save → chạy song song per document
+✅ Phase 7: mc_traceability(register) bắt buộc trước validate; sau validate → [∥ mc_checkpoint]
+✅ No re-validation: Pre-Completion Tầng 3 chỉ confirm mc_validate PASS đã done, không re-run
+```
+
+---
+
 ## CHẾ ĐỘ VẬN HÀNH — Type C (Hybrid)
 
 Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`) — **Type C: Hybrid**:
@@ -124,8 +157,10 @@ mc_snapshot({
 ### 1b. Nếu đã có project MCV3
 
 ```
-mc_status() → xác nhận project
-mc_list() → xem documents hiện có
+// PARALLEL (2 calls đồng thời):
+PARALLEL:
+  mc_status() → xác nhận project
+  mc_list()   → xem documents hiện có (tái dùng ở Phase 2 để check ID conflicts)
 → "Import vào project: {project_name}"
 
 // Tạo safety snapshot trước khi migrate (bảo vệ documents hiện có)
@@ -305,27 +340,26 @@ mc_save({
 })
 ```
 
-### 4e. Validate + Per-Document Checkpoint
+### 4e. Validate + Per-Document Checkpoint — PARALLEL
 
 Sau khi save mỗi converted document:
 
 ```
-// RISK-002: BẮT BUỘC validate sau khi convert mỗi document
-mc_validate({
-  projectSlug: "<slug>",
-  filePath: "<path-of-converted-doc>",
-  validationType: "format"
-})
-→ Nếu validate FAIL → tự fix format issues trước khi sang document tiếp theo
+// RISK-002 + RISK-003: Sau mc_save → PARALLEL [mc_validate ∥ mc_checkpoint]
+PARALLEL (2 calls đồng thời — lặp lại per document):
+  mc_validate({
+    projectSlug: "<slug>",
+    filePath: "<path-of-converted-doc>",
+    validationType: "format"
+  })
+  mc_checkpoint({
+    projectSlug: "<slug>",
+    label: "migrate-doc-{N}-of-{TOTAL}",
+    sessionSummary: "Migration: Đã convert {N}/{TOTAL} documents — vừa xong {doc-name}",
+    nextActions: ["Tiếp tục /mcv3:migrate — convert document {N+1}: {next-doc-name}"]
+  })
+→ Nếu mc_validate FAIL → tự fix format issues trước khi sang document tiếp theo
 → Nếu không tự fix được → đánh dấu "[NEEDS-FIX]" và ghi vào MIGRATION-REPORT gaps
-
-// RISK-003: Per-document checkpoint — để resume nếu bị interrupt
-mc_checkpoint({
-  projectSlug: "<slug>",
-  label: "migrate-doc-{N}-of-{TOTAL}",
-  sessionSummary: "Migration: Đã convert {N}/{TOTAL} documents — vừa xong {doc-name}",
-  nextActions: ["Tiếp tục /mcv3:migrate — convert document {N+1}: {next-doc-name}"]
-})
 [MANDATORY — PER BATCH] Checkpoint sau mỗi batch/scope, KHÔNG gộp cuối session.
 ```
 
@@ -581,7 +615,7 @@ Thứ tự fill gaps theo REMEDIATION-PLAN (từ /mcv3:assess)"
 ## Phase 7 — Register Traceability
 
 ```
-// Register tất cả IDs mới
+// Step 1: Register tất cả IDs mới (phải hoàn thành trước validate)
 mc_traceability({
   action: "register",
   source: "migration",
@@ -589,12 +623,22 @@ mc_traceability({
 })
 [MANDATORY] Traceability PHẢI được register trước khi sang Phase 8.
 
-// RISK-005: Verify imported IDs đã được registered và không conflict
-mc_traceability({
-  action: "validate",
-  projectSlug: "<slug>",
-  scope: "imported-ids"   // Validate tất cả IDs từ migration này
-})
+// Step 2: Sau khi register xong → PARALLEL [mc_traceability(validate) ∥ mc_checkpoint]
+PARALLEL (2 calls đồng thời):
+  mc_traceability({
+    action: "validate",
+    projectSlug: "<slug>",
+    scope: "imported-ids"   // Validate tất cả IDs từ migration này
+  })
+  mc_checkpoint({
+    label: "migration-complete",
+    sessionSummary: "Migration từ {source}: {N} docs, {M} IDs",
+    nextActions: [
+      "Review MIGRATION-REPORT.md và confirm gaps",
+      "Fill missing ACs, NFRs, priorities",
+      "Continue: /mcv3:tech-design hoặc /mcv3:requirements (nếu cần)"
+    ]
+  })
 → Nếu có orphan IDs (registered nhưng chưa có document) → ghi vào MIGRATION-REPORT gaps
 → Nếu có duplicate IDs với existing → ghi CRITICAL gap, đề xuất re-assign
 ```
@@ -603,17 +647,11 @@ mc_traceability({
 
 ## Phase 8 — Post-Gate
 
+> ✅ **Checkpoint đã được gộp vào Phase 7 PARALLEL** — mc_checkpoint chạy song song với mc_traceability(validate), tiết kiệm 1 round-trip. Checkpoint MANDATORY đã được thực thi ở Phase 7.
+
 ```
-mc_checkpoint({
-  label: "migration-complete",
-  sessionSummary: "Migration từ {source}: {N} docs, {M} IDs",
-  nextActions: [
-    "Review MIGRATION-REPORT.md và confirm gaps",
-    "Fill missing ACs, NFRs, priorities",
-    "Continue: /mcv3:tech-design hoặc /mcv3:requirements (nếu cần)"
-  ]
-})
-[MANDATORY] Checkpoint PHẢI được gọi trước khi kết thúc skill.
+// Nếu Phase 7 checkpoint thất bại (hiếm gặp) → retry checkpoint ngay tại đây:
+[FALLBACK ONLY] mc_checkpoint({ label: "migration-complete", ... })
 ```
 
 SAU KHI TẤT CẢ DOCUMENTS ĐÃ CONVERT VÀ VALIDATE:

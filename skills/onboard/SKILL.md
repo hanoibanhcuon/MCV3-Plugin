@@ -29,6 +29,28 @@ References:
 
 ---
 
+## SPEED OPTIMIZATION GUIDELINES
+
+> Onboard là tutorial skill với ít MCP calls — tối ưu tập trung vào init phase.
+
+### Parallel MCP Calls
+
+| Điểm tối ưu | Trước | Sau | Tiết kiệm |
+|-------------|-------|-----|-----------|
+| Phase 2 + Phase 3 | mc_status → mc_init_project (sequential) | mc_status ∥ mc_init_project (khi user đã cung cấp project name) | ~1 round-trip |
+
+### Quy tắc áp dụng
+
+```
+✅ Nếu user cung cấp project name ngay trong message ban đầu:
+   → Phase 2 (mc_status) và Phase 3 (mc_init_project) chạy song song trong 1 round
+   → mc_status để verify setup; mc_init_project để khởi tạo ngay
+   → Fallback: nếu mc_status FAIL → không gọi mc_init_project (MCP server chưa sẵn sàng)
+✅ Nếu user chưa cung cấp project name: mc_status trước, hỏi sau → sequential là đúng
+```
+
+---
+
 ## CHẾ ĐỘ VẬN HÀNH — Type C (Hybrid)
 
 Skill này chạy theo **Auto-Mode Protocol** (`knowledge/auto-mode-protocol.md`) — **Type C: Hybrid**:
@@ -397,7 +419,9 @@ Nếu MCP server kết nối OK:
 ═══════════════════════════════════════════════"
 
 Nếu user đã cung cấp tên dự án và domain trong message:
-  → mc_init_project({ projectName, domain }) ngay
+  → PARALLEL với mc_status (Phase 2): mc_init_project({ projectName, domain })
+     [Chỉ chạy parallel khi mc_status Phase 2 đã xác nhận MCP server hoạt động]
+     Nếu chạy sequential: mc_status PASS → mc_init_project ngay sau đó
   → [BẮT BUỘC — RISK-002] mc_checkpoint({ projectSlug, label: "onboard-complete", sessionSummary: "Onboard xong — project tạo mới, sẵn sàng bắt đầu pipeline", nextActions: ["/mcv3:discovery"] })
   → "✅ Project đã tạo! Chạy /mcv3:discovery để bắt đầu."
 ```
